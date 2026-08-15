@@ -668,12 +668,9 @@ td{
 
     </div>
 
-    <div style="display:flex;align-items:center;gap:14px">
-        <div class="status">
-            <span class="status-dot" id="statusDot"></span>
-            <span id="statusText">Connecting...</span>
-        </div>
-        <button class="btn btn-danger btn-small" onclick="logoutAdmin()">🔐 Logout</button>
+    <div class="status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting...</span>
     </div>
 
 </header>
@@ -1814,45 +1811,6 @@ td{
 <script>
 
 const API = "";
-
-/* =========================================================
-   ADMIN LOGIN / SESSION PROTECTION
-========================================================= */
-
-async function checkAdminLogin(){
-    try{
-        const response = await fetch("/api/admin/me",{
-            credentials:"include"
-        });
-
-        const data = await response.json();
-
-        if(!response.ok || !data.authenticated){
-            window.location.replace("/admin-login.html");
-            return false;
-        }
-
-        return true;
-    }catch(error){
-        console.error("Admin session check failed:",error);
-        window.location.replace("/admin-login.html");
-        return false;
-    }
-}
-
-async function logoutAdmin(){
-    try{
-        await fetch("/api/admin/logout",{
-            method:"POST",
-            credentials:"include"
-        });
-    }catch(error){
-        console.error("Logout error:",error);
-    }finally{
-        window.location.replace("/admin-login.html");
-    }
-}
-
 
 let eventsCache = [];
 let specialEventsCache = [];

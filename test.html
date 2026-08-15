@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>The Potter's House Church Bengaluru</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css">
+
+<style>
+:root{
+  --black:#080808;
+  --black2:#111111;
+  --white:#fff;
+  --soft:#f4f4f1;
+  --gray:#8b8b8b;
+  --red:#b91c1c;
+  --red2:#dc2626;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+body{background:var(--white);color:#111;font-family:Arial,Helvetica,sans-serif}
+::selection{background:var(--red);color:#fff}
+::-webkit-scrollbar{width:7px}
+::-webkit-scrollbar-track{background:#111}
+::-webkit-scrollbar-thumb{background:#b91c1c;border-radius:10px}
+
+.noise:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.06;z-index:2;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+}
+.reveal-line{width:0;height:1px;background:#b91c1c;transition:width 1s ease}
+.aos-animate .reveal-line{width:100%}
+
+.navbar{transition:.45s ease}
+.navbar.scrolled{background:rgba(8,8,8,.94);backdrop-filter:blur(18px);box-shadow:0 10px 35px rgba(0,0,0,.25)}
+
+.hero-media-layer{position:absolute;inset:0;opacity:0;transition:opacity 1.4s ease}
+.hero-media-layer.active{opacity:1}
+.hero-media-layer img,.hero-media-layer video{width:100%;height:100%;object-fit:cover}
+
+.hero-content{animation:heroIn 1.2s cubic-bezier(.16,1,.3,1) both}
+@keyframes heroIn{from{opacity:0;transform:translateY(45px)}to{opacity:1;transform:none}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulseRed{0%,100%{box-shadow:0 0 0 0 rgba(185,28,28,.4)}50%{box-shadow:0 0 0 14px rgba(185,28,28,0)}}
+@keyframes scrollLine{0%{height:0;opacity:0}30%{opacity:1}100%{height:65px;opacity:0}}
+@keyframes marquee{to{transform:translateX(-50%)}}
+@keyframes shine{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@keyframes rotateSlow{to{transform:rotate(360deg)}}
+
+.float{animation:float 4s ease-in-out infinite}
+.pulse-red{animation:pulseRed 2.5s infinite}
+.scroll-line{animation:scrollLine 2s ease-in-out infinite}
+.marquee-track{animation:marquee 28s linear infinite}
+.shine{position:relative;overflow:hidden}
+.shine:after{content:"";position:absolute;top:0;bottom:0;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:translateX(-120%);animation:shine 4s infinite}
+
+.section-title{font-size:clamp(2.3rem,6vw,5.5rem);line-height:.9;letter-spacing:-.055em}
+.big-number{font-size:clamp(4rem,10vw,9rem);line-height:.75;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.25)}
+.event-card{transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s,border-color .5s}
+.event-card:hover{transform:translateY(-10px);box-shadow:0 25px 60px rgba(0,0,0,.12);border-color:#b91c1c}
+.event-card .event-image{transition:transform .7s cubic-bezier(.16,1,.3,1)}
+.event-card:hover .event-image{transform:scale(1.08)}
+
+.special-row{transition:.45s ease}
+.special-row:hover{background:#f0f0ee;transform:translateX(8px)}
+.special-image{transition:transform .7s ease}
+.special-row:hover .special-image{transform:scale(1.07)}
+
+.explore-card{transition:.45s cubic-bezier(.16,1,.3,1)}
+.explore-card:hover{background:#111;color:#fff;transform:translateY(-8px)}
+.explore-card:hover .explore-desc{color:#aaa}
+.explore-card:hover .explore-arrow{background:#b91c1c;color:#fff;transform:rotate(-45deg)}
+
+.menu-open #menu-icon{display:none}
+.menu-open #close-icon{display:block}
+#close-icon{display:none}
+
+#calendarWrapper{max-height:0;opacity:0;overflow:hidden;transition:max-height .8s ease,opacity .5s ease}
+#calendarWrapper.open{max-height:3000px;opacity:1;margin-top:30px}
+#calendarContent{min-height:350px;background:#f3f3f1;border:1px solid #ddd;overflow:hidden}
+#calendarContent iframe{width:100%;min-height:700px;border:0}
+#calendarContent img{display:block;width:100%;max-height:1000px;object-fit:contain;background:#fff}
+
+@media(max-width:640px){
+  .special-row:hover{transform:none}
+  #calendarContent iframe{min-height:600px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVIGATION -->
+<header id="navbar" class="navbar fixed top-0 left-0 w-full z-50 text-white">
+  <div class="max-w-7xl mx-auto px-5 md:px-8 py-5 flex items-center justify-between">
+    <a href="#hero" class="flex items-center gap-3 min-w-0">
+      <div id="logoContainer" class="w-11 h-11 rounded-full border border-white/40 flex items-center justify-center text-white text-xl overflow-hidden flex-shrink-0">✝</div>
+      <div>
+        <div id="navChurchName" class="font-black uppercase tracking-[.18em] text-xs sm:text-sm truncate max-w-[190px] sm:max-w-none">The Potter's House</div>
+        <div class="text-[9px] tracking-[.35em] text-white/50 uppercase">Church Bengaluru</div>
+      </div>
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-7 text-[10px] uppercase tracking-[.22em] font-bold">
+      <a href="#hero" class="hover:text-red-400 transition">Home</a>
+      <a href="#events" class="hover:text-red-400 transition">Events</a>
+      <a href="#special-events" class="hover:text-red-400 transition">Special Events</a>
+      <a href="#featured" class="hover:text-red-400 transition">Watch</a>
+      <a href="#welcome" class="hover:text-red-400 transition">Welcome</a>
+      <a href="#explore" class="hover:text-red-400 transition">Explore</a>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href="#welcome" class="hidden sm:inline-flex border border-white/30 px-4 py-2.5 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-white hover:text-black transition">Contact</a>
+      <a id="navLocationLink" href="#hero" class="hidden sm:inline-flex bg-red-700 px-4 py-2.5 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-red-600 transition pulse-red">Visit Us</a>
+      <button id="menu-btn" aria-label="Menu" class="lg:hidden w-11 h-11 border border-white/30 rounded-full flex items-center justify-center">
+        <svg id="menu-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.8" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg id="close-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.8" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden lg:hidden bg-black/95 backdrop-blur-xl border-t border-white/10 px-6 py-7">
+    <nav class="flex flex-col gap-5 text-xs uppercase tracking-[.25em] font-bold">
+      <a class="mobile-link hover:text-red-400" href="#hero">Home</a>
+      <a class="mobile-link hover:text-red-400" href="#events">Events</a>
+      <a class="mobile-link hover:text-red-400" href="#special-events">Special Events</a>
+      <a class="mobile-link hover:text-red-400" href="#featured">Watch</a>
+      <a class="mobile-link hover:text-red-400" href="#welcome">Welcome</a>
+      <a class="mobile-link hover:text-red-400" href="#explore">Explore</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section id="hero" class="relative min-h-screen bg-black text-white overflow-hidden flex items-center noise">
+  <div id="heroMediaSlides" class="absolute inset-0"></div>
+  <div class="absolute inset-0 bg-black/55"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
+  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto w-full px-5 md:px-8 pt-28 pb-20">
+    <div class="hero-content max-w-5xl">
+      <div class="flex items-center gap-4 mb-8">
+        <span class="w-12 h-px bg-red-600"></span>
+        <span id="heroBadge" class="text-[10px] sm:text-xs uppercase tracking-[.35em] text-white/70 font-bold">Welcome Home</span>
+      </div>
+
+      <h1 class="uppercase font-black tracking-[-.04em] leading-[.86]">
+        <span id="heroTitle" class="block text-[clamp(3.5rem,10vw,9.5rem)]">The Potter's House</span>
+        <span id="heroSubtitle" class="block text-[clamp(1.8rem,5vw,4.8rem)] text-white/75 mt-4">Church Bengaluru</span>
+      </h1>
+
+      <div class="mt-10 flex flex-col sm:flex-row sm:items-center gap-5">
+        <p id="heroLocation" class="text-sm text-white/65">Bengaluru, Karnataka, India</p>
+        <span class="hidden sm:block w-1 h-1 rounded-full bg-red-600"></span>
+        <a id="heroMapLink" href="https://maps.google.com" target="_blank" rel="noopener" class="text-xs uppercase tracking-[.2em] font-bold border-b border-white/30 pb-2 hover:border-red-500 hover:text-red-400 transition">Find Us On A Map →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="absolute bottom-8 left-5 md:left-8 z-10 flex items-center gap-4">
+    <span class="text-[9px] uppercase tracking-[.3em] text-white/50">Scroll</span>
+    <span class="scroll-line w-px bg-red-600"></span>
+  </div>
+
+  <div class="absolute right-5 md:right-8 bottom-8 z-10 text-[9px] tracking-[.3em] uppercase text-white/40 hidden sm:block">Bengaluru • India</div>
+</section>
+
+<!-- MARQUEE -->
+<div class="bg-red-700 text-white overflow-hidden border-y border-red-500">
+  <div class="marquee-track flex whitespace-nowrap w-max">
+    <div class="py-4 px-2 text-[10px] font-black tracking-[.4em] uppercase">
+      Faith • Hope • Jesus • Community • Worship • Faith • Hope • Jesus • Community • Worship •
+    </div>
+    <div class="py-4 px-2 text-[10px] font-black tracking-[.4em] uppercase">
+      Faith • Hope • Jesus • Community • Worship • Faith • Hope • Jesus • Community • Worship •
+    </div>
+  </div>
+</div>
+
+<!-- EVENTS -->
+<section id="events" class="bg-white text-black py-24 md:py-32 px-5">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16" data-aos="fade-up">
+      <div>
+        <div class="flex items-center gap-4 mb-5">
+          <span class="text-red-700 text-[10px] font-black tracking-[.35em] uppercase">01 / Gather</span>
+          <span class="w-20 h-px bg-red-700"></span>
+        </div>
+        <h2 class="section-title font-black uppercase">Coming<br><span class="text-red-700">Events</span></h2>
+      </div>
+      <p class="max-w-sm text-sm text-gray-500 leading-7">Join us throughout the week as we gather together to worship, learn God's Word, build relationships and grow in faith.</p>
+    </div>
+
+    <div id="eventsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+    <div class="mt-14 text-center">
+      <button id="viewCalendarBtn" class="shine bg-black text-white px-8 py-4 rounded-full text-[10px] uppercase tracking-[.25em] font-black hover:bg-red-700 transition">View Church Calendar <span id="calendarArrow" class="inline-block ml-3 transition">↓</span></button>
+    </div>
+
+    <div id="calendarWrapper">
+      <div class="mt-6 border border-gray-200 p-4 md:p-7">
+        <div class="flex flex-col sm:flex-row justify-between gap-4 mb-5">
+          <div>
+            <h3 id="calendarTitle" class="font-black uppercase text-xl">Church Calendar</h3>
+            <p id="calendarStatus" class="text-xs text-gray-500 mt-1">Loading calendar...</p>
+          </div>
+          <a id="calendarOpenLink" href="#" target="_blank" class="hidden bg-red-700 text-white px-5 py-3 rounded-full text-[10px] uppercase tracking-widest font-bold">Open Calendar</a>
+        </div>
+        <div id="calendarContent"><div class="min-h-[250px] flex items-center justify-center text-sm text-gray-400">Loading calendar...</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPECIAL EVENTS -->
+<section id="special-events" class="bg-[#f1f1ee] text-black py-24 md:py-32 px-5">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-14" data-aos="fade-up">
+      <div class="flex items-center gap-4 mb-5">
+        <span class="text-red-700 text-[10px] font-black tracking-[.35em] uppercase">02 / Connect</span>
+        <span class="w-20 h-px bg-red-700"></span>
+      </div>
+      <h2 class="section-title font-black uppercase">Special<br><span class="text-red-700">Events</span></h2>
+    </div>
+
+    <div id="specialEventsContainer" class="space-y-4"></div>
+  </div>
+</section>
+
+<!-- FEATURED -->
+<section id="featured" class="relative min-h-screen bg-black text-white overflow-hidden flex items-center">
+  <div id="featuredBackground" class="absolute inset-0 bg-cover bg-center scale-105"></div>
+  <div class="absolute inset-0 bg-black/60"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/60"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto w-full px-5 md:px-8 py-28">
+    <div data-aos="fade-up" class="max-w-4xl">
+      <span id="featuredBadge" class="inline-block text-[10px] uppercase tracking-[.35em] font-black text-red-400 mb-7">Featured Message</span>
+      <h2 id="featuredTitle" class="font-black uppercase tracking-[-.045em] leading-[.9] text-[clamp(3rem,8vw,8rem)]">Time Is Running Out</h2>
+      <p id="featuredSubtitle" class="mt-7 text-lg text-white/60">Bible Conference 2026</p>
+
+      <div class="flex flex-col sm:flex-row gap-4 mt-10">
+        <a id="watchLink" href="#" class="shine bg-red-700 text-white px-8 py-4 rounded-full text-[10px] uppercase tracking-[.25em] font-black text-center hover:bg-red-600 transition">▶ Watch Now</a>
+        <a id="sermonsLink" href="#" class="border border-white/30 px-8 py-4 rounded-full text-[10px] uppercase tracking-[.25em] font-black text-center hover:bg-white hover:text-black transition">View All Sermons</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WELCOME -->
+<section id="welcome" class="bg-white text-black py-24 md:py-32 px-5">
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-14 lg:gap-24 items-center">
+    <div data-aos="fade-right">
+      <div class="flex items-center gap-4 mb-5">
+        <span class="text-red-700 text-[10px] font-black tracking-[.35em] uppercase">03 / Welcome</span>
+        <span class="w-20 h-px bg-red-700"></span>
+      </div>
+      <span id="welcomeBadge" class="text-[10px] uppercase tracking-[.3em] text-gray-500 font-bold">A Message From Leadership</span>
+      <h2 id="welcomeTitle" class="section-title font-black uppercase mt-5">Welcome<br><span class="text-red-700">To Church</span></h2>
+
+      <p id="welcomeParagraph1" class="mt-8 text-gray-600 leading-8 max-w-xl">Thank you for visiting us online.</p>
+      <p id="welcomeParagraph2" class="mt-4 text-gray-600 leading-8 max-w-xl">Whether you are seeking a spiritual home or just passing through, we invite you to join us.</p>
+      <p id="leaderName" class="mt-7 font-black uppercase tracking-wider text-sm">— Leadership Team</p>
+
+      <div class="flex flex-col sm:flex-row gap-3 mt-9">
+        <a id="newHereLink" href="#" class="bg-black text-white px-7 py-3.5 rounded-full text-[10px] uppercase tracking-[.2em] font-black text-center hover:bg-red-700 transition">New Here?</a>
+        <a id="contactLink" href="#" class="border border-black px-7 py-3.5 rounded-full text-[10px] uppercase tracking-[.2em] font-black text-center hover:bg-black hover:text-white transition">Contact Us</a>
+      </div>
+    </div>
+
+    <div data-aos="fade-left" id="welcomeImageContainer" class="relative min-h-[450px] bg-[#111] overflow-hidden group">
+      <div class="absolute inset-0 flex items-center justify-center text-gray-500 text-xs uppercase tracking-[.25em] text-center p-5" id="welcomeImagePlaceholder">Pastor & Spouse Image</div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+      <div class="absolute bottom-7 left-7 right-7 flex justify-between items-end text-white">
+        <span class="text-[9px] uppercase tracking-[.3em]">Our Leadership</span>
+        <span class="text-red-500 text-xl">✝</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLORE -->
+<section id="explore" class="bg-black text-white py-24 md:py-32 px-5">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between md:items-end gap-8 mb-14" data-aos="fade-up">
+      <div>
+        <div class="flex items-center gap-4 mb-5">
+          <span class="text-red-500 text-[10px] font-black tracking-[.35em] uppercase">04 / Discover</span>
+          <span class="w-20 h-px bg-red-600"></span>
+        </div>
+        <h2 class="section-title font-black uppercase">Explore<br><span class="text-red-600">More</span></h2>
+      </div>
+      <p class="max-w-sm text-sm text-white/45 leading-7">Discover more about our church, our mission, our people and how you can get involved.</p>
+    </div>
+
+    <div id="exploreContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10"></div>
+  </div>
+</section>
+
+<footer class="bg-black text-white border-t border-white/10 px-5 py-10">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-5 text-center md:text-left">
+    <div>
+      <div class="font-black uppercase tracking-[.2em] text-sm">The Potter's House Church Bengaluru</div>
+      <div class="text-[10px] text-white/30 uppercase tracking-[.25em] mt-2">Faith • Hope • Jesus • Community</div>
+    </div>
+    <div class="text-[10px] text-white/30 uppercase tracking-widest">© 2026 All Rights Reserved</div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script>
+AOS.init({once:false,duration:900,easing:"ease-out-cubic",offset:80});
+
+const $=id=>document.getElementById(id);
+
+function escapeHtml(v){
+  if(v===null||v===undefined)return "";
+  return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+function escapeAttribute(v){return escapeHtml(v)}
+async function getJSON(url){
+  const r=await fetch(url,{cache:"no-store"});
+  if(!r.ok)throw new Error(url+" "+r.status);
+  return r.json();
+}
+
+/* NAV */
+window.addEventListener("scroll",()=>{
+  $("navbar").classList.toggle("scrolled",window.scrollY>40);
+},{passive:true});
+
+const menuBtn=$("menu-btn"), mobileMenu=$("mobile-menu");
+menuBtn.addEventListener("click",()=>{
+  document.body.classList.toggle("menu-open");
+  mobileMenu.classList.toggle("hidden");
+});
+document.querySelectorAll(".mobile-link").forEach(a=>a.addEventListener("click",()=>{
+  mobileMenu.classList.add("hidden");
+  document.body.classList.remove("menu-open");
+}));
+
+/* HOME */
+async function loadHome(){
+  try{
+    const home=await getJSON("/api/home");
+    $("heroBadge").textContent=home.badge||"Welcome Home";
+    $("heroTitle").textContent=home.title||"The Potter's House";
+    $("heroSubtitle").textContent=home.subtitle||"Church Bengaluru";
+    $("heroLocation").textContent=home.location||"Bengaluru, Karnataka, India";
+    $("heroMapLink").href=home.mapLink||"https://maps.google.com";
+    $("navLocationLink").href=home.mapLink||"#hero";
+    $("navChurchName").textContent=home.title||"The Potter's House";
+    if(home.logo){
+      $("logoContainer").innerHTML='<img src="'+escapeAttribute(home.logo)+'" alt="Church Logo" class="w-full h-full object-contain">';
+      $("logoContainer").classList.remove("border-white/40");
+    }
+  }catch(e){console.error("Home:",e)}
+}
+
+/* HERO MEDIA */
+let heroMediaItems=[],heroMediaIndex=0,heroMediaTimer=null;
+function clearHeroTimer(){if(heroMediaTimer){clearTimeout(heroMediaTimer);heroMediaTimer=null}}
+async function loadHeroMedia(){
+  try{
+    let media;
+    try{media=await getJSON("/api/home-background")}catch(e){media=await getJSON("/api/hero-media").catch(()=>[])}
+    heroMediaItems=Array.isArray(media)?media:(Array.isArray(media?.items)?media.items:[]);
+    heroMediaItems=heroMediaItems.filter(x=>x&&x.url);
+    const c=$("heroMediaSlides");c.innerHTML="";clearHeroTimer();
+    heroMediaItems.forEach((item,i)=>{
+      const layer=document.createElement("div");layer.className="hero-media-layer";
+      const url=item.url||item.path||item.src||"";
+      const type=String(item.type||item.mediaType||"").toLowerCase();
+      const video=type==="video"||/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+      layer.innerHTML=video?
+        '<video muted playsinline preload="metadata" src="'+escapeAttribute(url)+'"></video>':
+        '<img src="'+escapeAttribute(url)+'" alt="Church background">';
+      c.appendChild(layer);
+    });
+    if(heroMediaItems.length)showHeroMedia(0);
+  }catch(e){console.error("Hero media:",e)}
+}
+function showHeroMedia(i){
+  clearHeroTimer();
+  if(!heroMediaItems.length)return;
+  heroMediaIndex=i%heroMediaItems.length;
+  const layers=document.querySelectorAll("#heroMediaSlides > div");
+  layers.forEach((x,n)=>x.classList.toggle("active",n===heroMediaIndex));
+  const item=heroMediaItems[heroMediaIndex],layer=layers[heroMediaIndex],video=layer?.querySelector("video");
+  if(video){
+    video.currentTime=0;
+    video.play().catch(()=>{});
+    video.onended=()=>showHeroMedia((heroMediaIndex+1)%heroMediaItems.length);
+  }else{
+    const duration=Math.max(1000,Number(item.duration)||6500);
+    heroMediaTimer=setTimeout(()=>showHeroMedia((heroMediaIndex+1)%heroMediaItems.length),duration);
+  }
+}
+
+/* EVENTS */
+async function loadEvents(){
+  try{
+    const events=await getJSON("/api/events"),c=$("eventsContainer");c.innerHTML="";
+    if(!Array.isArray(events)||!events.length){
+      c.innerHTML='<div class="col-span-full py-12 text-center text-gray-400">No upcoming events configured.</div>';return;
+    }
+    events.forEach((e,i)=>{
+      const card=document.createElement("article");
+      card.className="event-card border border-gray-200 bg-white p-7 md:p-9 relative overflow-hidden";
+      card.setAttribute("data-aos","fade-up");card.setAttribute("data-aos-delay",String(i*100));
+      card.innerHTML=`
+        <div class="flex justify-between items-start gap-5">
+          <span class="text-red-700 text-[9px] font-black uppercase tracking-[.3em]">${escapeHtml(e.category||e.type||"SERVICE")}</span>
+          <span class="big-number text-black/5 font-black">${String(i+1).padStart(2,"0")}</span>
+        </div>
+        <h3 class="text-2xl md:text-3xl font-black uppercase tracking-tight -mt-3">${escapeHtml(e.day||e.title||"")}</h3>
+        <p class="text-xs text-gray-500 mt-3 uppercase tracking-wider">${escapeHtml(e.service||e.description||"")}</p>
+        ${e.date?`<p class="text-xs text-gray-400 mt-3">${escapeHtml(e.date)}</p>`:""}
+        <div class="mt-8 flex items-end justify-between">
+          <span class="text-3xl font-black">${escapeHtml(e.time||"")}</span>
+          <span class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center">→</span>
+        </div>`;
+      c.appendChild(card);
+    });
+    AOS.refresh();
+  }catch(e){console.error("Events:",e)}
+}
+
+/* CALENDAR */
+let calendarData=null;
+async function loadCalendar(){
+  try{
+    const r=await fetch("/api/calendar",{cache:"no-store"});
+    if(!r.ok){calendarData=null;updateCalendarPreview();return}
+    calendarData=await r.json();updateCalendarPreview();
+  }catch(e){calendarData=null;updateCalendarPreview("Unable to load calendar.")}
+}
+function calendarUrl(d){return d?.url||d?.fileUrl||d?.calendarUrl||d?.path||""}
+function updateCalendarPreview(err=""){
+  const c=$("calendarContent"),s=$("calendarStatus"),l=$("calendarOpenLink"),t=$("calendarTitle");
+  t.textContent=calendarData?.title||calendarData?.name||"Church Calendar";
+  if(!calendarData){
+    s.textContent=err||"No calendar has been configured.";c.innerHTML='<div class="min-h-[250px] flex items-center justify-center text-sm text-gray-400">No calendar available.</div>';l.classList.add("hidden");return;
+  }
+  const url=calendarUrl(calendarData);
+  if(!url){s.textContent="Calendar URL is unavailable.";c.innerHTML='<div class="min-h-[250px] flex items-center justify-center text-sm text-gray-400">Calendar URL is unavailable.</div>';return}
+  s.textContent="Calendar available";l.href=url;l.classList.remove("hidden");
+  if(/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url))c.innerHTML='<img src="'+escapeAttribute(url)+'" alt="Church Calendar">';
+  else c.innerHTML='<iframe src="'+escapeAttribute(url)+'" title="Church Calendar" loading="lazy"></iframe>';
+}
+$("viewCalendarBtn").addEventListener("click",()=>{
+  const w=$("calendarWrapper"),a=$("calendarArrow"),b=$("viewCalendarBtn");
+  w.classList.toggle("open");
+  a.style.transform=w.classList.contains("open")?"rotate(180deg)":"rotate(0)";
+  b.childNodes[0].textContent=w.classList.contains("open")?"Hide Church Calendar ":"View Church Calendar ";
+  if(w.classList.contains("open"))loadCalendar();
+});
+
+/* SPECIAL EVENTS */
+async function loadSpecialEvents(){
+  try{
+    const events=await getJSON("/api/special-events"),c=$("specialEventsContainer");c.innerHTML="";
+    if(!Array.isArray(events)||!events.length){c.innerHTML='<div class="py-12 text-center text-gray-400">No special events available.</div>';return}
+    events.forEach((e,i)=>{
+      const row=document.createElement("article");row.className="special-row bg-white border border-gray-200 p-4 md:p-6 flex flex-col md:flex-row gap-7 md:gap-10";
+      row.setAttribute("data-aos","fade-up");row.setAttribute("data-aos-delay",String(i*100));
+      const image=e.image?`<img class="special-image w-full h-full object-cover" src="${escapeAttribute(e.image)}" alt="${escapeAttribute(e.title||"Event")}">`:
+      `<div class="w-full h-full flex items-center justify-center text-gray-400 text-[9px] uppercase tracking-widest">Event Image</div>`;
+      row.innerHTML=`
+        <div class="w-full md:w-72 h-52 md:h-44 bg-gray-100 overflow-hidden flex-shrink-0">${image}</div>
+        <div class="flex-1 py-1 md:py-3">
+          <div class="flex flex-wrap gap-3 items-center mb-3"><span class="text-red-700 text-[9px] font-black uppercase tracking-[.25em]">Special Event</span><span class="text-gray-300">•</span><span class="text-[10px] text-gray-500">${escapeHtml(e.date||"")}${e.time?" | "+escapeHtml(e.time):""}</span></div>
+          <h3 class="text-2xl md:text-3xl font-black uppercase tracking-tight">${escapeHtml(e.title||"")}</h3>
+          ${e.description?`<p class="text-sm text-gray-500 leading-7 mt-3 max-w-2xl">${escapeHtml(e.description)}</p>`:""}
+          <a href="${escapeAttribute(e.link||"#")}" ${e.link&&e.link!=="#"?'target="_blank" rel="noopener"':""} class="inline-block mt-5 text-[9px] uppercase tracking-[.25em] font-black border-b border-black pb-2 hover:text-red-700 hover:border-red-700 transition">Find Out More →</a>
+        </div>`;
+      c.appendChild(row);
+    });
+    AOS.refresh();
+  }catch(e){console.error("Special:",e)}
+}
+
+/* FEATURED */
+async function loadFeatured(){
+  try{
+    const x=await getJSON("/api/featured");
+    $("featuredBadge").textContent=x.badge||"Featured Message";
+    $("featuredTitle").textContent=x.title||"Time Is Running Out";
+    $("featuredSubtitle").textContent=x.subtitle||"Bible Conference 2026";
+    $("watchLink").href=x.watchLink||"#";
+    $("sermonsLink").href=x.sermonsLink||"#";
+    const bg=x.backgroundImage||x.background||"";
+    $("featuredBackground").style.backgroundImage=bg?`url('${escapeAttribute(bg)}')`:"none";
+  }catch(e){console.error("Featured:",e)}
+}
+
+/* WELCOME */
+async function loadWelcome(){
+  try{
+    const x=await getJSON("/api/welcome");
+    $("welcomeBadge").textContent=x.badge||"A Message From Leadership";
+    $("welcomeTitle").textContent=x.title||"Welcome To Church";
+    $("welcomeParagraph1").textContent=x.paragraph1||"";
+    $("welcomeParagraph2").textContent=x.paragraph2||"";
+    $("leaderName").textContent=x.leaderName?"— "+x.leaderName:"";
+    $("newHereLink").textContent=x.newHereText||"New Here?";
+    $("newHereLink").href=x.newHereLink||"#";
+    $("contactLink").textContent=x.contactText||"Contact Us";
+    $("contactLink").href=x.contactLink||"#";
+    const box=$("welcomeImageContainer"),ph=$("welcomeImagePlaceholder");
+    if(x.image){ph.style.display="none";box.style.backgroundImage=`url('${escapeAttribute(x.image)}')`;box.style.backgroundSize="cover";box.style.backgroundPosition="center"}
+  }catch(e){console.error("Welcome:",e)}
+}
+
+/* EXPLORE */
+async function loadExplore(){
+  try{
+    const response=await getJSON("/api/explore");
+    let items=Array.isArray(response)?response:(Array.isArray(response?.items)?response.items:[]);
+    items.sort((a,b)=>Number(a.order??a.displayOrder??0)-Number(b.order??b.displayOrder??0));
+    const c=$("exploreContainer");c.innerHTML="";
+    if(!items.length){c.innerHTML='<div class="col-span-full py-12 text-center text-white/30">No Explore items available.</div>';return}
+    items.forEach((x,i)=>{
+      const d=document.createElement("article");d.className="explore-card bg-[#111] p-8 md:p-10 min-h-[260px] flex flex-col justify-between";
+      d.setAttribute("data-aos","fade-up");d.setAttribute("data-aos-delay",String(i%6*100));
+      d.innerHTML=`
+        <div>
+          <div class="text-[9px] text-red-500 uppercase tracking-[.3em] font-black mb-8">0${i+1}</div>
+          <h3 class="text-2xl font-black uppercase tracking-tight">${escapeHtml(x.title||"")}</h3>
+          ${x.description?`<p class="explore-desc text-sm text-white/40 leading-7 mt-3 transition">${escapeHtml(x.description)}</p>`:""}
+        </div>
+        <a href="${escapeAttribute(x.buttonLink||"#")}" ${x.buttonLink&&x.buttonLink!=="#"?'target="_blank" rel="noopener"':""} class="explore-arrow mt-7 w-11 h-11 rounded-full bg-white text-black flex items-center justify-center text-lg transition">→</a>`;
+      c.appendChild(d);
+    });
+    AOS.refresh();
+  }catch(e){console.error("Explore:",e);$("exploreContainer").innerHTML='<div class="col-span-full text-center text-red-400 py-10">Unable to load Explore items.</div>'}
+}
+
+/* LOAD */
+async function loadAllContent(){
+  await Promise.allSettled([loadHome(),loadHeroMedia(),loadEvents(),loadSpecialEvents(),loadFeatured(),loadWelcome(),loadExplore(),loadCalendar()]);
+  AOS.refresh();
+}
+loadAllContent();
+
+/* LIVE UPDATES */
+let eventSource=null;
+function connectLiveUpdates(){
+  try{
+    eventSource=new EventSource("/api/updates");
+    eventSource.onmessage=async e=>{
+      try{
+        const d=JSON.parse(e.data);
+        if(d.type!=="connected")await loadAllContent();
+      }catch(err){console.error("SSE:",err)}
+    };
+    eventSource.onerror=()=>{
+      eventSource?.close();
+      setTimeout(connectLiveUpdates,4000);
+    };
+  }catch(e){setTimeout(connectLiveUpdates,4000)}
+}
+connectLiveUpdates();
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible")loadAllContent();
+});
+</script>
+</body>
+</html>

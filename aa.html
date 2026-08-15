@@ -1,0 +1,3093 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Panel | The Potter's House</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at top right, rgba(239,68,68,.12), transparent 30%),
+                radial-gradient(circle at bottom left, rgba(59,130,246,.08), transparent 30%),
+                #050505;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .sidebar {
+            background: rgba(10,10,10,.96);
+            border-right: 1px solid #27272a;
+        }
+
+        .nav-btn {
+            width: 100%;
+            padding: 13px 15px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            color: #a1a1aa;
+            text-align: left;
+            transition: .2s;
+        }
+
+        .nav-btn:hover,
+        .nav-btn.active {
+            background: #ef2929;
+            color: white;
+        }
+
+        .panel {
+            background: rgba(15,15,15,.92);
+            border: 1px solid #27272a;
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 15px 50px rgba(0,0,0,.25);
+        }
+
+        .field {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #090909;
+            border: 1px solid #3f3f46;
+            color: white;
+            outline: none;
+        }
+
+        .field:focus {
+            border-color: #ef2929;
+            box-shadow: 0 0 0 2px rgba(239,68,68,.15);
+        }
+
+        textarea.field {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 7px;
+            color: #d4d4d8;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 18px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: .2s;
+        }
+
+        .btn-red {
+            background: #ef2929;
+            color: white;
+        }
+
+        .btn-red:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-dark {
+            background: #27272a;
+            color: white;
+        }
+
+        .btn-dark:hover {
+            background: #3f3f46;
+        }
+
+        .btn-green {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #991b1b;
+            color: white;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .item-card {
+            background: #090909;
+            border: 1px solid #27272a;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .preview {
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #27272a;
+            margin-top: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            right: 25px;
+            bottom: 25px;
+            z-index: 9999;
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: none;
+            font-weight: 700;
+            box-shadow: 0 15px 50px rgba(0,0,0,.4);
+        }
+
+        .toast.success {
+            background: #15803d;
+        }
+
+        .toast.error {
+            background: #b91c1c;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+            border-radius: 50%;
+            background: #71717a;
+        }
+
+        .status-dot.online {
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            .layout {
+                display: block !important;
+            }
+
+            main {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout flex min-h-screen">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar fixed left-0 top-0 w-64 h-screen p-5 overflow-y-auto">
+
+        <div class="mb-8">
+            <h1 class="text-xl font-black">
+                THE POTTER'S HOUSE
+            </h1>
+
+            <p class="text-xs text-zinc-500 mt-1">
+                Admin Panel
+            </p>
+        </div>
+
+        <nav>
+
+            <button class="nav-btn active" onclick="showSection('home', this)">
+                🏠 Home
+            </button>
+
+            <button class="nav-btn" onclick="showSection('background', this)">
+                🖼 Home Background
+            </button>
+
+            <button class="nav-btn" onclick="showSection('events', this)">
+                📅 Coming Events
+            </button>
+
+            <button class="nav-btn" onclick="showSection('specialEvents', this)">
+                ⭐ Special Events
+            </button>
+
+            <button class="nav-btn" onclick="showSection('featured', this)">
+                🎬 Featured
+            </button>
+
+            <button class="nav-btn" onclick="showSection('welcome', this)">
+                👋 Welcome
+            </button>
+
+            <button class="nav-btn" onclick="showSection('explore', this)">
+                🔎 Explore
+            </button>
+
+            <button class="nav-btn" onclick="showSection('calendar', this)">
+                🗓 Calendar
+            </button>
+
+        </nav>
+
+        <div class="border-t border-zinc-800 mt-8 pt-6">
+
+            <div class="text-xs text-zinc-500 mb-2">
+                SERVER STATUS
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span id="statusDot" class="status-dot"></span>
+                <span id="serverStatus" class="text-sm">
+                    Checking...
+                </span>
+            </div>
+
+            <a
+                href="/"
+                target="_blank"
+                class="btn btn-dark block text-center mt-5"
+            >
+                View Website
+            </a>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="ml-64 flex-1 p-6">
+
+        <!-- HEADER -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-black">
+                Website Management
+            </h2>
+
+            <p class="text-zinc-500 mt-1">
+                Update your church website content.
+            </p>
+        </div>
+
+
+        <!-- =====================================================
+             HOME
+        ====================================================== -->
+
+        <section id="home" class="section active">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-6">
+                    Home
+                </h2>
+
+                <form id="homeForm" enctype="multipart/form-data">
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="label">
+                                Badge
+                            </label>
+
+                            <input
+                                class="field"
+                                id="homeBadge"
+                                name="badge"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Main Title
+                            </label>
+
+                            <input
+                                class="field"
+                                id="homeTitle"
+                                name="title"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Subtitle
+                            </label>
+
+                            <input
+                                class="field"
+                                id="homeSubtitle"
+                                name="subtitle"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Location
+                            </label>
+
+                            <input
+                                class="field"
+                                id="homeLocation"
+                                name="location"
+                            >
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="label">
+                                Google Maps Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="homeMapLink"
+                                name="mapLink"
+                                type="url"
+                            >
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Logo
+                            </label>
+
+                            <input
+                                class="field"
+                                type="file"
+                                id="homeLogo"
+                                name="logo"
+                                accept="image/*"
+                            >
+
+                            <img
+                                id="homeLogoPreview"
+                                class="preview hidden"
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn btn-red mt-6"
+                    >
+                        Save Home
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             BACKGROUND
+        ====================================================== -->
+
+        <section id="background" class="section">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-2">
+                    Home Background
+                </h2>
+
+                <p class="text-zinc-500 mb-6">
+                    Upload images or videos for the home background.
+                </p>
+
+                <form id="backgroundForm" enctype="multipart/form-data">
+
+                    <div class="mb-5">
+
+                        <label class="label">
+                            Background Images / Videos
+                        </label>
+
+                        <input
+                            class="field"
+                            type="file"
+                            id="backgroundFiles"
+                            name="media"
+                            multiple
+                            accept="image/*,video/mp4,video/webm,video/quicktime"
+                        >
+
+                    </div>
+
+                    <div>
+
+                        <label class="label">
+                            Title
+                        </label>
+
+                        <input
+                            class="field"
+                            id="backgroundTitle"
+                            name="title"
+                            value="Home Background"
+                        >
+
+                    </div>
+
+                    <button
+                        class="btn btn-red mt-5"
+                        type="submit"
+                    >
+                        Upload Background
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div class="panel">
+
+                <h3 class="text-xl font-bold mb-5">
+                    Existing Background Media
+                </h3>
+
+                <div
+                    id="backgroundList"
+                    class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             COMING EVENTS
+        ====================================================== -->
+
+        <section id="events" class="section">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-6">
+                    Coming Events
+                </h2>
+
+                <form id="eventForm">
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="label">Category</label>
+
+                            <input
+                                class="field"
+                                id="eventCategory"
+                                name="category"
+                                placeholder="Morning"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">Day</label>
+
+                            <input
+                                class="field"
+                                id="eventDay"
+                                name="day"
+                                placeholder="Sunday"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">Service</label>
+
+                            <input
+                                class="field"
+                                id="eventService"
+                                name="service"
+                                placeholder="Worship Service"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">Time</label>
+
+                            <input
+                                class="field"
+                                id="eventTime"
+                                name="time"
+                                placeholder="10:30 AM"
+                            >
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="btn btn-red mt-5"
+                        type="submit"
+                    >
+                        Add Event
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div class="panel">
+
+                <h3 class="text-xl font-bold mb-5">
+                    Existing Events
+                </h3>
+
+                <div
+                    id="eventsList"
+                    class="grid md:grid-cols-2 gap-4"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             SPECIAL EVENTS
+        ====================================================== -->
+
+        <section id="specialEvents" class="section">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-6">
+                    Special Events
+                </h2>
+
+                <form
+                    id="specialEventForm"
+                    enctype="multipart/form-data"
+                >
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Event Title
+                            </label>
+
+                            <input
+                                class="field"
+                                id="specialTitle"
+                                name="title"
+                            >
+
+                        </div>
+
+                        <div>
+
+                            <label class="label">
+                                Date
+                            </label>
+
+                            <input
+                                class="field"
+                                id="specialDate"
+                                name="date"
+                                placeholder="August 24"
+                            >
+
+                        </div>
+
+                        <div>
+
+                            <label class="label">
+                                Time
+                            </label>
+
+                            <input
+                                class="field"
+                                id="specialTime"
+                                name="time"
+                                placeholder="7:30 PM"
+                            >
+
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="specialLink"
+                                name="link"
+                                type="url"
+                                placeholder="https://..."
+                            >
+
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Event Image
+                            </label>
+
+                            <input
+                                class="field"
+                                id="specialImage"
+                                name="image"
+                                type="file"
+                                accept="image/*"
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="btn btn-red mt-5"
+                        type="submit"
+                    >
+                        Add Special Event
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div class="panel">
+
+                <h3 class="text-xl font-bold mb-5">
+                    Existing Special Events
+                </h3>
+
+                <div
+                    id="specialEventsList"
+                    class="grid md:grid-cols-2 gap-4"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             FEATURED
+        ====================================================== -->
+
+        <section id="featured" class="section">
+
+            <div class="panel">
+
+                <div class="mb-6">
+
+                    <h2 class="text-2xl font-bold">
+                        Featured Message
+                    </h2>
+
+                    <p class="text-zinc-500 mt-1">
+                        Control the Featured Message section on the website.
+                    </p>
+
+                </div>
+
+                <form
+                    id="featuredForm"
+                    enctype="multipart/form-data"
+                >
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <!-- BADGE -->
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Featured Badge
+                            </label>
+
+                            <input
+                                class="field"
+                                id="featuredBadge"
+                                name="badge"
+                                placeholder="Featured Message"
+                            >
+
+                            <p class="text-xs text-zinc-600 mt-2">
+                                Example: Featured Message
+                            </p>
+
+                        </div>
+
+
+                        <!-- TITLE -->
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Featured Title
+                            </label>
+
+                            <input
+                                class="field text-xl"
+                                id="featuredTitle"
+                                name="title"
+                                placeholder="YOUTH147"
+                            >
+
+                            <p class="text-xs text-zinc-600 mt-2">
+                                This is the large title shown in the Featured section.
+                            </p>
+
+                        </div>
+
+
+                        <!-- SUBTITLE -->
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Featured Subtitle
+                            </label>
+
+                            <input
+                                class="field"
+                                id="featuredSubtitle"
+                                name="subtitle"
+                                placeholder="Bible Conference 2026"
+                            >
+
+                            <p class="text-xs text-zinc-600 mt-2">
+                                Example: Bible Conference 2026
+                            </p>
+
+                        </div>
+
+
+                        <!-- BACKGROUND -->
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Featured Background Image
+                            </label>
+
+                            <input
+                                class="field"
+                                id="featuredBackground"
+                                name="backgroundImage"
+                                type="file"
+                                accept="image/*"
+                            >
+
+                            <img
+                                id="featuredPreview"
+                                class="preview hidden"
+                            >
+
+                        </div>
+
+
+                        <!-- WATCH LINK -->
+                        <div>
+
+                            <label class="label">
+                                Watch Now Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="featuredWatchLink"
+                                name="watchLink"
+                                type="url"
+                                placeholder="https://youtube.com/..."
+                            >
+
+                        </div>
+
+
+                        <!-- SERMONS LINK -->
+                        <div>
+
+                            <label class="label">
+                                View All Sermons Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="featuredSermonsLink"
+                                name="sermonsLink"
+                                type="url"
+                                placeholder="https://..."
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="mt-6 flex flex-wrap gap-3">
+
+                        <button
+                            type="submit"
+                            class="btn btn-red"
+                        >
+                            Save Featured
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-dark"
+                            onclick="loadFeatured()"
+                        >
+                            Reload Featured
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- FEATURED LIVE PREVIEW -->
+
+            <div class="panel">
+
+                <h3 class="text-xl font-bold mb-5">
+                    Featured Preview
+                </h3>
+
+                <div
+                    id="featuredLivePreview"
+                    class="rounded-2xl min-h-[400px] flex flex-col items-center justify-center text-center p-10 bg-cover bg-center relative overflow-hidden"
+                    style="background-color:#050505"
+                >
+
+                    <div class="absolute inset-0 bg-black/60"></div>
+
+                    <div class="relative z-10">
+
+                        <div
+                            id="previewFeaturedBadge"
+                            class="inline-block px-5 py-2 rounded-full border border-red-600 text-red-400 font-bold text-sm mb-7"
+                        >
+                            Featured Message
+                        </div>
+
+                        <h2
+                            id="previewFeaturedTitle"
+                            class="text-5xl md:text-7xl font-black"
+                        >
+                            YOUTH147
+                        </h2>
+
+                        <p
+                            id="previewFeaturedSubtitle"
+                            class="text-xl text-zinc-300 mt-5"
+                        >
+                            Bible Conference 2026
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             WELCOME
+        ====================================================== -->
+
+        <section id="welcome" class="section">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-6">
+                    Welcome
+                </h2>
+
+                <form
+                    id="welcomeForm"
+                    enctype="multipart/form-data"
+                >
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="label">Badge</label>
+
+                            <input
+                                class="field"
+                                id="welcomeBadge"
+                                name="badge"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">Title</label>
+
+                            <input
+                                class="field"
+                                id="welcomeTitle"
+                                name="title"
+                            >
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Paragraph 1
+                            </label>
+
+                            <textarea
+                                class="field"
+                                id="welcomeParagraph1"
+                                name="paragraph1"
+                            ></textarea>
+
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Paragraph 2
+                            </label>
+
+                            <textarea
+                                class="field"
+                                id="welcomeParagraph2"
+                                name="paragraph2"
+                            ></textarea>
+
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Leader Name
+                            </label>
+
+                            <input
+                                class="field"
+                                id="welcomeLeaderName"
+                                name="leaderName"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Image
+                            </label>
+
+                            <input
+                                class="field"
+                                id="welcomeImage"
+                                name="image"
+                                type="file"
+                                accept="image/*"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                New Here Button Text
+                            </label>
+
+                            <input
+                                class="field"
+                                id="newHereText"
+                                name="newHereText"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                New Here Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="newHereLink"
+                                name="newHereLink"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Contact Button Text
+                            </label>
+
+                            <input
+                                class="field"
+                                id="contactText"
+                                name="contactText"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Contact Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="contactLink"
+                                name="contactLink"
+                            >
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="btn btn-red mt-6"
+                        type="submit"
+                    >
+                        Save Welcome
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             EXPLORE
+        ====================================================== -->
+
+        <section id="explore" class="section">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-2">
+                    Explore
+                </h2>
+
+                <p class="text-zinc-500 mb-6">
+                    Add unlimited Explore items.
+                </p>
+
+                <form id="exploreForm">
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="label">
+                                Title
+                            </label>
+
+                            <input
+                                class="field"
+                                id="exploreTitle"
+                                name="title"
+                                required
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Button Text
+                            </label>
+
+                            <input
+                                class="field"
+                                id="exploreButtonText"
+                                name="buttonText"
+                                value="Learn More"
+                            >
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Description
+                            </label>
+
+                            <textarea
+                                class="field"
+                                id="exploreDescription"
+                                name="description"
+                            ></textarea>
+
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Button Link
+                            </label>
+
+                            <input
+                                class="field"
+                                id="exploreButtonLink"
+                                name="buttonLink"
+                                value="#"
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="btn btn-red mt-5"
+                        type="submit"
+                    >
+                        Add Explore Item
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div class="panel">
+
+                <h3 class="text-xl font-bold mb-5">
+                    Explore Items
+                </h3>
+
+                <div
+                    id="exploreList"
+                    class="grid md:grid-cols-2 gap-4"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             CALENDAR
+        ====================================================== -->
+
+        <section id="calendar" class="section">
+
+            <div class="panel">
+
+                <h2 class="text-2xl font-bold mb-2">
+                    Church Calendar
+                </h2>
+
+                <p class="text-zinc-500 mb-6">
+                    Add a calendar URL or upload a PDF/image.
+                </p>
+
+                <form
+                    id="calendarForm"
+                    enctype="multipart/form-data"
+                >
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="label">
+                                Calendar Label
+                            </label>
+
+                            <input
+                                class="field"
+                                id="calendarLabel"
+                                name="label"
+                                value="Church Calendar"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="label">
+                                Calendar URL
+                            </label>
+
+                            <input
+                                class="field"
+                                id="calendarUrl"
+                                name="url"
+                                placeholder="https://..."
+                            >
+                        </div>
+
+                        <div class="md:col-span-2">
+
+                            <label class="label">
+                                Or Upload Calendar
+                            </label>
+
+                            <input
+                                class="field"
+                                id="calendarFile"
+                                name="calendarFile"
+                                type="file"
+                                accept=".pdf,image/jpeg,image/png,image/webp"
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="btn btn-red mt-5"
+                        type="submit"
+                    >
+                        Save Calendar
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-danger mt-5 ml-2"
+                        onclick="deleteCalendar()"
+                    >
+                        Delete Calendar
+                    </button>
+
+                </form>
+
+                <div
+                    id="calendarCurrent"
+                    class="mt-6 text-zinc-400"
+                ></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+
+<script>
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+let editingSpecialEventId = null;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+function showToast(message, success = true) {
+
+    const toast =
+        document.getElementById("toast");
+
+    toast.textContent = message;
+
+    toast.className =
+        "toast " +
+        (success ? "success" : "error");
+
+    toast.style.display = "block";
+
+    setTimeout(() => {
+
+        toast.style.display = "none";
+
+    }, 3000);
+
+}
+
+
+async function api(url, options = {}) {
+
+    const response =
+        await fetch(url, options);
+
+    const text =
+        await response.text();
+
+    let data;
+
+    try {
+
+        data =
+            text ? JSON.parse(text) : {};
+
+    } catch {
+
+        throw new Error(
+            "Server returned an invalid response."
+        );
+
+    }
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.message ||
+            data.error ||
+            `HTTP ${response.status}`
+        );
+
+    }
+
+    return data;
+
+}
+
+
+/* =========================================================
+   SECTION NAVIGATION
+========================================================= */
+
+function showSection(id, button) {
+
+    document
+        .querySelectorAll(".section")
+        .forEach(section => {
+
+            section.classList.remove("active");
+
+        });
+
+    const target =
+        document.getElementById(id);
+
+    if (target) {
+        target.classList.add("active");
+    }
+
+    document
+        .querySelectorAll(".nav-btn")
+        .forEach(btn => {
+
+            btn.classList.remove("active");
+
+        });
+
+    if (button) {
+        button.classList.add("active");
+    }
+
+}
+
+
+/* =========================================================
+   SERVER STATUS
+========================================================= */
+
+async function checkServer() {
+
+    try {
+
+        const data =
+            await api("/api/health");
+
+        document
+            .getElementById("serverStatus")
+            .textContent =
+            data.mongodb === "connected"
+                ? "Online • MongoDB Connected"
+                : "Online • MongoDB Disconnected";
+
+        document
+            .getElementById("statusDot")
+            .classList.add("online");
+
+    } catch {
+
+        document
+            .getElementById("serverStatus")
+            .textContent =
+            "Server Offline";
+
+    }
+
+}
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+async function loadHome() {
+
+    try {
+
+        const data =
+            await api("/api/home");
+
+        document.getElementById("homeBadge").value =
+            data.badge || "";
+
+        document.getElementById("homeTitle").value =
+            data.title || "";
+
+        document.getElementById("homeSubtitle").value =
+            data.subtitle || "";
+
+        document.getElementById("homeLocation").value =
+            data.location || "";
+
+        document.getElementById("homeMapLink").value =
+            data.mapLink || "";
+
+        if (data.logo) {
+
+            const image =
+                document.getElementById("homeLogoPreview");
+
+            image.src = data.logo;
+            image.classList.remove("hidden");
+
+        }
+
+    } catch (error) {
+
+        showToast(
+            "Failed to load Home: " + error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("homeForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const form =
+                event.currentTarget;
+
+            const data =
+                new FormData(form);
+
+            await api("/api/home", {
+                method: "PUT",
+                body: data
+            });
+
+            showToast(
+                "Home updated successfully."
+            );
+
+            await loadHome();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+async function loadBackground() {
+
+    try {
+
+        const items =
+            await api("/api/home-background");
+
+        const list =
+            document.getElementById(
+                "backgroundList"
+            );
+
+        if (!items.length) {
+
+            list.innerHTML =
+                `<p class="text-zinc-500">
+                    No background media uploaded.
+                </p>`;
+
+            return;
+
+        }
+
+        list.innerHTML =
+            items.map(item => {
+
+                const media =
+                    item.type === "video"
+
+                        ? `
+                        <video
+                            src="${escapeHtml(item.url)}"
+                            class="w-full h-48 object-cover rounded-lg"
+                            controls
+                        ></video>
+                        `
+
+                        : `
+                        <img
+                            src="${escapeHtml(item.url)}"
+                            class="w-full h-48 object-cover rounded-lg"
+                        >
+                        `;
+
+                return `
+                    <div class="item-card">
+
+                        ${media}
+
+                        <div class="mt-3 font-bold">
+                            ${escapeHtml(item.title)}
+                        </div>
+
+                        <div class="text-xs text-zinc-500 mt-1">
+                            ${escapeHtml(item.type)}
+                        </div>
+
+                        <button
+                            class="btn btn-danger mt-4"
+                            onclick="deleteBackground('${item._id}')"
+                        >
+                            Delete
+                        </button>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("backgroundForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const form =
+                event.currentTarget;
+
+            const files =
+                document.getElementById(
+                    "backgroundFiles"
+                ).files;
+
+            if (!files.length) {
+
+                showToast(
+                    "Please select background media.",
+                    false
+                );
+
+                return;
+
+            }
+
+            const data =
+                new FormData();
+
+            data.append(
+                "title",
+                document.getElementById(
+                    "backgroundTitle"
+                ).value
+            );
+
+            for (
+                const file of files
+            ) {
+
+                data.append(
+                    "media",
+                    file
+                );
+
+            }
+
+            await api(
+                "/api/home-background",
+                {
+                    method: "POST",
+                    body: data
+                }
+            );
+
+            event.currentTarget.reset();
+
+            showToast(
+                "Background uploaded successfully."
+            );
+
+            await loadBackground();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+async function deleteBackground(id) {
+
+    if (!confirm(
+        "Delete this background media?"
+    )) return;
+
+    try {
+
+        await api(
+            "/api/home-background/" + id,
+            {
+                method: "DELETE"
+            }
+        );
+
+        showToast(
+            "Background deleted."
+        );
+
+        await loadBackground();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   COMING EVENTS
+========================================================= */
+
+async function loadEvents() {
+
+    try {
+
+        const events =
+            await api("/api/events");
+
+        const list =
+            document.getElementById(
+                "eventsList"
+            );
+
+        if (!events.length) {
+
+            list.innerHTML =
+                `<p class="text-zinc-500">
+                    No events found.
+                </p>`;
+
+            return;
+
+        }
+
+        list.innerHTML =
+            events.map(event => {
+
+                return `
+                    <div class="item-card">
+
+                        <div class="text-xs text-red-400 font-bold">
+                            ${escapeHtml(event.category)}
+                        </div>
+
+                        <h3 class="text-xl font-bold mt-2">
+                            ${escapeHtml(event.service)}
+                        </h3>
+
+                        <p class="text-zinc-400 mt-2">
+                            ${escapeHtml(event.day)}
+                            •
+                            ${escapeHtml(event.time)}
+                        </p>
+
+                        <div class="flex gap-2 mt-4">
+
+                            <button
+                                class="btn btn-dark"
+                                onclick="editEvent('${event._id}')"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger"
+                                onclick="deleteEvent('${event._id}')"
+                            >
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("eventForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const data = {
+
+                category:
+                    document.getElementById(
+                        "eventCategory"
+                    ).value,
+
+                day:
+                    document.getElementById(
+                        "eventDay"
+                    ).value,
+
+                service:
+                    document.getElementById(
+                        "eventService"
+                    ).value,
+
+                time:
+                    document.getElementById(
+                        "eventTime"
+                    ).value
+
+            };
+
+            await api(
+                "/api/events",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:
+                        JSON.stringify(data)
+                }
+            );
+
+            event.currentTarget.reset();
+
+            showToast(
+                "Event added successfully."
+            );
+
+            await loadEvents();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+async function editEvent(id) {
+
+    try {
+
+        const events =
+            await api("/api/events");
+
+        const event =
+            events.find(
+                item => item._id === id
+            );
+
+        if (!event) return;
+
+        const category =
+            prompt(
+                "Category:",
+                event.category || ""
+            );
+
+        if (category === null) return;
+
+        const day =
+            prompt(
+                "Day:",
+                event.day || ""
+            );
+
+        if (day === null) return;
+
+        const service =
+            prompt(
+                "Service:",
+                event.service || ""
+            );
+
+        if (service === null) return;
+
+        const time =
+            prompt(
+                "Time:",
+                event.time || ""
+            );
+
+        if (time === null) return;
+
+        await api(
+            "/api/events/" + id,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body:
+                    JSON.stringify({
+                        category,
+                        day,
+                        service,
+                        time
+                    })
+            }
+        );
+
+        showToast(
+            "Event updated."
+        );
+
+        await loadEvents();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+async function deleteEvent(id) {
+
+    if (!confirm(
+        "Delete this event?"
+    )) return;
+
+    try {
+
+        await api(
+            "/api/events/" + id,
+            {
+                method: "DELETE"
+            }
+        );
+
+        showToast(
+            "Event deleted."
+        );
+
+        await loadEvents();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SPECIAL EVENTS
+========================================================= */
+
+async function loadSpecialEvents() {
+
+    try {
+
+        const events =
+            await api(
+                "/api/special-events"
+            );
+
+        const list =
+            document.getElementById(
+                "specialEventsList"
+            );
+
+        if (!events.length) {
+
+            list.innerHTML =
+                `<p class="text-zinc-500">
+                    No special events.
+                </p>`;
+
+            return;
+
+        }
+
+        list.innerHTML =
+            events.map(event => {
+
+                const image =
+                    event.image
+                        ? `
+                            <img
+                                src="${escapeHtml(event.image)}"
+                                class="w-full h-48 object-cover rounded-lg mb-4"
+                            >
+                        `
+                        : "";
+
+                return `
+                    <div class="item-card">
+
+                        ${image}
+
+                        <h3 class="text-xl font-bold">
+                            ${escapeHtml(event.title)}
+                        </h3>
+
+                        <p class="text-zinc-400 mt-2">
+                            ${escapeHtml(event.date)}
+                            •
+                            ${escapeHtml(event.time)}
+                        </p>
+
+                        <div class="flex gap-2 mt-4">
+
+                            <button
+                                class="btn btn-dark"
+                                onclick="editSpecialEvent('${event._id}')"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger"
+                                onclick="deleteSpecialEvent('${event._id}')"
+                            >
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("specialEventForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const form =
+                event.currentTarget;
+
+            const data =
+                new FormData(form);
+
+            await api(
+                "/api/special-events",
+                {
+                    method: "POST",
+                    body: data
+                }
+            );
+
+            form.reset();
+
+            showToast(
+                "Special event added."
+            );
+
+            await loadSpecialEvents();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+async function editSpecialEvent(id) {
+
+    try {
+
+        const events =
+            await api(
+                "/api/special-events"
+            );
+
+        const event =
+            events.find(
+                item => item._id === id
+            );
+
+        if (!event) return;
+
+        const title =
+            prompt(
+                "Event Title:",
+                event.title || ""
+            );
+
+        if (title === null) return;
+
+        const date =
+            prompt(
+                "Date:",
+                event.date || ""
+            );
+
+        if (date === null) return;
+
+        const time =
+            prompt(
+                "Time:",
+                event.time || ""
+            );
+
+        if (time === null) return;
+
+        const link =
+            prompt(
+                "Link:",
+                event.link || "#"
+            );
+
+        if (link === null) return;
+
+        await api(
+            "/api/special-events/" + id,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body:
+                    JSON.stringify({
+                        title,
+                        date,
+                        time,
+                        link
+                    })
+            }
+        );
+
+        showToast(
+            "Special event updated."
+        );
+
+        await loadSpecialEvents();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+async function deleteSpecialEvent(id) {
+
+    if (!confirm(
+        "Delete this special event?"
+    )) return;
+
+    try {
+
+        await api(
+            "/api/special-events/" + id,
+            {
+                method: "DELETE"
+            }
+        );
+
+        showToast(
+            "Special event deleted."
+        );
+
+        await loadSpecialEvents();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   FEATURED
+   IMPORTANT:
+   BADGE + TITLE + SUBTITLE ARE ALL EDITABLE.
+========================================================= */
+
+async function loadFeatured() {
+
+    try {
+
+        const data =
+            await api("/api/featured");
+
+        document.getElementById(
+            "featuredBadge"
+        ).value =
+            data.badge || "";
+
+        document.getElementById(
+            "featuredTitle"
+        ).value =
+            data.title || "";
+
+        document.getElementById(
+            "featuredSubtitle"
+        ).value =
+            data.subtitle || "";
+
+        document.getElementById(
+            "featuredWatchLink"
+        ).value =
+            data.watchLink || "";
+
+        document.getElementById(
+            "featuredSermonsLink"
+        ).value =
+            data.sermonsLink || "";
+
+
+        if (data.backgroundImage) {
+
+            const preview =
+                document.getElementById(
+                    "featuredPreview"
+                );
+
+            preview.src =
+                data.backgroundImage;
+
+            preview.classList.remove(
+                "hidden"
+            );
+
+            document
+                .getElementById(
+                    "featuredLivePreview"
+                )
+                .style.backgroundImage =
+                `url("${data.backgroundImage}")`;
+
+        }
+
+
+        updateFeaturedPreview();
+
+    } catch (error) {
+
+        showToast(
+            "Failed to load Featured: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* LIVE PREVIEW */
+
+function updateFeaturedPreview() {
+
+    document.getElementById(
+        "previewFeaturedBadge"
+    ).textContent =
+        document.getElementById(
+            "featuredBadge"
+        ).value ||
+        "Featured Message";
+
+    document.getElementById(
+        "previewFeaturedTitle"
+    ).textContent =
+        document.getElementById(
+            "featuredTitle"
+        ).value ||
+        "YOUTH147";
+
+    document.getElementById(
+        "previewFeaturedSubtitle"
+    ).textContent =
+        document.getElementById(
+            "featuredSubtitle"
+        ).value ||
+        "Bible Conference 2026";
+
+}
+
+
+[
+    "featuredBadge",
+    "featuredTitle",
+    "featuredSubtitle"
+].forEach(id => {
+
+    document
+        .getElementById(id)
+        .addEventListener(
+            "input",
+            updateFeaturedPreview
+        );
+
+});
+
+
+document
+    .getElementById(
+        "featuredBackground"
+    )
+    .addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files[0];
+
+            if (!file) return;
+
+            const url =
+                URL.createObjectURL(file);
+
+            document.getElementById(
+                "featuredPreview"
+            ).src = url;
+
+            document.getElementById(
+                "featuredPreview"
+            ).classList.remove(
+                "hidden"
+            );
+
+            document.getElementById(
+                "featuredLivePreview"
+            ).style.backgroundImage =
+                `url("${url}")`;
+
+        }
+    );
+
+
+document
+    .getElementById("featuredForm")
+    .addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            try {
+
+                const form =
+                    event.currentTarget;
+
+                const data =
+                    new FormData();
+
+                /*
+                   Explicitly append every Featured field.
+                   This guarantees badge, title and subtitle
+                   are sent to server.js.
+                */
+
+                data.append(
+                    "badge",
+                    document.getElementById(
+                        "featuredBadge"
+                    ).value
+                );
+
+                data.append(
+                    "title",
+                    document.getElementById(
+                        "featuredTitle"
+                    ).value
+                );
+
+                data.append(
+                    "subtitle",
+                    document.getElementById(
+                        "featuredSubtitle"
+                    ).value
+                );
+
+                data.append(
+                    "watchLink",
+                    document.getElementById(
+                        "featuredWatchLink"
+                    ).value
+                );
+
+                data.append(
+                    "sermonsLink",
+                    document.getElementById(
+                        "featuredSermonsLink"
+                    ).value
+                );
+
+                const file =
+                    document.getElementById(
+                        "featuredBackground"
+                    ).files[0];
+
+                if (file) {
+
+                    data.append(
+                        "backgroundImage",
+                        file
+                    );
+
+                }
+
+                await api(
+                    "/api/featured",
+                    {
+                        method: "PUT",
+                        body: data
+                    }
+                );
+
+                showToast(
+                    "Featured updated successfully."
+                );
+
+                await loadFeatured();
+
+            } catch (error) {
+
+                showToast(
+                    error.message,
+                    false
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   WELCOME
+========================================================= */
+
+async function loadWelcome() {
+
+    try {
+
+        const data =
+            await api("/api/welcome");
+
+        document.getElementById(
+            "welcomeBadge"
+        ).value =
+            data.badge || "";
+
+        document.getElementById(
+            "welcomeTitle"
+        ).value =
+            data.title || "";
+
+        document.getElementById(
+            "welcomeParagraph1"
+        ).value =
+            data.paragraph1 || "";
+
+        document.getElementById(
+            "welcomeParagraph2"
+        ).value =
+            data.paragraph2 || "";
+
+        document.getElementById(
+            "welcomeLeaderName"
+        ).value =
+            data.leaderName || "";
+
+        document.getElementById(
+            "newHereText"
+        ).value =
+            data.newHereText || "";
+
+        document.getElementById(
+            "newHereLink"
+        ).value =
+            data.newHereLink || "";
+
+        document.getElementById(
+            "contactText"
+        ).value =
+            data.contactText || "";
+
+        document.getElementById(
+            "contactLink"
+        ).value =
+            data.contactLink || "";
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("welcomeForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const data =
+                new FormData(
+                    event.currentTarget
+                );
+
+            await api(
+                "/api/welcome",
+                {
+                    method: "PUT",
+                    body: data
+                }
+            );
+
+            showToast(
+                "Welcome updated."
+            );
+
+            await loadWelcome();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+/* =========================================================
+   EXPLORE
+========================================================= */
+
+async function loadExplore() {
+
+    try {
+
+        const items =
+            await api("/api/explore");
+
+        const list =
+            document.getElementById(
+                "exploreList"
+            );
+
+        if (!items.length) {
+
+            list.innerHTML =
+                `<p class="text-zinc-500">
+                    No Explore items.
+                </p>`;
+
+            return;
+
+        }
+
+        list.innerHTML =
+            items.map(item => {
+
+                return `
+                    <div class="item-card">
+
+                        <h3 class="text-xl font-bold">
+                            ${escapeHtml(item.title)}
+                        </h3>
+
+                        <p class="text-zinc-400 mt-2">
+                            ${escapeHtml(item.description)}
+                        </p>
+
+                        <p class="text-xs text-zinc-600 mt-3">
+                            Order: ${item.order}
+                        </p>
+
+                        <div class="flex gap-2 mt-4">
+
+                            <button
+                                class="btn btn-dark"
+                                onclick="editExplore('${item._id}')"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger"
+                                onclick="deleteExplore('${item._id}')"
+                            >
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("exploreForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const data = {
+
+                title:
+                    document.getElementById(
+                        "exploreTitle"
+                    ).value,
+
+                description:
+                    document.getElementById(
+                        "exploreDescription"
+                    ).value,
+
+                buttonText:
+                    document.getElementById(
+                        "exploreButtonText"
+                    ).value,
+
+                buttonLink:
+                    document.getElementById(
+                        "exploreButtonLink"
+                    ).value
+
+            };
+
+            await api(
+                "/api/explore",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:
+                        JSON.stringify(data)
+                }
+            );
+
+            event.currentTarget.reset();
+
+            showToast(
+                "Explore item added."
+            );
+
+            await loadExplore();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+async function editExplore(id) {
+
+    try {
+
+        const items =
+            await api("/api/explore");
+
+        const item =
+            items.find(
+                x => x._id === id
+            );
+
+        if (!item) return;
+
+        const title =
+            prompt(
+                "Title:",
+                item.title || ""
+            );
+
+        if (title === null) return;
+
+        const description =
+            prompt(
+                "Description:",
+                item.description || ""
+            );
+
+        if (description === null) return;
+
+        const buttonText =
+            prompt(
+                "Button Text:",
+                item.buttonText || ""
+            );
+
+        if (buttonText === null) return;
+
+        const buttonLink =
+            prompt(
+                "Button Link:",
+                item.buttonLink || "#"
+            );
+
+        if (buttonLink === null) return;
+
+        await api(
+            "/api/explore/" + id,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body:
+                    JSON.stringify({
+                        title,
+                        description,
+                        buttonText,
+                        buttonLink
+                    })
+            }
+        );
+
+        showToast(
+            "Explore item updated."
+        );
+
+        await loadExplore();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+async function deleteExplore(id) {
+
+    if (!confirm(
+        "Delete this Explore item?"
+    )) return;
+
+    try {
+
+        await api(
+            "/api/explore/" + id,
+            {
+                method: "DELETE"
+            }
+        );
+
+        showToast(
+            "Explore item deleted."
+        );
+
+        await loadExplore();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CALENDAR
+========================================================= */
+
+async function loadCalendar() {
+
+    try {
+
+        const data =
+            await api("/api/calendar");
+
+        document.getElementById(
+            "calendarLabel"
+        ).value =
+            data.label ||
+            "Church Calendar";
+
+        document.getElementById(
+            "calendarUrl"
+        ).value =
+            data.url || "";
+
+        const current =
+            document.getElementById(
+                "calendarCurrent"
+            );
+
+        if (data.url) {
+
+            current.innerHTML =
+                `
+                    Current calendar:
+                    <a
+                        href="${escapeHtml(data.url)}"
+                        target="_blank"
+                        class="text-red-400 underline"
+                    >
+                        Open Calendar
+                    </a>
+                `;
+
+        } else {
+
+            current.textContent =
+                "No calendar configured.";
+
+        }
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("calendarForm")
+    .addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        try {
+
+            const data =
+                new FormData(
+                    event.currentTarget
+                );
+
+            await api(
+                "/api/calendar",
+                {
+                    method: "PUT",
+                    body: data
+                }
+            );
+
+            showToast(
+                "Calendar updated."
+            );
+
+            await loadCalendar();
+
+        } catch (error) {
+
+            showToast(
+                error.message,
+                false
+            );
+
+        }
+
+    });
+
+
+async function deleteCalendar() {
+
+    if (!confirm(
+        "Delete the calendar?"
+    )) return;
+
+    try {
+
+        await api(
+            "/api/calendar",
+            {
+                method: "DELETE"
+            }
+        );
+
+        showToast(
+            "Calendar deleted."
+        );
+
+        await loadCalendar();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SERVER SENT EVENTS
+========================================================= */
+
+function connectLiveUpdates() {
+
+    if (!window.EventSource) {
+        return;
+    }
+
+    const source =
+        new EventSource(
+            "/api/updates"
+        );
+
+    source.onmessage =
+        async event => {
+
+            try {
+
+                const data =
+                    JSON.parse(
+                        event.data
+                    );
+
+                switch (
+                    data.type
+                ) {
+
+                    case "home-updated":
+                        await loadHome();
+                        break;
+
+                    case "home-background-updated":
+                        await loadBackground();
+                        break;
+
+                    case "events-updated":
+                        await loadEvents();
+                        break;
+
+                    case "special-events-updated":
+                        await loadSpecialEvents();
+                        break;
+
+                    case "featured-updated":
+                        await loadFeatured();
+                        break;
+
+                    case "welcome-updated":
+                        await loadWelcome();
+                        break;
+
+                    case "explore-updated":
+                        await loadExplore();
+                        break;
+
+                    case "calendar-updated":
+                        await loadCalendar();
+                        break;
+
+                }
+
+            } catch {
+
+                /* Ignore malformed SSE messages */
+
+            }
+
+        };
+
+}
+
+
+/* =========================================================
+   INITIAL LOAD
+========================================================= */
+
+async function initializeAdmin() {
+
+    await checkServer();
+
+    await Promise.allSettled([
+        loadHome(),
+        loadBackground(),
+        loadEvents(),
+        loadSpecialEvents(),
+        loadFeatured(),
+        loadWelcome(),
+        loadExplore(),
+        loadCalendar()
+    ]);
+
+    connectLiveUpdates();
+
+}
+
+
+initializeAdmin();
+
+</script>
+
+</body>
+</html>
+

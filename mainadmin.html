@@ -1,0 +1,3978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Potter's House - Admin Panel</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:#070b12;
+    color:#f8fafc;
+    min-height:100vh;
+}
+
+button,input,textarea,select{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:265px;
+    height:100vh;
+    background:linear-gradient(180deg,#111827,#1e293b);
+    border-right:1px solid #263449;
+    z-index:1000;
+    overflow-y:auto;
+}
+
+.sidebar-header{
+    padding:24px 20px;
+    border-bottom:1px solid rgba(255,255,255,.1);
+}
+
+.sidebar-logo{
+    width:50px;
+    height:50px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#334155;
+    font-size:24px;
+    margin-bottom:12px;
+}
+
+.sidebar-title{
+    font-size:18px;
+    font-weight:800;
+}
+
+.sidebar-subtitle{
+    color:#94a3b8;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.nav{
+    padding:16px 12px;
+}
+
+.nav button,
+.nav a{
+    width:100%;
+    display:block;
+    border:0;
+    background:transparent;
+    color:#cbd5e1;
+    padding:12px 14px;
+    margin-bottom:5px;
+    border-radius:10px;
+    text-align:left;
+    text-decoration:none;
+    transition:.2s;
+}
+
+.nav button:hover,
+.nav button.active,
+.nav a:hover{
+    background:#334155;
+    color:#fff;
+}
+
+.nav-icon{
+    width:30px;
+    display:inline-block;
+}
+
+.main{
+    margin-left:265px;
+    min-height:100vh;
+}
+
+.topbar{
+    position:sticky;
+    top:0;
+    height:82px;
+    background:rgba(3,7,12,.96);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid #263449;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px;
+    z-index:500;
+}
+
+.topbar-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.topbar h1{
+    font-size:22px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#cbd5e1;
+    font-size:14px;
+}
+
+.status-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#22c55e;
+}
+
+.container{
+    padding:30px;
+    max-width:1500px;
+    margin:auto;
+}
+
+.admin-section{
+    display:none;
+}
+
+.admin-section.active{
+    display:block;
+}
+
+.section-heading{
+    margin-bottom:25px;
+}
+
+.section-heading h2{
+    font-size:34px;
+    font-weight:900;
+    margin-bottom:8px;
+}
+
+.section-heading p{
+    color:#94a3b8;
+    font-size:16px;
+}
+
+.card{
+    background:#101827;
+    border:1px solid #334155;
+    border-radius:18px;
+    padding:28px;
+    margin-bottom:25px;
+    box-shadow:0 10px 35px rgba(0,0,0,.18);
+}
+
+.card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:22px;
+    padding-bottom:16px;
+    border-bottom:1px solid #243146;
+}
+
+.card-header h3{
+    font-size:19px;
+}
+
+.card-header p{
+    color:#64748b;
+    font-size:13px;
+    margin-top:4px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+}
+
+.form-grid.three{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.form-group.full{
+    grid-column:1/-1;
+}
+
+.form-group label{
+    font-size:14px;
+    font-weight:700;
+    color:#e2e8f0;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select{
+    width:100%;
+    border:1px solid #334155;
+    border-radius:11px;
+    padding:13px 14px;
+    outline:none;
+    background:#09111f;
+    color:#f8fafc;
+}
+
+.form-group textarea{
+    min-height:120px;
+    resize:vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus{
+    border-color:#ef4444;
+    box-shadow:0 0 0 3px rgba(239,68,68,.12);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder{
+    color:#64748b;
+}
+
+.file-input{
+    padding:10px !important;
+}
+
+.help{
+    color:#64748b;
+    font-size:12px;
+}
+
+.actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:22px;
+}
+
+.btn{
+    border:0;
+    border-radius:11px;
+    padding:12px 18px;
+    font-weight:800;
+    transition:.2s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.btn:hover{
+    transform:translateY(-1px);
+}
+
+.btn-primary{
+    background:#ff3035;
+    color:#fff;
+}
+
+.btn-primary:hover{
+    background:#e3262b;
+}
+
+.btn-success{
+    background:#16a34a;
+    color:#fff;
+}
+
+.btn-danger{
+    background:#dc2626;
+    color:#fff;
+}
+
+.btn-warning{
+    background:#d97706;
+    color:#fff;
+}
+
+.btn-secondary{
+    background:#334155;
+    color:#fff;
+}
+
+.btn-small{
+    padding:8px 12px;
+    font-size:12px;
+}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+}
+
+.stat{
+    background:#101827;
+    border:1px solid #334155;
+    border-radius:16px;
+    padding:23px;
+}
+
+.stat-icon{
+    font-size:25px;
+    margin-bottom:15px;
+}
+
+.stat-number{
+    font-size:30px;
+    font-weight:900;
+}
+
+.stat-label{
+    color:#94a3b8;
+    font-size:13px;
+    margin-top:4px;
+}
+
+.item-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    gap:18px;
+}
+
+.item-card{
+    border:1px solid #334155;
+    border-radius:15px;
+    overflow:hidden;
+    background:#0b1220;
+}
+
+.item-media{
+    width:100%;
+    height:180px;
+    background:#020617;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+
+.item-media img,
+.item-media video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.item-body{
+    padding:16px;
+}
+
+.item-body h4{
+    margin-bottom:9px;
+}
+
+.item-body p{
+    color:#94a3b8;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.item-actions{
+    display:flex;
+    gap:8px;
+    margin-top:15px;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    text-align:left;
+    font-size:12px;
+    color:#94a3b8;
+    background:#0b1220;
+    padding:13px;
+}
+
+td{
+    padding:13px;
+    border-top:1px solid #243146;
+    font-size:13px;
+    color:#e2e8f0;
+}
+
+.table-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.preview-large{
+    width:200px;
+    max-width:100%;
+    max-height:150px;
+    object-fit:cover;
+    border-radius:10px;
+    background:#020617;
+}
+
+.preview-box{
+    padding:15px;
+    border:1px dashed #334155;
+    border-radius:12px;
+    color:#64748b;
+}
+
+.loading{
+    padding:35px;
+    text-align:center;
+    color:#94a3b8;
+}
+
+.spinner{
+    width:28px;
+    height:28px;
+    border:3px solid #334155;
+    border-top-color:#ef4444;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    margin:0 auto 10px;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+.empty{
+    text-align:center;
+    padding:35px;
+    color:#64748b;
+}
+
+.toast-container{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    z-index:99999;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.toast{
+    min-width:280px;
+    max-width:480px;
+    background:#1e293b;
+    color:#fff;
+    padding:15px 18px;
+    border-radius:12px;
+    box-shadow:0 15px 35px rgba(0,0,0,.3);
+}
+
+.toast.success{
+    background:#15803d;
+}
+
+.toast.error{
+    background:#dc2626;
+}
+
+.mobile-menu{
+    display:none;
+    border:0;
+    background:#334155;
+    color:white;
+    border-radius:10px;
+    padding:9px 13px;
+    font-size:20px;
+}
+
+.calendar-preview{
+    width:100%;
+    min-height:500px;
+    border-radius:14px;
+    background:#020617;
+    border:1px solid #334155;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+
+.calendar-preview iframe{
+    width:100%;
+    height:650px;
+    border:0;
+}
+
+.calendar-preview img{
+    max-width:100%;
+    max-height:650px;
+    object-fit:contain;
+}
+
+.calendar-preview embed{
+    width:100%;
+    height:650px;
+    border:0;
+}
+
+@media(max-width:1100px){
+    .dashboard-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .form-grid.three{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:800px){
+    .sidebar{
+        transform:translateX(-100%);
+        transition:.25s;
+    }
+
+    .sidebar.open{
+        transform:translateX(0);
+    }
+
+    .main{
+        margin-left:0;
+    }
+
+    .mobile-menu{
+        display:block;
+    }
+
+    .topbar{
+        padding:0 16px;
+    }
+
+    .container{
+        padding:18px;
+    }
+
+    .form-grid,
+    .form-grid.three{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-grid{
+        grid-template-columns:1fr;
+    }
+
+    .topbar h1{
+        font-size:18px;
+    }
+
+    .status{
+        font-size:12px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+        <div class="sidebar-logo">⛪</div>
+        <div class="sidebar-title">Potter's House</div>
+        <div class="sidebar-subtitle">Administration Panel</div>
+    </div>
+
+    <nav class="nav">
+
+        <button class="active" onclick="showSection('dashboard',this)">
+            <span class="nav-icon">📊</span> Dashboard
+        </button>
+
+        <button onclick="showSection('home',this)">
+            <span class="nav-icon">🏠</span> Home
+        </button>
+
+        <button onclick="showSection('background',this)">
+            <span class="nav-icon">🖼️</span> Home Background
+        </button>
+
+        <button onclick="showSection('events',this)">
+            <span class="nav-icon">📅</span> Coming Events
+        </button>
+
+        <button onclick="showSection('special-events',this)">
+            <span class="nav-icon">⭐</span> Special Events
+        </button>
+
+        <button onclick="showSection('featured',this)">
+            <span class="nav-icon">🎬</span> Featured
+        </button>
+
+        <button onclick="showSection('welcome',this)">
+            <span class="nav-icon">👋</span> Welcome
+        </button>
+
+        <button onclick="showSection('explore',this)">
+            <span class="nav-icon">🧭</span> Explore
+        </button>
+
+        <button onclick="showSection('calendar',this)">
+            <span class="nav-icon">📆</span> Calendar
+        </button>
+
+        <a href="/" target="_blank">
+            <span class="nav-icon">🌐</span> Open Website
+        </a>
+
+    </nav>
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+
+    <div class="topbar-left">
+
+        <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
+
+        <h1 id="pageTitle">Dashboard</h1>
+
+    </div>
+
+    <div class="status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting...</span>
+    </div>
+
+</header>
+
+<div class="container">
+
+<!-- =========================================================
+     DASHBOARD
+========================================================= -->
+
+<section id="dashboard" class="admin-section active">
+
+    <div class="section-heading">
+        <h2>Dashboard</h2>
+        <p>Manage all website content from one place.</p>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <div class="stat">
+            <div class="stat-icon">📅</div>
+            <div class="stat-number" id="countEvents">0</div>
+            <div class="stat-label">Coming Events</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-number" id="countSpecial">0</div>
+            <div class="stat-label">Special Events</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-icon">🧭</div>
+            <div class="stat-number" id="countExplore">0</div>
+            <div class="stat-label">Explore Items</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-icon">🖼️</div>
+            <div class="stat-number" id="countBackground">0</div>
+            <div class="stat-label">Background Media</div>
+        </div>
+
+    </div>
+
+    <div class="card" style="margin-top:25px">
+
+        <div class="card-header">
+            <div>
+                <h3>Quick Actions</h3>
+                <p>Quickly open a section.</p>
+            </div>
+        </div>
+
+        <div class="actions">
+
+            <button class="btn btn-primary" onclick="openSection('home')">
+                🏠 Edit Home
+            </button>
+
+            <button class="btn btn-primary" onclick="openSection('events')">
+                📅 Manage Events
+            </button>
+
+            <button class="btn btn-primary" onclick="openSection('special-events')">
+                ⭐ Special Events
+            </button>
+
+            <button class="btn btn-primary" onclick="openSection('background')">
+                🖼️ Background Media
+            </button>
+
+            <button class="btn btn-primary" onclick="openSection('calendar')">
+                📆 Calendar
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     HOME
+========================================================= -->
+
+<section id="home" class="admin-section">
+
+    <div class="section-heading">
+        <h2>Home</h2>
+        <p>Update your main website heading, location and logo.</p>
+    </div>
+
+    <div class="card">
+
+        <div class="card-header">
+            <div>
+                <h3>Home Information</h3>
+                <p>Changes are saved directly to MongoDB.</p>
+            </div>
+        </div>
+
+        <form id="homeForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Badge</label>
+                    <input type="text" id="homeBadge" placeholder="WELCOME HOME">
+                </div>
+
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="homeTitle">
+                </div>
+
+                <div class="form-group full">
+                    <label>Subtitle</label>
+                    <input type="text" id="homeSubtitle">
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="homeLocation">
+                </div>
+
+                <div class="form-group">
+                    <label>Google Maps Link</label>
+                    <input type="url" id="homeMapLink">
+                </div>
+
+                <div class="form-group">
+                    <label>Logo</label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="homeLogo"
+                        name="logo"
+                        accept="image/*"
+                    >
+
+                    <span class="help">
+                        JPG, PNG, WEBP or GIF.
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Logo</label>
+
+                    <div class="preview-box" id="homeLogoPreview">
+                        No logo uploaded.
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button class="btn btn-primary" type="submit">
+                    💾 Save Home
+                </button>
+
+                <button
+                    class="btn btn-secondary"
+                    type="button"
+                    onclick="loadHome()"
+                >
+                    ↻ Reload
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     HOME BACKGROUND
+========================================================= -->
+
+<section id="background" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Home Background</h2>
+
+        <p>
+            Upload multiple background images or videos for the home page.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h3>Upload Background Media</h3>
+                <p>
+                    Select one or multiple images/videos.
+                </p>
+            </div>
+
+        </div>
+
+        <form id="backgroundForm">
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label>Media Files</label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="backgroundMedia"
+                        name="media"
+                        multiple
+                        accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v"
+                    >
+
+                    <span class="help">
+                        Maximum 100 MB per file.
+                    </span>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Title</label>
+
+                    <input
+                        type="text"
+                        id="backgroundTitle"
+                        placeholder="Home Background"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Starting Order</label>
+
+                    <input
+                        type="number"
+                        id="backgroundOrder"
+                        value="0"
+                    >
+
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button class="btn btn-primary" type="submit">
+                    ⬆ Upload Media
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h3>Background Media</h3>
+                <p>Edit title/order or delete media.</p>
+            </div>
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadBackground()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+        <div id="backgroundList" class="item-grid"></div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     COMING EVENTS
+========================================================= -->
+
+<section id="events" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Coming Events</h2>
+
+        <p>
+            Add, edit and delete your regular church services.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h3 id="eventFormTitle">Add Event</h3>
+            </div>
+
+        </div>
+
+        <form id="eventForm">
+
+            <input type="hidden" id="eventId">
+
+            <div class="form-grid three">
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="eventCategory" placeholder="Morning">
+                </div>
+
+                <div class="form-group">
+                    <label>Day</label>
+                    <input type="text" id="eventDay" placeholder="Sunday">
+                </div>
+
+                <div class="form-group">
+                    <label>Service</label>
+                    <input type="text" id="eventService" placeholder="Worship Service">
+                </div>
+
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="text" id="eventTime" placeholder="10:30 AM">
+                </div>
+
+                <div class="form-group">
+                    <label>Order</label>
+                    <input type="number" id="eventOrder" value="0">
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="eventSaveBtn"
+                >
+                    ➕ Add Event
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="resetEventForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h3>Coming Events List</h3>
+            </div>
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadEvents()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Order</th>
+                        <th>Category</th>
+                        <th>Day</th>
+                        <th>Service</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="eventsTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     SPECIAL EVENTS
+========================================================= -->
+
+<section id="special-events" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Special Events</h2>
+
+        <p>
+            Add, edit and delete special event cards.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h3 id="specialFormTitle">
+                    Add Special Event
+                </h3>
+            </div>
+
+        </div>
+
+        <form id="specialForm">
+
+            <input type="hidden" id="specialId">
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label>Event Title</label>
+
+                    <input
+                        type="text"
+                        id="specialTitle"
+                        placeholder="Youth Rally"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Date</label>
+
+                    <input
+                        type="text"
+                        id="specialDate"
+                        placeholder="September 12, 2026"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Time</label>
+
+                    <input
+                        type="text"
+                        id="specialTime"
+                        placeholder="6:30 PM"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Link</label>
+
+                    <input
+                        type="text"
+                        id="specialLink"
+                        value="#"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Display Order</label>
+
+                    <input
+                        type="number"
+                        id="specialOrder"
+                        value="0"
+                    >
+
+                </div>
+
+                <div class="form-group full">
+
+                    <label>Event Image</label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="specialImage"
+                        name="image"
+                        accept="image/*"
+                    >
+
+                    <span class="help">
+                        The backend accepts the field name "image".
+                    </span>
+
+                </div>
+
+                <div class="form-group full">
+
+                    <div
+                        class="preview-box"
+                        id="specialCurrentImage"
+                    ></div>
+
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="specialSaveBtn"
+                >
+                    ➕ Add Special Event
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="resetSpecialForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h3>Special Event List</h3>
+            </div>
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadSpecialEvents()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+        <div
+            id="specialEventsList"
+            class="item-grid"
+        ></div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     FEATURED
+========================================================= -->
+
+<section id="featured" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Featured</h2>
+
+        <p>
+            Update the featured message and background.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <form id="featuredForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>Badge</label>
+
+                    <input
+                        type="text"
+                        id="featuredBadge"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Title</label>
+
+                    <input
+                        type="text"
+                        id="featuredTitle"
+                    >
+
+                </div>
+
+                <div class="form-group full">
+
+                    <label>Subtitle</label>
+
+                    <input
+                        type="text"
+                        id="featuredSubtitle"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Watch Link</label>
+
+                    <input
+                        type="text"
+                        id="featuredWatchLink"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Sermons Link</label>
+
+                    <input
+                        type="text"
+                        id="featuredSermonsLink"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Background Image</label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="featuredBackground"
+                        name="backgroundImage"
+                        accept="image/*"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Background Image URL</label>
+
+                    <input
+                        type="text"
+                        id="featuredBackgroundUrl"
+                        placeholder="https://..."
+                    >
+
+                </div>
+
+            </div>
+
+            <div
+                id="featuredPreview"
+                class="preview-box"
+                style="margin-top:20px"
+            ></div>
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    💾 Save Featured
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="loadFeatured()"
+                >
+                    ↻ Reload
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     WELCOME
+========================================================= -->
+
+<section id="welcome" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Welcome</h2>
+
+        <p>
+            Manage the welcome message and leadership information.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <form id="welcomeForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Badge</label>
+                    <input type="text" id="welcomeBadge">
+                </div>
+
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="welcomeTitle">
+                </div>
+
+                <div class="form-group full">
+                    <label>Paragraph 1</label>
+                    <textarea id="welcomeParagraph1"></textarea>
+                </div>
+
+                <div class="form-group full">
+                    <label>Paragraph 2</label>
+                    <textarea id="welcomeParagraph2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Leader Name</label>
+                    <input type="text" id="welcomeLeaderName">
+                </div>
+
+                <div class="form-group">
+                    <label>New Here Text</label>
+                    <input type="text" id="welcomeNewHereText">
+                </div>
+
+                <div class="form-group">
+                    <label>New Here Link</label>
+                    <input type="text" id="welcomeNewHereLink">
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Text</label>
+                    <input type="text" id="welcomeContactText">
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Link</label>
+                    <input type="text" id="welcomeContactLink">
+                </div>
+
+                <div class="form-group">
+                    <label>Welcome Image</label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="welcomeImage"
+                        name="image"
+                        accept="image/*"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Current Image</label>
+
+                    <div
+                        id="welcomePreview"
+                        class="preview-box"
+                    >
+                        No welcome image.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    💾 Save Welcome
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="loadWelcome()"
+                >
+                    ↻ Reload
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     EXPLORE
+========================================================= -->
+
+<section id="explore" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Explore</h2>
+
+        <p>
+            Add, update and delete Explore cards.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3 id="exploreFormTitle">
+                Add Explore Item
+            </h3>
+
+        </div>
+
+        <form id="exploreForm">
+
+            <input type="hidden" id="exploreId">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>Title</label>
+
+                    <input
+                        type="text"
+                        id="exploreTitle"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Display Order</label>
+
+                    <input
+                        type="number"
+                        id="exploreOrder"
+                        value="0"
+                    >
+
+                </div>
+
+                <div class="form-group full">
+
+                    <label>Description</label>
+
+                    <textarea
+                        id="exploreDescription"
+                    ></textarea>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Button Text</label>
+
+                    <input
+                        type="text"
+                        id="exploreButtonText"
+                        value="Learn More"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>Button Link</label>
+
+                    <input
+                        type="text"
+                        id="exploreButtonLink"
+                        value="#"
+                    >
+
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="exploreSaveBtn"
+                >
+                    ➕ Add Explore Item
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="resetExploreForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3>Explore Items</h3>
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadExplore()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+        <div
+            id="exploreList"
+            class="item-grid"
+        ></div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     CALENDAR
+========================================================= -->
+
+<section id="calendar" class="admin-section">
+
+    <div class="section-heading">
+
+        <h2>Calendar</h2>
+
+        <p>
+            Set the calendar displayed when visitors click VIEW CALENDAR.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <form id="calendarForm">
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label>Calendar URL</label>
+
+                    <input
+                        type="text"
+                        id="calendarUrl"
+                        placeholder="https://example.com/calendar.pdf"
+                    >
+
+                    <span class="help">
+                        You can use a Google Calendar link, PDF URL, image URL, etc.
+                    </span>
+
+                </div>
+
+                <div class="form-group full">
+
+                    <label>Or Upload Calendar</label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="calendarFile"
+                        name="calendarFile"
+                        accept=".pdf,image/jpeg,image/png,image/webp"
+                    >
+
+                    <span class="help">
+                        PDF, JPG, PNG or WEBP.
+                    </span>
+
+                </div>
+
+                <div class="form-group full">
+
+                    <label>Calendar Title</label>
+
+                    <input
+                        type="text"
+                        id="calendarTitle"
+                        value="Church Calendar"
+                    >
+
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="calendarSaveBtn"
+                >
+                    💾 Save Calendar
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    onclick="removeCalendar()"
+                >
+                    🗑 Remove Calendar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>Calendar Preview</h3>
+
+                <p id="calendarStatus">
+                    Loading calendar...
+                </p>
+
+            </div>
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadCalendar()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+        <div
+            id="calendarPreview"
+            class="calendar-preview"
+        >
+            <span style="color:#64748b">
+                No calendar available.
+            </span>
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+</main>
+
+<div id="toastContainer" class="toast-container"></div>
+
+
+<script>
+
+const API = "";
+
+let eventsCache = [];
+let specialEventsCache = [];
+let backgroundCache = [];
+let exploreCache = [];
+let eventSource = null;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+function fileUrl(value){
+
+    if(!value){
+        return "";
+    }
+
+    if(/^https?:\/\//i.test(value)){
+        return value;
+    }
+
+    if(value.startsWith("/")){
+        return value;
+    }
+
+    return "/" + value;
+
+}
+
+
+async function api(url,options={}){
+
+    const response = await fetch(API + url,{
+        ...options
+    });
+
+    const text = await response.text();
+
+    let data;
+
+    try{
+        data = text ? JSON.parse(text) : {};
+    }catch{
+        throw new Error(
+            text ||
+            `Server returned invalid response (${response.status})`
+        );
+    }
+
+    if(!response.ok){
+
+        throw new Error(
+            data.message ||
+            data.error ||
+            `Request failed (${response.status})`
+        );
+
+    }
+
+    return data;
+
+}
+
+
+function showToast(message,type="success"){
+
+    const container =
+        document.getElementById("toastContainer");
+
+    const toast =
+        document.createElement("div");
+
+    toast.className =
+        `toast ${type}`;
+
+    toast.textContent =
+        message;
+
+    container.appendChild(toast);
+
+    setTimeout(()=>{
+        toast.remove();
+    },4500);
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function showSection(sectionId,button){
+
+    document
+        .querySelectorAll(".admin-section")
+        .forEach(section=>{
+            section.classList.remove("active");
+        });
+
+    const section =
+        document.getElementById(sectionId);
+
+    if(section){
+        section.classList.add("active");
+    }
+
+    document
+        .querySelectorAll(".nav button")
+        .forEach(btn=>{
+            btn.classList.remove("active");
+        });
+
+    if(button){
+        button.classList.add("active");
+    }
+
+    const titles = {
+
+        dashboard:"Dashboard",
+        home:"Home",
+        background:"Home Background",
+        events:"Coming Events",
+        "special-events":"Special Events",
+        featured:"Featured",
+        welcome:"Welcome",
+        explore:"Explore",
+        calendar:"Calendar"
+
+    };
+
+    document.getElementById("pageTitle").textContent =
+        titles[sectionId] || "Admin Panel";
+
+    document
+        .getElementById("sidebar")
+        .classList.remove("open");
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+}
+
+
+function openSection(sectionId){
+
+    const button =
+        [...document.querySelectorAll(".nav button")]
+        .find(btn =>
+            btn.getAttribute("onclick")?.includes(
+                `'${sectionId}'`
+            )
+        );
+
+    showSection(sectionId,button);
+
+}
+
+
+function toggleSidebar(){
+
+    document
+        .getElementById("sidebar")
+        .classList.toggle("open");
+
+}
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+async function loadHome(){
+
+    try{
+
+        const data =
+            await api("/api/home");
+
+        document.getElementById("homeBadge").value =
+            data.badge || "";
+
+        document.getElementById("homeTitle").value =
+            data.title || "";
+
+        document.getElementById("homeSubtitle").value =
+            data.subtitle || "";
+
+        document.getElementById("homeLocation").value =
+            data.location || "";
+
+        document.getElementById("homeMapLink").value =
+            data.mapLink || "";
+
+        const preview =
+            document.getElementById("homeLogoPreview");
+
+        if(data.logo){
+
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(fileUrl(data.logo))}"
+                    class="preview-large"
+                    alt="Logo"
+                >
+            `;
+
+        }else{
+
+            preview.textContent =
+                "No logo uploaded.";
+
+        }
+
+    }catch(error){
+
+        showToast(error.message,"error");
+
+    }
+
+}
+
+
+document
+    .getElementById("homeForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "badge",
+            document.getElementById("homeBadge").value
+        );
+
+        formData.append(
+            "title",
+            document.getElementById("homeTitle").value
+        );
+
+        formData.append(
+            "subtitle",
+            document.getElementById("homeSubtitle").value
+        );
+
+        formData.append(
+            "location",
+            document.getElementById("homeLocation").value
+        );
+
+        formData.append(
+            "mapLink",
+            document.getElementById("homeMapLink").value
+        );
+
+        const file =
+            document.getElementById("homeLogo").files[0];
+
+        if(file){
+            formData.append("logo",file);
+        }
+
+        try{
+
+            const data =
+                await api("/api/home",{
+                    method:"PUT",
+                    body:formData
+                });
+
+            showToast(
+                data.message ||
+                "Home updated successfully."
+            );
+
+            document.getElementById("homeLogo").value="";
+
+            loadHome();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+async function loadBackground(){
+
+    const container =
+        document.getElementById("backgroundList");
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading background media...
+        </div>
+    `;
+
+    try{
+
+        backgroundCache =
+            await api("/api/home-background");
+
+        renderBackground();
+
+        document.getElementById("countBackground")
+            .textContent =
+            backgroundCache.length;
+
+    }catch(error){
+
+        container.innerHTML =
+            `<div class="empty">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+function renderBackground(){
+
+    const container =
+        document.getElementById("backgroundList");
+
+    if(!backgroundCache.length){
+
+        container.innerHTML =
+            `<div class="empty">
+                No background media uploaded.
+            </div>`;
+
+        return;
+
+    }
+
+    container.innerHTML =
+        backgroundCache
+        .map(item=>{
+
+            const isVideo =
+                item.type === "video";
+
+            const media =
+                isVideo
+                ? `
+                    <video
+                        src="${escapeHTML(fileUrl(item.url))}"
+                        controls
+                    ></video>
+                `
+                : `
+                    <img
+                        src="${escapeHTML(fileUrl(item.url))}"
+                        alt="${escapeHTML(item.title)}"
+                    >
+                `;
+
+            return `
+                <div class="item-card">
+
+                    <div class="item-media">
+                        ${media}
+                    </div>
+
+                    <div class="item-body">
+
+                        <h4>
+                            ${escapeHTML(item.title || "Home Background")}
+                        </h4>
+
+                        <p>
+                            Type:
+                            ${escapeHTML(item.type)}
+                        </p>
+
+                        <p>
+                            Order:
+                            ${escapeHTML(item.order)}
+                        </p>
+
+                        <p>
+                            ${escapeHTML(item.originalName || "")}
+                        </p>
+
+                        <div class="item-actions">
+
+                            <button
+                                class="btn btn-warning btn-small"
+                                onclick="editBackground('${item._id}')"
+                            >
+                                ✏ Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger btn-small"
+                                onclick="deleteBackground('${item._id}')"
+                            >
+                                🗑 Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+document
+    .getElementById("backgroundForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const files =
+            document.getElementById("backgroundMedia").files;
+
+        if(!files.length){
+
+            showToast(
+                "Please select at least one file.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "title",
+            document.getElementById("backgroundTitle").value
+        );
+
+        formData.append(
+            "order",
+            document.getElementById("backgroundOrder").value
+        );
+
+        for(const file of files){
+
+            formData.append(
+                "media",
+                file
+            );
+
+        }
+
+        try{
+
+            const data =
+                await api("/api/home-background",{
+                    method:"POST",
+                    body:formData
+                });
+
+            showToast(
+                data.message ||
+                "Background uploaded successfully."
+            );
+
+            document.getElementById("backgroundForm").reset();
+
+            document.getElementById("backgroundOrder").value=0;
+
+            loadBackground();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+async function editBackground(id){
+
+    const item =
+        backgroundCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+    if(!item){
+        return;
+    }
+
+    const title =
+        prompt(
+            "Enter media title:",
+            item.title || ""
+        );
+
+    if(title===null){
+        return;
+    }
+
+    const order =
+        prompt(
+            "Enter order:",
+            item.order ?? 0
+        );
+
+    if(order===null){
+        return;
+    }
+
+    try{
+
+        const data =
+            await api(
+                `/api/home-background/${id}`,
+                {
+                    method:"PUT",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+                        title,
+                        order:Number(order)||0
+                    })
+                }
+            );
+
+        showToast(
+            data.message ||
+            "Background updated."
+        );
+
+        loadBackground();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+async function deleteBackground(id){
+
+    if(!confirm(
+        "Delete this background media?\n\nThe uploaded file will also be deleted."
+    )){
+        return;
+    }
+
+    try{
+
+        const data =
+            await api(
+                `/api/home-background/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+        showToast(
+            data.message ||
+            "Background deleted."
+        );
+
+        loadBackground();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+async function loadEvents(){
+
+    const tbody =
+        document.getElementById("eventsTable");
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading events...
+                </div>
+            </td>
+        </tr>
+    `;
+
+    try{
+
+        eventsCache =
+            await api("/api/events");
+
+        renderEvents();
+
+        document.getElementById("countEvents")
+            .textContent =
+            eventsCache.length;
+
+    }catch(error){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6">
+                    ${escapeHTML(error.message)}
+                </td>
+            </tr>`;
+
+    }
+
+}
+
+
+function renderEvents(){
+
+    const tbody =
+        document.getElementById("eventsTable");
+
+    if(!eventsCache.length){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6">
+                    <div class="empty">
+                        No events found.
+                    </div>
+                </td>
+            </tr>`;
+
+        return;
+
+    }
+
+    tbody.innerHTML =
+        eventsCache
+        .map(event=>`
+
+            <tr>
+
+                <td>${escapeHTML(event.order)}</td>
+
+                <td>${escapeHTML(event.category)}</td>
+
+                <td>${escapeHTML(event.day)}</td>
+
+                <td>${escapeHTML(event.service)}</td>
+
+                <td>${escapeHTML(event.time)}</td>
+
+                <td>
+
+                    <div class="table-actions">
+
+                        <button
+                            class="btn btn-warning btn-small"
+                            onclick="editEvent('${event._id}')"
+                        >
+                            ✏ Edit
+                        </button>
+
+                        <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteEvent('${event._id}')"
+                        >
+                            🗑 Delete
+                        </button>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `)
+        .join("");
+
+}
+
+
+document
+    .getElementById("eventForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const id =
+            document.getElementById("eventId").value;
+
+        const body = {
+
+            category:
+                document.getElementById("eventCategory").value,
+
+            day:
+                document.getElementById("eventDay").value,
+
+            service:
+                document.getElementById("eventService").value,
+
+            time:
+                document.getElementById("eventTime").value,
+
+            order:
+                Number(
+                    document.getElementById("eventOrder").value
+                ) || 0
+
+        };
+
+        try{
+
+            const data =
+                await api(
+                    id
+                    ? `/api/events/${id}`
+                    : "/api/events",
+                    {
+                        method:id ? "PUT" : "POST",
+                        headers:{
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body:JSON.stringify(body)
+                    }
+                );
+
+            showToast(
+                data.message ||
+                "Event saved."
+            );
+
+            resetEventForm();
+
+            loadEvents();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+function editEvent(id){
+
+    const event =
+        eventsCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+    if(!event){
+        return;
+    }
+
+    document.getElementById("eventId").value =
+        event._id;
+
+    document.getElementById("eventCategory").value =
+        event.category || "";
+
+    document.getElementById("eventDay").value =
+        event.day || "";
+
+    document.getElementById("eventService").value =
+        event.service || "";
+
+    document.getElementById("eventTime").value =
+        event.time || "";
+
+    document.getElementById("eventOrder").value =
+        event.order || 0;
+
+    document.getElementById("eventFormTitle").textContent =
+        "Edit Event";
+
+    document.getElementById("eventSaveBtn").textContent =
+        "💾 Update Event";
+
+    openSection("events");
+
+}
+
+
+function resetEventForm(){
+
+    document.getElementById("eventForm").reset();
+
+    document.getElementById("eventId").value="";
+
+    document.getElementById("eventOrder").value=0;
+
+    document.getElementById("eventFormTitle").textContent =
+        "Add Event";
+
+    document.getElementById("eventSaveBtn").textContent =
+        "➕ Add Event";
+
+}
+
+
+async function deleteEvent(id){
+
+    if(!confirm("Delete this event?")){
+        return;
+    }
+
+    try{
+
+        const data =
+            await api(
+                `/api/events/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+        showToast(
+            data.message ||
+            "Event deleted."
+        );
+
+        loadEvents();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SPECIAL EVENTS
+========================================================= */
+
+async function loadSpecialEvents(){
+
+    const container =
+        document.getElementById("specialEventsList");
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading special events...
+        </div>
+    `;
+
+    try{
+
+        specialEventsCache =
+            await api("/api/special-events");
+
+        renderSpecialEvents();
+
+        document.getElementById("countSpecial")
+            .textContent =
+            specialEventsCache.length;
+
+    }catch(error){
+
+        container.innerHTML =
+            `<div class="empty">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+function renderSpecialEvents(){
+
+    const container =
+        document.getElementById("specialEventsList");
+
+    if(!specialEventsCache.length){
+
+        container.innerHTML =
+            `<div class="empty">
+                No special events found.
+            </div>`;
+
+        return;
+
+    }
+
+    container.innerHTML =
+        specialEventsCache
+        .map(event=>{
+
+            const image =
+                event.image
+                ? `
+                    <img
+                        src="${escapeHTML(fileUrl(event.image))}"
+                        alt="${escapeHTML(event.title)}"
+                    >
+                `
+                : `
+                    <span style="color:#64748b">
+                        No image
+                    </span>
+                `;
+
+            return `
+                <div class="item-card">
+
+                    <div class="item-media">
+                        ${image}
+                    </div>
+
+                    <div class="item-body">
+
+                        <h4>
+                            ${escapeHTML(event.title)}
+                        </h4>
+
+                        <p>
+                            📅 ${escapeHTML(event.date)}
+                        </p>
+
+                        <p>
+                            🕐 ${escapeHTML(event.time)}
+                        </p>
+
+                        <p>
+                            Order: ${escapeHTML(event.order)}
+                        </p>
+
+                        <div class="item-actions">
+
+                            <button
+                                class="btn btn-warning btn-small"
+                                onclick="editSpecialEvent('${event._id}')"
+                            >
+                                ✏ Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger btn-small"
+                                onclick="deleteSpecialEvent('${event._id}')"
+                            >
+                                🗑 Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+document
+    .getElementById("specialForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const id =
+            document.getElementById("specialId").value;
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "title",
+            document.getElementById("specialTitle").value
+        );
+
+        formData.append(
+            "date",
+            document.getElementById("specialDate").value
+        );
+
+        formData.append(
+            "time",
+            document.getElementById("specialTime").value
+        );
+
+        formData.append(
+            "link",
+            document.getElementById("specialLink").value
+        );
+
+        formData.append(
+            "order",
+            document.getElementById("specialOrder").value
+        );
+
+        const file =
+            document.getElementById("specialImage").files[0];
+
+        /*
+         * IMPORTANT:
+         * This MUST be "image".
+         */
+        if(file){
+            formData.append("image",file);
+        }
+
+        try{
+
+            const data =
+                await api(
+                    id
+                    ? `/api/special-events/${id}`
+                    : "/api/special-events",
+                    {
+                        method:id ? "PUT" : "POST",
+                        body:formData
+                    }
+                );
+
+            showToast(
+                data.message ||
+                "Special event saved."
+            );
+
+            resetSpecialForm();
+
+            loadSpecialEvents();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+function editSpecialEvent(id){
+
+    const event =
+        specialEventsCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+    if(!event){
+        return;
+    }
+
+    document.getElementById("specialId").value =
+        event._id;
+
+    document.getElementById("specialTitle").value =
+        event.title || "";
+
+    document.getElementById("specialDate").value =
+        event.date || "";
+
+    document.getElementById("specialTime").value =
+        event.time || "";
+
+    document.getElementById("specialLink").value =
+        event.link || "#";
+
+    document.getElementById("specialOrder").value =
+        event.order || 0;
+
+    document.getElementById("specialImage").value="";
+
+    const preview =
+        document.getElementById("specialCurrentImage");
+
+    if(event.image){
+
+        preview.innerHTML = `
+            <p style="margin-bottom:8px">
+                Current image:
+            </p>
+
+            <img
+                src="${escapeHTML(fileUrl(event.image))}"
+                class="preview-large"
+                alt="Current image"
+            >
+        `;
+
+    }else{
+
+        preview.textContent =
+            "No current image.";
+
+    }
+
+    document.getElementById("specialFormTitle").textContent =
+        "Edit Special Event";
+
+    document.getElementById("specialSaveBtn").textContent =
+        "💾 Update Special Event";
+
+    openSection("special-events");
+
+}
+
+
+function resetSpecialForm(){
+
+    document.getElementById("specialForm").reset();
+
+    document.getElementById("specialId").value="";
+
+    document.getElementById("specialOrder").value=0;
+
+    document.getElementById("specialLink").value="#";
+
+    document.getElementById("specialFormTitle").textContent =
+        "Add Special Event";
+
+    document.getElementById("specialSaveBtn").textContent =
+        "➕ Add Special Event";
+
+    document.getElementById("specialCurrentImage").textContent="";
+
+}
+
+
+async function deleteSpecialEvent(id){
+
+    if(!confirm(
+        "Delete this special event?\n\nIts uploaded image will also be deleted."
+    )){
+        return;
+    }
+
+    try{
+
+        const data =
+            await api(
+                `/api/special-events/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+        showToast(
+            data.message ||
+            "Special event deleted."
+        );
+
+        loadSpecialEvents();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   FEATURED
+========================================================= */
+
+async function loadFeatured(){
+
+    try{
+
+        const data =
+            await api("/api/featured");
+
+        document.getElementById("featuredBadge").value =
+            data.badge || "";
+
+        document.getElementById("featuredTitle").value =
+            data.title || "";
+
+        document.getElementById("featuredSubtitle").value =
+            data.subtitle || "";
+
+        document.getElementById("featuredWatchLink").value =
+            data.watchLink || "";
+
+        document.getElementById("featuredSermonsLink").value =
+            data.sermonsLink || "";
+
+        document.getElementById("featuredBackgroundUrl").value =
+            data.backgroundImage &&
+            !data.backgroundImage.startsWith("/uploads/")
+            ? data.backgroundImage
+            : "";
+
+        const preview =
+            document.getElementById("featuredPreview");
+
+        if(data.backgroundImage){
+
+            preview.innerHTML = `
+                <p style="margin-bottom:8px">
+                    Current background:
+                </p>
+
+                <img
+                    src="${escapeHTML(fileUrl(data.backgroundImage))}"
+                    class="preview-large"
+                    alt="Featured background"
+                >
+            `;
+
+        }else{
+
+            preview.textContent =
+                "No background image.";
+
+        }
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("featuredForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "badge",
+            document.getElementById("featuredBadge").value
+        );
+
+        formData.append(
+            "title",
+            document.getElementById("featuredTitle").value
+        );
+
+        formData.append(
+            "subtitle",
+            document.getElementById("featuredSubtitle").value
+        );
+
+        formData.append(
+            "watchLink",
+            document.getElementById("featuredWatchLink").value
+        );
+
+        formData.append(
+            "sermonsLink",
+            document.getElementById("featuredSermonsLink").value
+        );
+
+        const url =
+            document.getElementById("featuredBackgroundUrl")
+            .value.trim();
+
+        if(url){
+            formData.append("backgroundImage",url);
+        }
+
+        const file =
+            document.getElementById("featuredBackground").files[0];
+
+        if(file){
+            formData.append("backgroundImage",file);
+        }
+
+        try{
+
+            const data =
+                await api("/api/featured",{
+                    method:"PUT",
+                    body:formData
+                });
+
+            showToast(
+                data.message ||
+                "Featured updated."
+            );
+
+            document.getElementById("featuredBackground").value="";
+
+            loadFeatured();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+/* =========================================================
+   WELCOME
+========================================================= */
+
+async function loadWelcome(){
+
+    try{
+
+        const data =
+            await api("/api/welcome");
+
+        document.getElementById("welcomeBadge").value =
+            data.badge || "";
+
+        document.getElementById("welcomeTitle").value =
+            data.title || "";
+
+        document.getElementById("welcomeParagraph1").value =
+            data.paragraph1 || "";
+
+        document.getElementById("welcomeParagraph2").value =
+            data.paragraph2 || "";
+
+        document.getElementById("welcomeLeaderName").value =
+            data.leaderName || "";
+
+        document.getElementById("welcomeNewHereText").value =
+            data.newHereText || "";
+
+        document.getElementById("welcomeNewHereLink").value =
+            data.newHereLink || "";
+
+        document.getElementById("welcomeContactText").value =
+            data.contactText || "";
+
+        document.getElementById("welcomeContactLink").value =
+            data.contactLink || "";
+
+        const preview =
+            document.getElementById("welcomePreview");
+
+        if(data.image){
+
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(fileUrl(data.image))}"
+                    class="preview-large"
+                    alt="Welcome"
+                >
+            `;
+
+        }else{
+
+            preview.textContent =
+                "No welcome image.";
+
+        }
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("welcomeForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const formData =
+            new FormData();
+
+        const fields = [
+            "badge",
+            "title",
+            "paragraph1",
+            "paragraph2",
+            "leaderName",
+            "newHereText",
+            "newHereLink",
+            "contactText",
+            "contactLink"
+        ];
+
+        fields.forEach(field=>{
+
+            const id =
+                "welcome" +
+                field.charAt(0).toUpperCase() +
+                field.slice(1);
+
+            formData.append(
+                field,
+                document.getElementById(id).value
+            );
+
+        });
+
+        const file =
+            document.getElementById("welcomeImage").files[0];
+
+        if(file){
+            formData.append("image",file);
+        }
+
+        try{
+
+            const data =
+                await api("/api/welcome",{
+                    method:"PUT",
+                    body:formData
+                });
+
+            showToast(
+                data.message ||
+                "Welcome updated."
+            );
+
+            document.getElementById("welcomeImage").value="";
+
+            loadWelcome();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+/* =========================================================
+   EXPLORE
+========================================================= */
+
+async function loadExplore(){
+
+    const container =
+        document.getElementById("exploreList");
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading explore items...
+        </div>
+    `;
+
+    try{
+
+        exploreCache =
+            await api("/api/explore");
+
+        renderExplore();
+
+        document.getElementById("countExplore")
+            .textContent =
+            exploreCache.length;
+
+    }catch(error){
+
+        container.innerHTML =
+            `<div class="empty">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+function renderExplore(){
+
+    const container =
+        document.getElementById("exploreList");
+
+    if(!exploreCache.length){
+
+        container.innerHTML =
+            `<div class="empty">
+                No explore items found.
+            </div>`;
+
+        return;
+
+    }
+
+    container.innerHTML =
+        exploreCache
+        .map(item=>`
+
+            <div class="item-card">
+
+                <div class="item-body">
+
+                    <h4>
+                        ${escapeHTML(item.title)}
+                    </h4>
+
+                    <p>
+                        ${escapeHTML(item.description)}
+                    </p>
+
+                    <p>
+                        Button:
+                        ${escapeHTML(item.buttonText)}
+                    </p>
+
+                    <p>
+                        Order:
+                        ${escapeHTML(item.order)}
+                    </p>
+
+                    <div class="item-actions">
+
+                        <button
+                            class="btn btn-warning btn-small"
+                            onclick="editExplore('${item._id}')"
+                        >
+                            ✏ Edit
+                        </button>
+
+                        <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteExplore('${item._id}')"
+                        >
+                            🗑 Delete
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `)
+        .join("");
+
+}
+
+
+document
+    .getElementById("exploreForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const id =
+            document.getElementById("exploreId").value;
+
+        const body = {
+
+            title:
+                document.getElementById("exploreTitle").value,
+
+            description:
+                document.getElementById("exploreDescription").value,
+
+            buttonText:
+                document.getElementById("exploreButtonText").value,
+
+            buttonLink:
+                document.getElementById("exploreButtonLink").value,
+
+            order:
+                Number(
+                    document.getElementById("exploreOrder").value
+                ) || 0
+
+        };
+
+        try{
+
+            const data =
+                await api(
+                    id
+                    ? `/api/explore/${id}`
+                    : "/api/explore",
+                    {
+                        method:id ? "PUT" : "POST",
+                        headers:{
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body:JSON.stringify(body)
+                    }
+                );
+
+            showToast(
+                data.message ||
+                "Explore item saved."
+            );
+
+            resetExploreForm();
+
+            loadExplore();
+
+        }catch(error){
+
+            showToast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    });
+
+
+function editExplore(id){
+
+    const item =
+        exploreCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+    if(!item){
+        return;
+    }
+
+    document.getElementById("exploreId").value =
+        item._id;
+
+    document.getElementById("exploreTitle").value =
+        item.title || "";
+
+    document.getElementById("exploreDescription").value =
+        item.description || "";
+
+    document.getElementById("exploreButtonText").value =
+        item.buttonText || "";
+
+    document.getElementById("exploreButtonLink").value =
+        item.buttonLink || "#";
+
+    document.getElementById("exploreOrder").value =
+        item.order || 0;
+
+    document.getElementById("exploreFormTitle").textContent =
+        "Edit Explore Item";
+
+    document.getElementById("exploreSaveBtn").textContent =
+        "💾 Update Explore Item";
+
+    openSection("explore");
+
+}
+
+
+function resetExploreForm(){
+
+    document.getElementById("exploreForm").reset();
+
+    document.getElementById("exploreId").value="";
+
+    document.getElementById("exploreButtonText").value =
+        "Learn More";
+
+    document.getElementById("exploreButtonLink").value =
+        "#";
+
+    document.getElementById("exploreOrder").value=0;
+
+    document.getElementById("exploreFormTitle").textContent =
+        "Add Explore Item";
+
+    document.getElementById("exploreSaveBtn").textContent =
+        "➕ Add Explore Item";
+
+}
+
+
+async function deleteExplore(id){
+
+    if(!confirm("Delete this Explore item?")){
+        return;
+    }
+
+    try{
+
+        const data =
+            await api(
+                `/api/explore/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+        showToast(
+            data.message ||
+            "Explore item deleted."
+        );
+
+        loadExplore();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CALENDAR
+========================================================= */
+
+async function loadCalendar(){
+
+    try{
+
+        const data =
+            await api("/api/calendar");
+
+        document.getElementById("calendarUrl").value =
+            data.url && !data.url.startsWith("/uploads/")
+            ? data.url
+            : "";
+
+        document.getElementById("calendarTitle").value =
+            data.title || "Church Calendar";
+
+        const status =
+            document.getElementById("calendarStatus");
+
+        const preview =
+            document.getElementById("calendarPreview");
+
+        if(!data.url){
+
+            status.textContent =
+                "No calendar has been configured.";
+
+            preview.innerHTML = `
+                <span style="color:#64748b">
+                    No calendar available.
+                </span>
+            `;
+
+            return;
+
+        }
+
+        status.textContent =
+            data.title || "Church Calendar";
+
+        const url =
+            fileUrl(data.url);
+
+        const lower =
+            url.toLowerCase();
+
+        if(
+            lower.includes(".pdf") ||
+            data.type === "pdf"
+        ){
+
+            preview.innerHTML = `
+                <embed
+                    src="${escapeHTML(url)}"
+                    type="application/pdf"
+                >
+            `;
+
+        }else if(
+            /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)
+        ){
+
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(url)}"
+                    alt="Calendar"
+                >
+            `;
+
+        }else{
+
+            preview.innerHTML = `
+                <iframe
+                    src="${escapeHTML(url)}"
+                    title="Church Calendar"
+                ></iframe>
+            `;
+
+        }
+
+    }catch(error){
+
+        document.getElementById("calendarStatus")
+            .textContent =
+            "Unable to load calendar.";
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("calendarForm")
+    .addEventListener("submit",async function(e){
+
+        e.preventDefault();
+
+        const formData =
+            new FormData();
+
+        const url =
+            document.getElementById("calendarUrl")
+            .value.trim();
+
+        const title =
+            document.getElementById("calendarTitle")
+            .value.trim();
+
+        formData.append(
+            "url",
+            url
+        );
+
+        formData.append(
+            "title",
+            title || "Church Calendar"
+        );
+
+        const file =
+            document.getElementById("calendarFile")
+            .files[0];
+
+        if(file){
+
+            /*
+             * IMPORTANT:
+             * Backend accepts calendarFile.
+             */
+            formData.append(
+                "calendarFile",
+                file
+            );
+
+        }
+
+        const button =
+            document.getElementById("calendarSaveBtn");
+
+        button.disabled=true;
+        button.textContent="Saving...";
+
+        try{
+
+            const data =
+                await api("/api/calendar",{
+                    method:"PUT",
+                    body:formData
+                });
+
+            showToast(
+                data.message ||
+                "Calendar saved successfully."
+            );
+
+            document.getElementById("calendarFile").value="";
+
+            loadCalendar();
+
+        }catch(error){
+
+            showToast(
+                "Calendar save failed: " +
+                error.message,
+                "error"
+            );
+
+        }finally{
+
+            button.disabled=false;
+            button.textContent="💾 Save Calendar";
+
+        }
+
+    });
+
+
+async function removeCalendar(){
+
+    if(!confirm(
+        "Remove the current calendar?"
+    )){
+        return;
+    }
+
+    try{
+
+        const data =
+            await api(
+                "/api/calendar",
+                {
+                    method:"DELETE"
+                }
+            );
+
+        showToast(
+            data.message ||
+            "Calendar removed."
+        );
+
+        document.getElementById("calendarUrl").value="";
+
+        loadCalendar();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SSE
+========================================================= */
+
+function connectSSE(){
+
+    if(!window.EventSource){
+
+        document.getElementById("statusText").textContent =
+            "Auto update unavailable";
+
+        document.getElementById("statusDot").style.background =
+            "#d97706";
+
+        return;
+
+    }
+
+    if(eventSource){
+        eventSource.close();
+    }
+
+    eventSource =
+        new EventSource("/api/updates");
+
+    eventSource.onopen=function(){
+
+        document.getElementById("statusText").textContent =
+            "Live Connected";
+
+        document.getElementById("statusDot").style.background =
+            "#22c55e";
+
+    };
+
+    eventSource.onmessage=function(event){
+
+        try{
+
+            const data =
+                JSON.parse(event.data);
+
+            if(data.type==="connected"){
+                return;
+            }
+
+            handleServerUpdate(data.type);
+
+        }catch(error){
+
+            console.error(
+                "SSE error:",
+                error
+            );
+
+        }
+
+    };
+
+    eventSource.onerror=function(){
+
+        document.getElementById("statusText").textContent =
+            "Reconnecting...";
+
+        document.getElementById("statusDot").style.background =
+            "#d97706";
+
+    };
+
+}
+
+
+function handleServerUpdate(type){
+
+    switch(type){
+
+        case "home-updated":
+            loadHome();
+            break;
+
+        case "home-background-updated":
+            loadBackground();
+            break;
+
+        case "events-updated":
+            loadEvents();
+            break;
+
+        case "special-events-updated":
+            loadSpecialEvents();
+            break;
+
+        case "featured-updated":
+            loadFeatured();
+            break;
+
+        case "welcome-updated":
+            loadWelcome();
+            break;
+
+        case "explore-updated":
+            loadExplore();
+            break;
+
+        case "calendar-updated":
+            loadCalendar();
+            break;
+
+    }
+
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+async function initialize(){
+
+    await Promise.allSettled([
+
+        loadHome(),
+        loadBackground(),
+        loadEvents(),
+        loadSpecialEvents(),
+        loadFeatured(),
+        loadWelcome(),
+        loadExplore(),
+        loadCalendar()
+
+    ]);
+
+    connectSSE();
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initialize
+);
+
+
+window.addEventListener(
+    "beforeunload",
+    function(){
+
+        if(eventSource){
+            eventSource.close();
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

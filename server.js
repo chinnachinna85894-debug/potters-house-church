@@ -1,5 +1,5 @@
 /* =========================================================
-   THE POTTER'S HOUSE CHURCH SERVER
+   THE POTTER'S HOUSE CHURCH SERVER   // Hello from Nehem
    + EMAIL LOGIN / AUTHENTICATION
    Merged single server.js
 ========================================================= */

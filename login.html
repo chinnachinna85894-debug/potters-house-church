@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login - The Potter's House</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                radial-gradient(circle at top left, #222 0%, transparent 35%),
+                radial-gradient(circle at bottom right, #1b1b1b 0%, transparent 35%),
+                #000;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 430px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            margin: 0 auto 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 18px;
+            padding: 30px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #111;
+            color: #fff;
+            outline: none;
+            font-size: 15px;
+        }
+
+        input:focus {
+            border-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            background: #fff;
+            color: #000;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        button:hover {
+            background: #ddd;
+            transform: translateY(-1px);
+        }
+
+        .secondary {
+            background: transparent;
+            color: #fff;
+            border: 1px solid #444;
+            margin-top: 10px;
+        }
+
+        .secondary:hover {
+            background: #181818;
+        }
+
+        .message {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .success {
+            display: block;
+            background: #123b20;
+            border: 1px solid #276b3a;
+            color: #9cffb3;
+        }
+
+        .error {
+            display: block;
+            background: #3b1212;
+            border: 1px solid #6b2727;
+            color: #ff9c9c;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 22px;
+        }
+
+        .links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            margin: 25px 0;
+            height: 1px;
+            background: #292929;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .back {
+            margin-top: 12px;
+            background: transparent;
+            color: #aaa;
+            border: none;
+        }
+
+        .back:hover {
+            color: #fff;
+            background: transparent;
+            transform: none;
+        }
+
+        .small-text {
+            color: #999;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        /* =========================================
+           GREEN SUCCESS ANIMATION
+           ========================================= */
+
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.94);
+            backdrop-filter: blur(12px);
+            opacity: 0;
+        }
+
+        .success-overlay.show {
+            display: flex;
+            animation: successOverlayIn 0.35s ease forwards;
+        }
+
+        .success-content {
+            text-align: center;
+            transform: scale(0.7);
+            opacity: 0;
+            animation: successContentIn 0.55s cubic-bezier(.17,.89,.32,1.28) 0.1s forwards;
+        }
+
+        .success-circle {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 25px;
+            border-radius: 50%;
+            border: 4px solid #22c55e;
+            background: rgba(34, 197, 94, 0.12);
+            box-shadow:
+                0 0 0 0 rgba(34, 197, 94, 0.5),
+                0 0 45px rgba(34, 197, 94, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation:
+                successCirclePulse 1.5s ease-out 0.45s,
+                successGlow 1.8s ease-in-out 0.8s infinite alternate;
+        }
+
+        .success-check {
+            width: 35px;
+            height: 65px;
+            border-right: 7px solid #22c55e;
+            border-bottom: 7px solid #22c55e;
+            transform: rotate(45deg) scale(0);
+            transform-origin: center;
+            animation: checkDraw 0.55s cubic-bezier(.65,0,.45,1) 0.55s forwards;
+        }
+
+        .success-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4ade80;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .success-subtitle {
+            color: #aaa;
+            font-size: 15px;
+        }
+
+        @keyframes successOverlayIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes successContentIn {
+            from {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes checkDraw {
+            0% {
+                transform: rotate(45deg) scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: rotate(45deg) scale(1.15);
+                opacity: 1;
+            }
+
+            100% {
+                transform: rotate(45deg) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes successCirclePulse {
+            0% {
+                box-shadow:
+                    0 0 0 0 rgba(34, 197, 94, 0.55),
+                    0 0 45px rgba(34, 197, 94, 0.35);
+            }
+
+            70% {
+                box-shadow:
+                    0 0 0 22px rgba(34, 197, 94, 0),
+                    0 0 65px rgba(34, 197, 94, 0.45);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0 rgba(34, 197, 94, 0),
+                    0 0 45px rgba(34, 197, 94, 0.35);
+            }
+        }
+
+        @keyframes successGlow {
+            from {
+                box-shadow:
+                    0 0 20px rgba(34, 197, 94, 0.25);
+            }
+
+            to {
+                box-shadow:
+                    0 0 55px rgba(34, 197, 94, 0.65);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .card {
+                padding: 22px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .success-circle {
+                width: 105px;
+                height: 105px;
+            }
+
+            .success-check {
+                width: 30px;
+                height: 56px;
+                border-width: 6px;
+            }
+
+            .success-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        <img
+            src="potters_house_logo_transparent_no_shadow.png"
+            alt="The Potter's House Logo"
+        >
+    </div>
+
+    <style>
+        .logo {
+            width: 105px;
+            height: 105px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            display: block;
+        }
+    </style>
+
+    <h1 class="title">The Potter's House</h1>
+
+    <p class="subtitle">
+        Administration Login
+    </p>
+
+    <!-- LOGIN -->
+    <div class="card" id="loginBox">
+
+        <div id="loginMessage" class="message"></div>
+
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="Enter your email"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit">
+                Login
+            </button>
+
+        </form>
+
+        <div class="links">
+            <a href="#" onclick="showForgotPassword(); return false;">
+                Forgot Password?
+            </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <button
+            type="button"
+            class="secondary"
+            onclick="window.location.href='/register.html'"
+        >
+            Create Account
+        </button>
+
+    </div>
+
+    <!-- FORGOT PASSWORD -->
+    <div class="card hidden" id="forgotBox">
+
+        <div id="forgotMessage" class="message"></div>
+
+        <h2 style="margin-bottom:10px;text-align:center;">
+            Forgot Password
+        </h2>
+
+        <p class="small-text">
+            Enter your email address. We will send a verification code.
+        </p>
+
+        <form id="forgotForm">
+
+            <div class="form-group">
+
+                <label for="forgotEmail">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="forgotEmail"
+                    placeholder="Enter your email"
+                    required
+                    autocomplete="email"
+                >
+
+            </div>
+
+            <button type="submit">
+                Send OTP
+            </button>
+
+        </form>
+
+        <button
+            type="button"
+            class="back"
+            onclick="showLogin()"
+        >
+            ← Back to Login
+        </button>
+
+    </div>
+
+    <!-- RESET PASSWORD -->
+    <div class="card hidden" id="resetBox">
+
+        <div id="resetMessage" class="message"></div>
+
+        <h2 style="margin-bottom:10px;text-align:center;">
+            Reset Password
+        </h2>
+
+        <p class="small-text">
+            Enter the OTP sent to your email and create a new password.
+        </p>
+
+        <form id="resetForm">
+
+            <div class="form-group">
+
+                <label for="resetEmail">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="resetEmail"
+                    readonly
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="resetOtp">
+                    OTP
+                </label>
+
+                <input
+                    type="text"
+                    id="resetOtp"
+                    placeholder="Enter 6 digit OTP"
+                    maxlength="6"
+                    required
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="newPassword">
+                    New Password
+                </label>
+
+                <input
+                    type="password"
+                    id="newPassword"
+                    placeholder="Minimum 6 characters"
+                    minlength="6"
+                    required
+                >
+
+            </div>
+
+            <button type="submit">
+                Reset Password
+            </button>
+
+        </form>
+
+        <button
+            type="button"
+            class="back"
+            onclick="showLogin()"
+        >
+            ← Back to Login
+        </button>
+
+    </div>
+
+</div>
+
+<!-- =========================================
+     SUCCESS ANIMATION
+     ========================================= -->
+
+<div class="success-overlay" id="successOverlay">
+
+    <div class="success-content">
+
+        <div class="success-circle">
+
+            <div class="success-check"></div>
+
+        </div>
+
+        <div class="success-title">
+            Login Successful
+        </div>
+
+        <div class="success-subtitle">
+            Opening your admin panel...
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const loginBox = document.getElementById("loginBox");
+    const forgotBox = document.getElementById("forgotBox");
+    const resetBox = document.getElementById("resetBox");
+    const successOverlay = document.getElementById("successOverlay");
+
+
+    function showMessage(id, message, type) {
+
+        const element = document.getElementById(id);
+
+        element.textContent = message;
+
+        element.className = "message " + type;
+    }
+
+
+    function hideMessage(id) {
+
+        const element = document.getElementById(id);
+
+        element.className = "message";
+        element.textContent = "";
+    }
+
+
+    function showLoginSuccess() {
+
+        successOverlay.classList.add("show");
+
+        document.body.style.overflow = "hidden";
+    }
+
+
+    function showLogin() {
+
+        loginBox.classList.remove("hidden");
+        forgotBox.classList.add("hidden");
+        resetBox.classList.add("hidden");
+
+        hideMessage("loginMessage");
+        hideMessage("forgotMessage");
+        hideMessage("resetMessage");
+    }
+
+
+    function showForgotPassword() {
+
+        loginBox.classList.add("hidden");
+        forgotBox.classList.remove("hidden");
+        resetBox.classList.add("hidden");
+
+        /*
+         * IMPORTANT:
+         * Do not automatically copy the login email.
+         * Always keep the Forgot Password email field empty.
+         */
+        document.getElementById("forgotEmail").value = "";
+
+        /*
+         * Automatically place the cursor
+         * inside the Forgot Password email field.
+         */
+        setTimeout(function() {
+
+            document.getElementById("forgotEmail").focus();
+
+        }, 100);
+    }
+
+
+    function showResetPassword(email) {
+
+        loginBox.classList.add("hidden");
+        forgotBox.classList.add("hidden");
+        resetBox.classList.remove("hidden");
+
+        document.getElementById("resetEmail").value = email;
+    }
+
+
+    /* ================================
+       LOGIN
+       ================================ */
+
+    document.getElementById("loginForm").addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+            const email =
+                document.getElementById("loginEmail").value.trim();
+
+            const password =
+                document.getElementById("loginPassword").value;
+
+            hideMessage("loginMessage");
+
+            try {
+
+                const response = await fetch(
+                    "/api/auth/login",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+
+                    showMessage(
+                        "loginMessage",
+                        data.message || "Login failed",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                /*
+                 * LOGIN SUCCESS
+                 * Show green animation.
+                 * Then open admin.html.
+                 */
+
+                showLoginSuccess();
+
+                setTimeout(function() {
+
+                    window.location.href = "admin.html";
+
+                }, 1800);
+
+            } catch (error) {
+
+                console.error(error);
+
+                showMessage(
+                    "loginMessage",
+                    "Unable to connect to server.",
+                    "error"
+                );
+            }
+        }
+    );
+
+
+    /* ================================
+       FORGOT PASSWORD
+       ================================ */
+
+    document.getElementById("forgotForm").addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+            const email =
+                document.getElementById("forgotEmail").value.trim();
+
+            hideMessage("forgotMessage");
+
+            try {
+
+                const response = await fetch(
+                    "/api/auth/forgot-password",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+                            email: email
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+
+                    showMessage(
+                        "forgotMessage",
+                        data.message || "Unable to send OTP",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                showMessage(
+                    "forgotMessage",
+                    "OTP sent to your email.",
+                    "success"
+                );
+
+                setTimeout(function() {
+
+                    showResetPassword(email);
+
+                }, 800);
+
+            } catch (error) {
+
+                console.error(error);
+
+                showMessage(
+                    "forgotMessage",
+                    "Unable to connect to server.",
+                    "error"
+                );
+            }
+        }
+    );
+
+
+    /* ================================
+       RESET PASSWORD
+       ================================ */
+
+    document.getElementById("resetForm").addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+            const email =
+                document.getElementById("resetEmail").value.trim();
+
+            const otp =
+                document.getElementById("resetOtp").value.trim();
+
+            const newPassword =
+                document.getElementById("newPassword").value;
+
+            hideMessage("resetMessage");
+
+            try {
+
+                const verifyResponse = await fetch(
+                    "/api/auth/verify-reset-otp",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+                            email: email,
+                            otp: otp
+                        })
+                    }
+                );
+
+                const verifyData =
+                    await verifyResponse.json();
+
+                if (
+                    !verifyResponse.ok ||
+                    !verifyData.success
+                ) {
+
+                    showMessage(
+                        "resetMessage",
+                        verifyData.message || "Invalid OTP",
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                const resetResponse = await fetch(
+                    "/api/auth/reset-password",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+                            email: email,
+                            otp: otp,
+                            password: newPassword
+                        })
+                    }
+                );
+
+                const resetData =
+                    await resetResponse.json();
+
+                if (
+                    !resetResponse.ok ||
+                    !resetData.success
+                ) {
+
+                    showMessage(
+                        "resetMessage",
+                        resetData.message ||
+                        "Password reset failed",
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                showMessage(
+                    "resetMessage",
+                    "Password reset successfully. Redirecting to login...",
+                    "success"
+                );
+
+
+                setTimeout(function() {
+
+                    window.location.replace("/login.html");
+
+                }, 1200);
+
+            } catch (error) {
+
+                console.error(error);
+
+                showMessage(
+                    "resetMessage",
+                    "Unable to connect to server.",
+                    "error"
+                );
+            }
+        }
+    );
+
+</script>
+
+</body>
+</html>

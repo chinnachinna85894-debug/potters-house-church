@@ -59,7 +59,7 @@ const uploadFolders = [
 ];
 
 for (const folder of uploadFolders) {
-    fs.mkdirSync(path.join(__dirname, folder), { recursive: true });
+    fs.mkdirSync(path.join("/tmp", folder), { recursive: true });
 }
 
 /* =========================================================
@@ -92,8 +92,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
     "/uploads",
-    express.static(path.join(__dirname, "uploads"), {
-        maxAge: "1h"
+express.static(path.join("/tmp", "uploads"), {        maxAge: "1h"
     })
 );
 
@@ -163,7 +162,7 @@ const storage = multer.diskStorage({
 
         const folder = getUploadFolder(req);
 
-        cb(null, path.join(__dirname, folder));
+       cb(null, path.join("/tmp", folder));
     },
 
     filename: function (req, file, cb) {
@@ -275,8 +274,7 @@ function normalizeUploadUrl(file) {
 
     if (!file) return "";
 
-    const uploadsRoot = path.join(__dirname, "uploads");
-
+const uploadsRoot = path.join("/tmp", "uploads");
     const relative = path.relative(uploadsRoot, file.path);
 
     return "/uploads/" + relative.replace(/\\/g, "/");
@@ -288,14 +286,12 @@ function deleteUploadedFile(fileUrl) {
 
     if (!fileUrl.startsWith("/uploads/")) return;
 
-    const uploadsRoot = path.resolve(path.join(__dirname, "uploads"));
-
-    const fullPath = path.resolve(
-        path.join(
-            __dirname,
-            "uploads",
-            fileUrl.replace(/^\/uploads\//, "")
-        )
+const uploadsRoot = path.resolve(path.join("/tmp", "uploads"));
+    path.join(
+    "/tmp",
+    "uploads",
+    fileUrl.replace(/^\/uploads\//, "")
+)
     );
 
     if (!fullPath.startsWith(uploadsRoot + path.sep)) return;

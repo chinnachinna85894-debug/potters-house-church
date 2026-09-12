@@ -91,11 +91,7 @@ app.use(
 app.use(cookieParser());
 
 /* =========================================================
-   STATIC FILES (PUBLIC ONLY)
-   
-   IMPORTANT:
-   index:false prevents Express from automatically serving
-   admin.html before the protected /admin.html route.
+   STATIC FILES
 ========================================================= */
 
 app.use(
@@ -535,6 +531,7 @@ function notifyClients(type) {
     });
 }
 
+
 /* =========================================================
    AUTH MIDDLEWARE
 ========================================================= */
@@ -542,8 +539,6 @@ function notifyClients(type) {
 function requireAuth(req, res, next) {
 
     const token = req.cookies.authToken;
-
-    /* ---------- No token ---------- */
 
     if (!token) {
 
@@ -563,8 +558,6 @@ function requireAuth(req, res, next) {
                 "Authentication required"
         });
     }
-
-    /* ---------- Verify token ---------- */
 
     try {
 
@@ -756,7 +749,9 @@ app.get(
                         mapLink:
                             "https://maps.google.com",
 
-                        logo: ""
+                        /* FIXED: logo cannot be empty */
+                        logo:
+                            "/logo.jpeg"
                     });
             }
 
@@ -1004,10 +999,8 @@ app.post(
                         return {
 
                             title:
-                                String(
-                                    req.body.title ||
-                                    "Home Background"
-                                ).trim(),
+                                req.body.title ||
+                                file.originalname,
 
                             type,
 
@@ -1015,12 +1008,6 @@ app.post(
                                 normalizeUploadUrl(
                                     file
                                 ),
-
-                            originalName:
-                                file.originalname,
-
-                            mimeType:
-                                file.mimetype,
 
                             order:
                                 order + index,
@@ -1034,27 +1021,47 @@ app.post(
                     }
                 );
 
-            await collection.insertMany(
-                documents
-            );
+            const inserted =
+                await collection.insertMany(
+                    documents
+                );
 
             notifyClients(
                 "home-background-updated"
             );
 
-            res.status(201).json({
+            res.json({
 
                 success: true,
 
                 message:
-                    `${documents.length} background media file(s) uploaded successfully.`,
+                    "Background media uploaded successfully",
 
-                data: documents
+                data:
+                    Object.values(
+                        inserted.insertedIds
+                    ).map(
+                        id =>
+                            documents.find(
+                                (_, index) =>
+                                    index ===
+                                    Object.keys(
+                                        inserted.insertedIds
+                                    ).indexOf(
+                                        String(id)
+                                    )
+                            )
+                    )
             });
 
         } catch (error) {
 
             removeNewFiles(req);
+
+            console.error(
+                "Home background POST error:",
+                error
+            );
 
             res.status(500).json({
 
@@ -1070,131 +1077,16 @@ app.post(
     }
 );
 
-app.put(
-    "/api/home-background/:id",
-    async (req, res) => {
-
-        try {
-
-            if (
-                !validObjectId(
-                    req.params.id
-                )
-            ) {
-
-                return res.status(
-                    400
-                ).json({
-
-                    success: false,
-
-                    message:
-                        "Invalid background media ID"
-                });
-            }
-
-            const collection =
-                getBackgroundCollection();
-
-            const id =
-                new mongoose.Types.ObjectId(
-                    req.params.id
-                );
-
-            const update = {
-                updatedAt:
-                    new Date()
-            };
-
-            if (
-                req.body.title !==
-                undefined
-            ) {
-
-                update.title =
-                    String(
-                        req.body.title
-                    );
-            }
-
-            if (
-                req.body.order !==
-                undefined
-            ) {
-
-                update.order =
-                    Number(
-                        req.body.order
-                    ) || 0;
-            }
-
-            const result =
-                await collection.updateOne(
-                    { _id: id },
-                    { $set: update }
-                );
-
-            if (
-                result.matchedCount === 0
-            ) {
-
-                return res.status(
-                    404
-                ).json({
-
-                    success: false,
-
-                    message:
-                        "Background media not found"
-                });
-            }
-
-            const updated =
-                await collection.findOne({
-                    _id: id
-                });
-
-            notifyClients(
-                "home-background-updated"
-            );
-
-            res.json({
-
-                success: true,
-
-                message:
-                    "Background media updated successfully",
-
-                data: updated
-            });
-
-        } catch (error) {
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Failed to update background media",
-
-                error:
-                    error.message
-            });
-        }
-    }
-);
-
 app.delete(
     "/api/home-background/:id",
     async (req, res) => {
 
         try {
 
-            if (
-                !validObjectId(
-                    req.params.id
-                )
-            ) {
+            const id =
+                req.params.id;
+
+            if (!validObjectId(id)) {
 
                 return res.status(
                     400
@@ -1210,14 +1102,12 @@ app.delete(
             const collection =
                 getBackgroundCollection();
 
-            const id =
-                new mongoose.Types.ObjectId(
-                    req.params.id
-                );
+            const { ObjectId } =
+                mongoose.mongo;
 
             const item =
                 await collection.findOne({
-                    _id: id
+                    _id: new ObjectId(id)
                 });
 
             if (!item) {
@@ -1234,12 +1124,14 @@ app.delete(
             }
 
             await collection.deleteOne({
-                _id: id
+                _id: new ObjectId(id)
             });
 
-            deleteUploadedFile(
-                item.url
-            );
+            if (item.url) {
+                deleteUploadedFile(
+                    item.url
+                );
+            }
 
             notifyClients(
                 "home-background-updated"
@@ -1255,6 +1147,11 @@ app.delete(
 
         } catch (error) {
 
+            console.error(
+                "Home background DELETE error:",
+                error
+            );
+
             res.status(500).json({
 
                 success: false,
@@ -1269,6 +1166,7 @@ app.delete(
     }
 );
 
+
 /* =========================================================
    COMING EVENTS
 ========================================================= */
@@ -1276,9 +1174,7 @@ app.delete(
 app.get(
     "/api/events",
     async (req, res) => {
-
         try {
-
             const events =
                 await Event.find().sort({
                     order: 1,
@@ -1293,14 +1189,10 @@ app.get(
             res.json(events);
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load events",
-
                 error:
                     error.message
             });
@@ -1312,9 +1204,7 @@ app.post(
     "/api/events",
     upload.any(),
     async (req, res) => {
-
         try {
-
             const imageFile =
                 getFileByFields(
                     req,
@@ -1325,7 +1215,6 @@ app.post(
                 );
 
             const eventData = {
-
                 category:
                     req.body.category ||
                     "Morning",
@@ -1350,7 +1239,6 @@ app.post(
             };
 
             if (imageFile) {
-
                 eventData.image =
                     normalizeUploadUrl(
                         imageFile
@@ -1367,26 +1255,19 @@ app.post(
             );
 
             res.status(201).json({
-
                 success: true,
-
                 message:
                     "Event added successfully",
-
                 data: event
             });
 
         } catch (error) {
-
             removeNewFiles(req);
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to add event",
-
                 error:
                     error.message
             });
@@ -1398,23 +1279,18 @@ app.put(
     "/api/events/:id",
     upload.any(),
     async (req, res) => {
-
         try {
-
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
-
                 removeNewFiles(req);
 
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid event ID"
                 });
@@ -1426,15 +1302,12 @@ app.put(
                 );
 
             if (!event) {
-
                 removeNewFiles(req);
 
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Event not found"
                 });
@@ -1448,12 +1321,10 @@ app.put(
                     "time"
                 ]
             ) {
-
                 if (
                     req.body[field] !==
                     undefined
                 ) {
-
                     event[field] =
                         req.body[field];
                 }
@@ -1463,7 +1334,6 @@ app.put(
                 req.body.order !==
                 undefined
             ) {
-
                 event.order =
                     Number(
                         req.body.order
@@ -1480,7 +1350,6 @@ app.put(
                 );
 
             if (imageFile) {
-
                 const oldImage =
                     event.image;
 
@@ -1496,14 +1365,12 @@ app.put(
                     oldImage !==
                         event.image
                 ) {
-
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
-
                 await event.save();
             }
 
@@ -1512,26 +1379,19 @@ app.put(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Event updated successfully",
-
                 data: event
             });
 
         } catch (error) {
-
             removeNewFiles(req);
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update event",
-
                 error:
                     error.message
             });
@@ -1542,21 +1402,16 @@ app.put(
 app.delete(
     "/api/events/:id",
     async (req, res) => {
-
         try {
-
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
-
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid event ID"
                 });
@@ -1568,20 +1423,16 @@ app.delete(
                 );
 
             if (!event) {
-
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Event not found"
                 });
             }
 
             if (event.image) {
-
                 deleteUploadedFile(
                     event.image
                 );
@@ -1592,28 +1443,23 @@ app.delete(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Event deleted successfully"
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to delete event",
-
                 error:
                     error.message
             });
         }
     }
 );
+
 
 /* =========================================================
    SPECIAL EVENTS
@@ -1622,9 +1468,7 @@ app.delete(
 app.get(
     "/api/special-events",
     async (req, res) => {
-
         try {
-
             const events =
                 await SpecialEvent.find().sort({
                     order: 1,
@@ -1639,14 +1483,10 @@ app.get(
             res.json(events);
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load special events",
-
                 error:
                     error.message
             });
@@ -1658,9 +1498,7 @@ app.post(
     "/api/special-events",
     upload.any(),
     async (req, res) => {
-
         try {
-
             const imageFile =
                 getFileByFields(
                     req,
@@ -1712,26 +1550,19 @@ app.post(
             );
 
             res.status(201).json({
-
                 success: true,
-
                 message:
                     "Special event added successfully",
-
                 data: event
             });
 
         } catch (error) {
-
             removeNewFiles(req);
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to add special event",
-
                 error:
                     error.message
             });
@@ -1743,23 +1574,18 @@ app.put(
     "/api/special-events/:id",
     upload.any(),
     async (req, res) => {
-
         try {
-
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
-
                 removeNewFiles(req);
 
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid special event ID"
                 });
@@ -1771,15 +1597,12 @@ app.put(
                 );
 
             if (!event) {
-
                 removeNewFiles(req);
 
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Special event not found"
                 });
@@ -1794,12 +1617,10 @@ app.put(
                     "link"
                 ]
             ) {
-
                 if (
                     req.body[field] !==
                     undefined
                 ) {
-
                     event[field] =
                         req.body[field];
                 }
@@ -1809,7 +1630,6 @@ app.put(
                 req.body.order !==
                 undefined
             ) {
-
                 event.order =
                     Number(
                         req.body.order
@@ -1827,7 +1647,6 @@ app.put(
                 );
 
             if (imageFile) {
-
                 const oldImage =
                     event.image;
 
@@ -1843,14 +1662,12 @@ app.put(
                     oldImage !==
                         event.image
                 ) {
-
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
-
                 await event.save();
             }
 
@@ -1859,26 +1676,19 @@ app.put(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Special event updated successfully",
-
                 data: event
             });
 
         } catch (error) {
-
             removeNewFiles(req);
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update special event",
-
                 error:
                     error.message
             });
@@ -1889,21 +1699,16 @@ app.put(
 app.delete(
     "/api/special-events/:id",
     async (req, res) => {
-
         try {
-
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
-
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid special event ID"
                 });
@@ -1915,20 +1720,16 @@ app.delete(
                 );
 
             if (!event) {
-
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Special event not found"
                 });
             }
 
             if (event.image) {
-
                 deleteUploadedFile(
                     event.image
                 );
@@ -1939,28 +1740,212 @@ app.delete(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Special event deleted successfully"
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to delete special event",
-
                 error:
                     error.message
             });
         }
     }
 );
+
+
+
+app.put(
+    "/api/special-events/:id",
+    upload.any(),
+    async (req, res) => {
+        try {
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+                removeNewFiles(req);
+
+                return res.status(
+                    400
+                ).json({
+                    success: false,
+                    message:
+                        "Invalid special event ID"
+                });
+            }
+
+            const event =
+                await SpecialEvent.findById(
+                    req.params.id
+                );
+
+            if (!event) {
+                removeNewFiles(req);
+
+                return res.status(
+                    404
+                ).json({
+                    success: false,
+                    message:
+                        "Special event not found"
+                });
+            }
+
+            for (
+                const field of [
+                    "title",
+                    "date",
+                    "time",
+                    "description",
+                    "link"
+                ]
+            ) {
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
+                    event[field] =
+                        req.body[field];
+                }
+            }
+
+            if (
+                req.body.order !==
+                undefined
+            ) {
+                event.order =
+                    Number(
+                        req.body.order
+                    ) || 0;
+            }
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "eventImage",
+                        "specialImage"
+                    ]
+                );
+
+            if (imageFile) {
+                const oldImage =
+                    event.image;
+
+                event.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+
+                await event.save();
+
+                if (
+                    oldImage &&
+                    oldImage !==
+                        event.image
+                ) {
+                    deleteUploadedFile(
+                        oldImage
+                    );
+                }
+
+            } else {
+                await event.save();
+            }
+
+            notifyClients(
+                "special-events-updated"
+            );
+
+            res.json({
+                success: true,
+                message:
+                    "Special event updated successfully",
+                data: event
+            });
+
+        } catch (error) {
+            removeNewFiles(req);
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Failed to update special event",
+                error:
+                    error.message
+            });
+        }
+    }
+);
+
+app.delete(
+    "/api/special-events/:id",
+    async (req, res) => {
+        try {
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+                return res.status(
+                    400
+                ).json({
+                    success: false,
+                    message:
+                        "Invalid special event ID"
+                });
+            }
+
+            const event =
+                await SpecialEvent.findByIdAndDelete(
+                    req.params.id
+                );
+
+            if (!event) {
+                return res.status(
+                    404
+                ).json({
+                    success: false,
+                    message:
+                        "Special event not found"
+                });
+            }
+
+            if (event.image) {
+                deleteUploadedFile(
+                    event.image
+                );
+            }
+
+            notifyClients(
+                "special-events-updated"
+            );
+
+            res.json({
+                success: true,
+                message:
+                    "Special event deleted successfully"
+            });
+
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message:
+                    "Failed to delete special event",
+                error:
+                    error.message
+            });
+        }
+    }
+);
+
 
 /* =========================================================
    FEATURED
@@ -1969,17 +1954,13 @@ app.delete(
 app.get(
     "/api/featured",
     async (req, res) => {
-
         try {
-
             let featured =
                 await Featured.findOne();
 
             if (!featured) {
-
                 featured =
                     await Featured.create({
-
                         badge:
                             "Featured Message",
 
@@ -2008,19 +1989,15 @@ app.get(
             res.json(featured);
 
         } catch (error) {
-
             console.error(
                 "Featured GET error:",
                 error
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load featured section",
-
                 error:
                     error.message
             });
@@ -2032,9 +2009,7 @@ app.put(
     "/api/featured",
     upload.any(),
     async (req, res) => {
-
         try {
-
             let featured =
                 await Featured.findOne();
 
@@ -2054,12 +2029,10 @@ app.put(
             for (
                 const field of textFields
             ) {
-
                 if (
                     req.body[field] !==
                     undefined
                 ) {
-
                     featured[field] =
                         String(
                             req.body[field]
@@ -2081,7 +2054,6 @@ app.put(
                 );
 
             if (backgroundFile) {
-
                 const oldImage =
                     featured.backgroundImage;
 
@@ -2097,21 +2069,18 @@ app.put(
                     oldImage !==
                         featured.backgroundImage
                 ) {
-
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
-
                 let backgroundUrl;
 
                 if (
                     req.body.backgroundImageUrl !==
                     undefined
                 ) {
-
                     backgroundUrl =
                         String(
                             req.body.backgroundImageUrl ||
@@ -2122,7 +2091,6 @@ app.put(
                     req.body.backgroundUrl !==
                     undefined
                 ) {
-
                     backgroundUrl =
                         String(
                             req.body.backgroundUrl ||
@@ -2131,7 +2099,6 @@ app.put(
                 }
 
                 if (backgroundUrl) {
-
                     const oldImage =
                         featured.backgroundImage;
 
@@ -2145,14 +2112,12 @@ app.put(
                         oldImage !==
                             backgroundUrl
                     ) {
-
                         deleteUploadedFile(
                             oldImage
                         );
                     }
 
                 } else {
-
                     await featured.save();
                 }
             }
@@ -2162,17 +2127,13 @@ app.put(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Featured section updated successfully",
-
                 data: featured
             });
 
         } catch (error) {
-
             removeNewFiles(req);
 
             console.error(
@@ -2181,18 +2142,16 @@ app.put(
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update featured section",
-
                 error:
                     error.message
             });
         }
     }
 );
+
 
 /* =========================================================
    WELCOME
@@ -2201,17 +2160,13 @@ app.put(
 app.get(
     "/api/welcome",
     async (req, res) => {
-
         try {
-
             let welcome =
                 await Welcome.findOne();
 
             if (!welcome) {
-
                 welcome =
                     await Welcome.create({
-
                         badge:
                             "A Message From Leadership",
 
@@ -2252,14 +2207,10 @@ app.get(
             res.json(welcome);
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load welcome section",
-
                 error:
                     error.message
             });
@@ -2271,9 +2222,7 @@ app.put(
     "/api/welcome",
     upload.any(),
     async (req, res) => {
-
         try {
-
             let welcome =
                 await Welcome.findOne();
 
@@ -2297,12 +2246,10 @@ app.put(
             for (
                 const field of fields
             ) {
-
                 if (
                     req.body[field] !==
                     undefined
                 ) {
-
                     welcome[field] =
                         req.body[field];
                 }
@@ -2318,7 +2265,6 @@ app.put(
                 );
 
             if (imageFile) {
-
                 const oldImage =
                     welcome.image;
 
@@ -2334,14 +2280,12 @@ app.put(
                     oldImage !==
                         welcome.image
                 ) {
-
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
-
                 await welcome.save();
             }
 
@@ -2350,26 +2294,19 @@ app.put(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Welcome section updated successfully",
-
                 data: welcome
             });
 
         } catch (error) {
-
             removeNewFiles(req);
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update welcome section",
-
                 error:
                     error.message
             });
@@ -2377,12 +2314,12 @@ app.put(
     }
 );
 
+
 /* =========================================================
    EXPLORE
 ========================================================= */
 
 async function normalizeExploreOrders() {
-
     const items =
         await Explore.find().sort({
             order: 1,
@@ -2394,18 +2331,14 @@ async function normalizeExploreOrders() {
         i < items.length;
         i++
     ) {
-
         if (
             items[i].order !== i
         ) {
-
             await Explore.updateOne(
-
                 {
                     _id:
                         items[i]._id
                 },
-
                 {
                     $set: {
                         order: i
@@ -2414,16 +2347,15 @@ async function normalizeExploreOrders() {
             );
         }
     }
-
-    return items;
 }
+
+
+
 
 app.get(
     "/api/explore",
     async (req, res) => {
-
         try {
-
             const items =
                 await Explore.find().sort({
                     order: 1,
@@ -2438,14 +2370,10 @@ app.get(
             res.json(items);
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load explore items",
-
                 error:
                     error.message
             });
@@ -2456,15 +2384,12 @@ app.get(
 app.post(
     "/api/explore",
     async (req, res) => {
-
         try {
-
             const count =
                 await Explore.countDocuments();
 
             const item =
                 await Explore.create({
-
                     title:
                         String(
                             req.body.title ||
@@ -2505,24 +2430,17 @@ app.post(
             );
 
             res.status(201).json({
-
                 success: true,
-
                 message:
                     "Explore item added successfully",
-
                 data: saved
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to add explore item",
-
                 error:
                     error.message
             });
@@ -2533,21 +2451,16 @@ app.post(
 app.put(
     "/api/explore/:id",
     async (req, res) => {
-
         try {
-
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
-
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid explore item ID"
                 });
@@ -2559,13 +2472,10 @@ app.put(
                 );
 
             if (!item) {
-
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Explore item not found"
                 });
@@ -2579,12 +2489,10 @@ app.put(
                     "buttonLink"
                 ]
             ) {
-
                 if (
                     req.body[field] !==
                     undefined
                 ) {
-
                     item[field] =
                         String(
                             req.body[field]
@@ -2606,24 +2514,17 @@ app.put(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Explore item updated successfully",
-
                 data: saved
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update explore item",
-
                 error:
                     error.message
             });
@@ -2634,21 +2535,16 @@ app.put(
 app.delete(
     "/api/explore/:id",
     async (req, res) => {
-
         try {
-
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
-
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid explore item ID"
                 });
@@ -2660,13 +2556,10 @@ app.delete(
                 );
 
             if (!item) {
-
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Explore item not found"
                 });
@@ -2679,22 +2572,16 @@ app.delete(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Explore item deleted successfully"
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to delete explore item",
-
                 error:
                     error.message
             });
@@ -2702,14 +2589,13 @@ app.delete(
     }
 );
 
+
 /* =========================================================
    CALENDAR
 ========================================================= */
 
 function getCalendarCollection() {
-
     if (!mongoose.connection.db) {
-
         throw new Error(
             "MongoDB is not connected"
         );
@@ -2723,9 +2609,7 @@ function getCalendarCollection() {
 app.get(
     "/api/calendar",
     async (req, res) => {
-
         try {
-
             const collection =
                 getCalendarCollection();
 
@@ -2740,7 +2624,6 @@ app.get(
             );
 
             res.json({
-
                 success: true,
 
                 label:
@@ -2753,14 +2636,10 @@ app.get(
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load calendar",
-
                 error:
                     error.message
             });
@@ -2772,9 +2651,7 @@ async function saveCalendar(
     req,
     res
 ) {
-
     try {
-
         const collection =
             getCalendarCollection();
 
@@ -2790,7 +2667,6 @@ async function saveCalendar(
             req.body.url !==
             undefined
         ) {
-
             url =
                 String(
                     req.body.url || ""
@@ -2800,7 +2676,6 @@ async function saveCalendar(
             req.body.calendarUrl !==
             undefined
         ) {
-
             url =
                 String(
                     req.body.calendarUrl ||
@@ -2833,7 +2708,6 @@ async function saveCalendar(
             getFirstFile(req);
 
         if (file) {
-
             url =
                 normalizeUploadUrl(
                     file
@@ -2841,26 +2715,21 @@ async function saveCalendar(
         }
 
         if (!url) {
-
             removeNewFiles(req);
 
             return res.status(
                 400
             ).json({
-
                 success: false,
-
                 message:
                     "Please enter a calendar URL or upload a calendar file."
             });
         }
 
         await collection.updateOne(
-
             {
                 _id: "main"
             },
-
             {
                 $set: {
                     label,
@@ -2874,7 +2743,6 @@ async function saveCalendar(
                         new Date()
                 }
             },
-
             {
                 upsert: true
             }
@@ -2884,7 +2752,6 @@ async function saveCalendar(
             current?.url &&
             current.url !== url
         ) {
-
             deleteUploadedFile(
                 current.url
             );
@@ -2895,9 +2762,7 @@ async function saveCalendar(
         );
 
         res.json({
-
             success: true,
-
             message:
                 "Calendar updated successfully",
 
@@ -2908,16 +2773,12 @@ async function saveCalendar(
         });
 
     } catch (error) {
-
         removeNewFiles(req);
 
         res.status(500).json({
-
             success: false,
-
             message:
                 "Failed to update calendar",
-
             error:
                 error.message
         });
@@ -2939,9 +2800,7 @@ app.put(
 app.delete(
     "/api/calendar",
     async (req, res) => {
-
         try {
-
             const collection =
                 getCalendarCollection();
 
@@ -2951,7 +2810,6 @@ app.delete(
                 });
 
             if (current?.url) {
-
                 deleteUploadedFile(
                     current.url
                 );
@@ -2966,22 +2824,16 @@ app.delete(
             );
 
             res.json({
-
                 success: true,
-
                 message:
                     "Calendar removed successfully"
             });
 
         } catch (error) {
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to remove calendar",
-
                 error:
                     error.message
             });
@@ -2989,16 +2841,14 @@ app.delete(
     }
 );
 
+
 /* =========================================================
    PAGE ROUTES
 ========================================================= */
 
-/* ---------- Public website ---------- */
-
 app.get(
     "/",
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3012,7 +2862,6 @@ app.get(
 app.get(
     "/index.html",
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3026,7 +2875,6 @@ app.get(
 app.get(
     "/website",
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3037,12 +2885,14 @@ app.get(
     }
 );
 
-/* ---------- Login / Register ---------- */
+
+/* =========================================================
+   LOGIN / REGISTER
+========================================================= */
 
 app.get(
     "/login.html",
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3055,7 +2905,6 @@ app.get(
 app.get(
     "/register.html",
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3065,22 +2914,15 @@ app.get(
     }
 );
 
+
 /* =========================================================
    PROTECTED ADMIN
 ========================================================= */
-
-/*
-   IMPORTANT:
-   These routes MUST appear before the root static fallback.
-
-   A user without a valid authToken is redirected to login.
-*/
 
 app.get(
     "/admin",
     requireAuth,
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3095,7 +2937,6 @@ app.get(
     "/admin.html",
     requireAuth,
     (req, res) => {
-
         res.sendFile(
             path.join(
                 __dirname,
@@ -3106,27 +2947,28 @@ app.get(
     }
 );
 
+
 /* =========================================================
    STATIC FALLBACK
 ========================================================= */
 
-/*
-   This allows root-level files such as login.html and
-   register.html to work.
-
-   Admin routes above are already protected before this
-   middleware is reached.
-*/
-
 app.use(
-    express.static(__dirname, {
-        index: false
-    })
-);
+    (req, res, next) => {
+        if (
+            req.path.startsWith("/api/")
+        ) {
+            return res.status(
+                404
+            ).json({
+                success: false,
+                message:
+                    "API route not found"
+            });
+        }
 
-/* =========================================================
-   API 404
-========================================================= */
+        next();
+    }
+);
 
 app.use(
     (req, res, next) => {
@@ -3150,6 +2992,7 @@ app.use(
     }
 );
 
+
 /* =========================================================
    GENERAL 404
 ========================================================= */
@@ -3162,6 +3005,7 @@ app.use(
         );
     }
 );
+
 
 /* =========================================================
    ERROR HANDLER
@@ -3217,11 +3061,14 @@ app.use(
     }
 );
 
+
 /* =========================================================
    DATABASE SEED
 ========================================================= */
 
 async function seedDatabase() {
+
+    /* ---------- HOME ---------- */
 
     if (
         !(await Home.findOne())
@@ -3244,9 +3091,14 @@ async function seedDatabase() {
             mapLink:
                 "https://maps.google.com",
 
-            logo: ""
+            /* FIXED */
+            logo:
+                "/logo.jpeg"
         });
     }
+
+
+    /* ---------- EVENTS ---------- */
 
     if (
         (await Event.countDocuments()) ===
@@ -3305,6 +3157,9 @@ async function seedDatabase() {
         ]);
     }
 
+
+    /* ---------- SPECIAL EVENTS ---------- */
+
     if (
         (await SpecialEvent.countDocuments()) ===
         0
@@ -3358,6 +3213,9 @@ async function seedDatabase() {
         ]);
     }
 
+
+    /* ---------- FEATURED ---------- */
+
     if (
         !(await Featured.findOne())
     ) {
@@ -3374,7 +3232,7 @@ async function seedDatabase() {
                 "Bible Conference 2026",
 
             backgroundImage:
-                "",
+                "/logo.jpeg",
 
             watchLink:
                 "#",
@@ -3383,6 +3241,9 @@ async function seedDatabase() {
                 "#"
         });
     }
+
+
+    /* ---------- WELCOME ---------- */
 
     if (
         !(await Welcome.findOne())
@@ -3421,6 +3282,9 @@ async function seedDatabase() {
                 ""
         });
     }
+
+
+    /* ---------- EXPLORE ---------- */
 
     if (
         (await Explore.countDocuments()) ===
@@ -3485,6 +3349,7 @@ async function seedDatabase() {
         "Database initialization complete."
     );
 }
+
 
 /* =========================================================
    START SERVER
@@ -3605,6 +3470,7 @@ async function startServer() {
     }
 }
 
+
 /* =========================================================
    GRACEFUL SHUTDOWN
 ========================================================= */
@@ -3660,6 +3526,7 @@ process.on(
     "SIGTERM",
     () => shutdown("SIGTERM")
 );
+
 
 /* =========================================================
    VERCEL EXPORT / LOCAL START

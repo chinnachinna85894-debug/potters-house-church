@@ -1,7 +1,7 @@
 /* =========================================================
    THE POTTER'S HOUSE CHURCH SERVER   // Hello from Nehem
    + EMAIL LOGIN / AUTHENTICATION
-   Merged single server.js   itau caep ttsj pttg
+   Merged single server.js
 ========================================================= */
 
 const express = require("express");
@@ -45,21 +45,27 @@ const JWT_SECRET =
    UPLOAD DIRECTORIES
 ========================================================= */
 
+const UPLOAD_ROOT = process.env.VERCEL
+    ? path.join("/tmp", "uploads")
+    : path.join(__dirname, "uploads");
+
 const uploadFolders = [
-    "uploads",
-    "uploads/home",
-    "uploads/hero",
-    "uploads/logo",
-    "uploads/events",
-    "uploads/special-events",
-    "uploads/featured",
-    "uploads/welcome",
-    "uploads/background",
-    "uploads/calendar"
+    "",
+    "home",
+    "hero",
+    "logo",
+    "events",
+    "special-events",
+    "featured",
+    "welcome",
+    "background",
+    "calendar"
 ];
 
 for (const folder of uploadFolders) {
-    fs.mkdirSync(path.join("/tmp", folder), { recursive: true });
+    fs.mkdirSync(path.join(UPLOAD_ROOT, folder), {
+        recursive: true
+    });
 }
 
 /* =========================================================
@@ -85,16 +91,48 @@ app.use(
 app.use(cookieParser());
 
 /* =========================================================
-   STATIC FILES (public + uploads)
+   STATIC FILES (PUBLIC ONLY)
+   
+   IMPORTANT:
+   index:false prevents Express from automatically serving
+   admin.html before the protected /admin.html route.
 ========================================================= */
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+    express.static(path.join(__dirname, "public"), {
+        index: false
+    })
+);
 
 app.use(
     "/uploads",
-express.static(path.join("/tmp", "uploads"), {        maxAge: "1h"
+    express.static(path.join(__dirname, "uploads"), {
+        maxAge: "1h"
     })
 );
+
+/* =========================================================
+   VERCEL DATABASE MIDDLEWARE
+========================================================= */
+
+app.use("/api", async (req, res, next) => {
+    try {
+        if (mongoose.connection.readyState !== 1) {
+            await mongoose.connect(MONGO_URI);
+        }
+
+        next();
+
+    } catch (error) {
+
+        console.error("MongoDB connection failed:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Database connection failed"
+        });
+    }
+});
 
 /* =========================================================
    MONGODB EVENTS
@@ -123,10 +161,21 @@ function getUploadFolder(req) {
 
     const route = String(req.path || "").toLowerCase();
 
-    if (route.startsWith("/api/featured")) return "uploads/featured";
-    if (route.startsWith("/api/welcome")) return "uploads/welcome";
-    if (route.startsWith("/api/special-events")) return "uploads/special-events";
-    if (route.startsWith("/api/events")) return "uploads/events";
+    if (route.startsWith("/api/featured")) {
+        return "uploads/featured";
+    }
+
+    if (route.startsWith("/api/welcome")) {
+        return "uploads/welcome";
+    }
+
+    if (route.startsWith("/api/special-events")) {
+        return "uploads/special-events";
+    }
+
+    if (route.startsWith("/api/events")) {
+        return "uploads/events";
+    }
 
     if (
         route.startsWith("/api/calendar") ||
@@ -135,19 +184,44 @@ function getUploadFolder(req) {
         return "uploads/calendar";
     }
 
-    if (route.startsWith("/api/home-background")) return "uploads/background";
-    if (route.startsWith("/api/home")) return "uploads/home";
+    if (route.startsWith("/api/home-background")) {
+        return "uploads/background";
+    }
 
-    const section = String(req.body?.section || "").toLowerCase();
+    if (route.startsWith("/api/home")) {
+        return "uploads/home";
+    }
 
-    if (section === "featured") return "uploads/featured";
-    if (section === "welcome") return "uploads/welcome";
-    if (section.includes("special")) return "uploads/special-events";
+    const section = String(
+        req.body?.section || ""
+    ).toLowerCase();
 
-    if (section === "events" || section === "event") return "uploads/events";
+    if (section === "featured") {
+        return "uploads/featured";
+    }
 
-    if (section.includes("background")) return "uploads/background";
-    if (section === "calendar") return "uploads/calendar";
+    if (section === "welcome") {
+        return "uploads/welcome";
+    }
+
+    if (section.includes("special")) {
+        return "uploads/special-events";
+    }
+
+    if (
+        section === "events" ||
+        section === "event"
+    ) {
+        return "uploads/events";
+    }
+
+    if (section.includes("background")) {
+        return "uploads/background";
+    }
+
+    if (section === "calendar") {
+        return "uploads/calendar";
+    }
 
     return "uploads";
 }
@@ -162,7 +236,7 @@ const storage = multer.diskStorage({
 
         const folder = getUploadFolder(req);
 
-       cb(null, path.join("/tmp", folder));
+        cb(null, path.join(__dirname, folder));
     },
 
     filename: function (req, file, cb) {
@@ -244,7 +318,9 @@ function getFiles(req) {
 
     if (!req.files) return [];
 
-    if (Array.isArray(req.files)) return req.files;
+    if (Array.isArray(req.files)) {
+        return req.files;
+    }
 
     return Object.values(req.files).flat();
 }
@@ -262,7 +338,9 @@ function getFileByFields(req, names) {
 
     for (const name of names) {
 
-        const found = files.find(file => file.fieldname === name);
+        const found = files.find(
+            file => file.fieldname === name
+        );
 
         if (found) return found;
     }
@@ -274,10 +352,18 @@ function normalizeUploadUrl(file) {
 
     if (!file) return "";
 
-const uploadsRoot = path.join("/tmp", "uploads");
-    const relative = path.relative(uploadsRoot, file.path);
+    const uploadsRoot = path.join(
+        __dirname,
+        "uploads"
+    );
 
-    return "/uploads/" + relative.replace(/\\/g, "/");
+    const relative = path.relative(
+        uploadsRoot,
+        file.path
+    );
+
+    return "/uploads/" +
+        relative.replace(/\\/g, "/");
 }
 
 function deleteUploadedFile(fileUrl) {
@@ -286,22 +372,41 @@ function deleteUploadedFile(fileUrl) {
 
     if (!fileUrl.startsWith("/uploads/")) return;
 
-const uploadsRoot = path.resolve(path.join("/tmp", "uploads"));
-    path.join(
-    "/tmp",
-    "uploads",
-    fileUrl.replace(/^\/uploads\//, "")
-)
+    const uploadsRoot = path.resolve(
+        path.join(__dirname, "uploads")
     );
 
-    if (!fullPath.startsWith(uploadsRoot + path.sep)) return;
+    const fullPath = path.resolve(
+        path.join(
+            __dirname,
+            "uploads",
+            fileUrl.replace(
+                /^\/uploads\//,
+                ""
+            )
+        )
+    );
+
+    if (
+        !fullPath.startsWith(
+            uploadsRoot + path.sep
+        )
+    ) {
+        return;
+    }
 
     if (fs.existsSync(fullPath)) {
 
         try {
+
             fs.unlinkSync(fullPath);
+
         } catch (error) {
-            console.error("File delete error:", error.message);
+
+            console.error(
+                "File delete error:",
+                error.message
+            );
         }
     }
 }
@@ -312,7 +417,10 @@ function removeNewFiles(req) {
 
     for (const file of files) {
 
-        if (file?.path && fs.existsSync(file.path)) {
+        if (
+            file?.path &&
+            fs.existsSync(file.path)
+        ) {
 
             try {
                 fs.unlinkSync(file.path);
@@ -336,10 +444,25 @@ app.get("/api/updates", (req, res) => {
 
     res.status(200);
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
+    res.setHeader(
+        "Content-Type",
+        "text/event-stream"
+    );
+
+    res.setHeader(
+        "Cache-Control",
+        "no-cache, no-transform"
+    );
+
+    res.setHeader(
+        "Connection",
+        "keep-alive"
+    );
+
+    res.setHeader(
+        "X-Accel-Buffering",
+        "no"
+    );
 
     res.flushHeaders();
 
@@ -356,7 +479,10 @@ app.get("/api/updates", (req, res) => {
     sseClients.push(res);
 
     req.on("close", () => {
-        sseClients = sseClients.filter(client => client !== res);
+
+        sseClients = sseClients.filter(
+            client => client !== res
+        );
     });
 });
 
@@ -365,9 +491,17 @@ const sseHeartbeat = setInterval(() => {
     sseClients = sseClients.filter(client => {
 
         try {
-            client.write(": heartbeat " + Date.now() + "\n\n");
+
+            client.write(
+                ": heartbeat " +
+                Date.now() +
+                "\n\n"
+            );
+
             return true;
+
         } catch {
+
             return false;
         }
     });
@@ -379,7 +513,9 @@ function notifyClients(type) {
     const message =
         "data: " +
         JSON.stringify({
-            type: type || "content-updated",
+            type:
+                type ||
+                "content-updated",
             timestamp: Date.now()
         }) +
         "\n\n";
@@ -387,16 +523,20 @@ function notifyClients(type) {
     sseClients = sseClients.filter(client => {
 
         try {
+
             client.write(message);
+
             return true;
+
         } catch {
+
             return false;
         }
     });
 }
 
 /* =========================================================
-   AUTH MIDDLEWARE (from email-login server)
+   AUTH MIDDLEWARE
 ========================================================= */
 
 function requireAuth(req, res, next) {
@@ -407,13 +547,20 @@ function requireAuth(req, res, next) {
 
     if (!token) {
 
-        if (req.path === "/admin.html" || req.path === "/admin") {
-            return res.redirect("/login.html");
+        if (
+            req.path === "/admin.html" ||
+            req.path === "/admin"
+        ) {
+
+            return res.redirect(
+                "/login.html"
+            );
         }
 
         return res.status(401).json({
             success: false,
-            message: "Authentication required"
+            message:
+                "Authentication required"
         });
     }
 
@@ -421,7 +568,10 @@ function requireAuth(req, res, next) {
 
     try {
 
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(
+            token,
+            JWT_SECRET
+        );
 
         req.user = decoded;
 
@@ -429,21 +579,35 @@ function requireAuth(req, res, next) {
 
     } catch (error) {
 
-        console.log("Invalid authentication token");
+        console.log(
+            "Invalid authentication token"
+        );
 
-        res.clearCookie("authToken", {
-            httpOnly: true,
-            sameSite: "lax",
-            secure: process.env.NODE_ENV === "production"
-        });
+        res.clearCookie(
+            "authToken",
+            {
+                httpOnly: true,
+                sameSite: "lax",
+                secure:
+                    process.env.NODE_ENV ===
+                    "production"
+            }
+        );
 
-        if (req.path === "/admin.html" || req.path === "/admin") {
-            return res.redirect("/login.html");
+        if (
+            req.path === "/admin.html" ||
+            req.path === "/admin"
+        ) {
+
+            return res.redirect(
+                "/login.html"
+            );
         }
 
         return res.status(401).json({
             success: false,
-            message: "Invalid or expired login session"
+            message:
+                "Invalid or expired login session"
         });
     }
 }
@@ -456,163 +620,277 @@ let authRoutes;
 
 try {
 
-    authRoutes = require("./routes/auth");
+    authRoutes = require(
+        "./routes/auth"
+    );
 
 } catch (error) {
 
     console.error("");
-    console.error("======================================");
-    console.error("       AUTH ROUTE LOAD ERROR");
-    console.error("======================================");
+    console.error(
+        "======================================"
+    );
+    console.error(
+        "       AUTH ROUTE LOAD ERROR"
+    );
+    console.error(
+        "======================================"
+    );
     console.error(error);
     console.error("");
 
     process.exit(1);
 }
 
-if (typeof authRoutes !== "function") {
+if (
+    typeof authRoutes !== "function"
+) {
 
     console.error("");
-    console.error("======================================");
-    console.error("       AUTH ROUTER ERROR");
-    console.error("======================================");
-    console.error("routes/auth.js is not exporting the Express router correctly.");
+    console.error(
+        "======================================"
+    );
+    console.error(
+        "       AUTH ROUTER ERROR"
+    );
+    console.error(
+        "======================================"
+    );
+    console.error(
+        "routes/auth.js is not exporting the Express router correctly."
+    );
     console.error("");
-    console.error("Make sure the LAST line of routes/auth.js is:");
+    console.error(
+        "Make sure the LAST line of routes/auth.js is:"
+    );
     console.error("");
-    console.error("module.exports = router;");
+    console.error(
+        "module.exports = router;"
+    );
     console.error("");
 
     process.exit(1);
 }
 
-app.use("/api/auth", authRoutes);
+app.use(
+    "/api/auth",
+    authRoutes
+);
 
 /* =========================================================
    STATUS / HEALTH
 ========================================================= */
 
-app.get("/api/status", (req, res) => {
+app.get(
+    "/api/status",
+    (req, res) => {
 
-    res.json({
-        success: true,
-        message: "Email Login API is running",
-        database:
-            mongoose.connection.readyState === 1
-                ? "connected"
-                : "disconnected"
-    });
-});
+        res.json({
 
-app.get("/api/health", (req, res) => {
+            success: true,
 
-    res.json({
-        success: true,
-        server: "running",
-        mongodb:
-            mongoose.connection.readyState === 1
-                ? "connected"
-                : "disconnected",
-        timestamp: new Date().toISOString()
-    });
-});
+            message:
+                "Email Login API is running",
+
+            database:
+                mongoose.connection
+                    .readyState === 1
+                    ? "connected"
+                    : "disconnected"
+        });
+    }
+);
+
+app.get(
+    "/api/health",
+    (req, res) => {
+
+        res.json({
+
+            success: true,
+
+            server: "running",
+
+            mongodb:
+                mongoose.connection
+                    .readyState === 1
+                    ? "connected"
+                    : "disconnected",
+
+            timestamp:
+                new Date().toISOString()
+        });
+    }
+);
 
 /* =========================================================
    HOME
 ========================================================= */
 
-app.get("/api/home", async (req, res) => {
+app.get(
+    "/api/home",
+    async (req, res) => {
 
-    try {
+        try {
 
-        let home = await Home.findOne();
+            let home =
+                await Home.findOne();
 
-        if (!home) {
+            if (!home) {
 
-            home = await Home.create({
-                badge: "Welcome Home",
-                title: "The Potter's House",
-                subtitle: "Church Bengaluru",
-                location: "Bengaluru, Karnataka, India",
-                mapLink: "https://maps.google.com",
-                logo: ""
+                home =
+                    await Home.create({
+
+                        badge:
+                            "Welcome Home",
+
+                        title:
+                            "The Potter's House",
+
+                        subtitle:
+                            "Church Bengaluru",
+
+                        location:
+                            "Bengaluru, Karnataka, India",
+
+                        mapLink:
+                            "https://maps.google.com",
+
+                        logo: ""
+                    });
+            }
+
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
+
+            res.json(home);
+
+        } catch (error) {
+
+            console.error(
+                "Home GET error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to load home data",
+
+                error:
+                    error.message
             });
         }
-
-        res.setHeader("Cache-Control", "no-store");
-
-        res.json(home);
-
-    } catch (error) {
-
-        console.error("Home GET error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to load home data",
-            error: error.message
-        });
     }
-});
+);
 
-app.put("/api/home", upload.any(), async (req, res) => {
+app.put(
+    "/api/home",
+    upload.any(),
+    async (req, res) => {
 
-    try {
+        try {
 
-        let home = await Home.findOne();
+            let home =
+                await Home.findOne();
 
-        if (!home) home = new Home();
-
-        const fields = [
-            "badge",
-            "title",
-            "subtitle",
-            "location",
-            "mapLink"
-        ];
-
-        for (const field of fields) {
-
-            if (req.body[field] !== undefined) {
-                home[field] = req.body[field];
+            if (!home) {
+                home = new Home();
             }
+
+            const fields = [
+                "badge",
+                "title",
+                "subtitle",
+                "location",
+                "mapLink"
+            ];
+
+            for (const field of fields) {
+
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
+
+                    home[field] =
+                        req.body[field];
+                }
+            }
+
+            const logoFile =
+                getFileByFields(
+                    req,
+                    [
+                        "logo",
+                        "homeLogo"
+                    ]
+                );
+
+            const oldLogo =
+                home.logo;
+
+            if (logoFile) {
+
+                home.logo =
+                    normalizeUploadUrl(
+                        logoFile
+                    );
+            }
+
+            await home.save();
+
+            if (
+                logoFile &&
+                oldLogo &&
+                oldLogo !== home.logo
+            ) {
+
+                deleteUploadedFile(
+                    oldLogo
+                );
+            }
+
+            notifyClients(
+                "home-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Home updated successfully",
+
+                data: home
+            });
+
+        } catch (error) {
+
+            removeNewFiles(req);
+
+            console.error(
+                "Home PUT error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to update home",
+
+                error:
+                    error.message
+            });
         }
-
-        const logoFile = getFileByFields(req, ["logo", "homeLogo"]);
-
-        const oldLogo = home.logo;
-
-        if (logoFile) {
-            home.logo = normalizeUploadUrl(logoFile);
-        }
-
-        await home.save();
-
-        if (logoFile && oldLogo && oldLogo !== home.logo) {
-            deleteUploadedFile(oldLogo);
-        }
-
-        notifyClients("home-updated");
-
-        res.json({
-            success: true,
-            message: "Home updated successfully",
-            data: home
-        });
-
-    } catch (error) {
-
-        removeNewFiles(req);
-
-        console.error("Home PUT error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update home",
-            error: error.message
-        });
     }
-});
+);
 
 /* =========================================================
    HOME BACKGROUND
@@ -621,844 +899,1483 @@ app.put("/api/home", upload.any(), async (req, res) => {
 function getBackgroundCollection() {
 
     if (!mongoose.connection.db) {
-        throw new Error("MongoDB is not connected");
+
+        throw new Error(
+            "MongoDB is not connected"
+        );
     }
 
-    return mongoose.connection.db.collection("home_background_media");
+    return mongoose.connection.db.collection(
+        "home_background_media"
+    );
 }
 
-app.get("/api/home-background", async (req, res) => {
+app.get(
+    "/api/home-background",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const collection = getBackgroundCollection();
+            const collection =
+                getBackgroundCollection();
 
-        const items = await collection
-            .find({})
-            .sort({ order: 1, createdAt: 1 })
-            .toArray();
+            const items =
+                await collection
+                    .find({})
+                    .sort({
+                        order: 1,
+                        createdAt: 1
+                    })
+                    .toArray();
 
-        res.setHeader("Cache-Control", "no-store");
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
 
-        res.json(items);
+            res.json(items);
 
-    } catch (error) {
+        } catch (error) {
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to load home background media",
-            error: error.message
-        });
-    }
-});
+            res.status(500).json({
 
-app.post("/api/home-background", upload.any(), async (req, res) => {
-
-    try {
-
-        const files = getFiles(req);
-
-        if (files.length === 0) {
-
-            return res.status(400).json({
                 success: false,
+
                 message:
-                    "Please select at least one background image or video."
+                    "Failed to load home background media",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        const collection = getBackgroundCollection();
+app.post(
+    "/api/home-background",
+    upload.any(),
+    async (req, res) => {
 
-        let order = Number(req.body.order);
+        try {
 
-        if (!Number.isFinite(order)) {
-            order = await collection.countDocuments();
+            const files =
+                getFiles(req);
+
+            if (files.length === 0) {
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Please select at least one background image or video."
+                });
+            }
+
+            const collection =
+                getBackgroundCollection();
+
+            let order =
+                Number(req.body.order);
+
+            if (!Number.isFinite(order)) {
+
+                order =
+                    await collection
+                        .countDocuments();
+            }
+
+            const documents =
+                files.map(
+                    (file, index) => {
+
+                        const type =
+                            (
+                                file.mimetype ||
+                                ""
+                            ).startsWith(
+                                "video/"
+                            )
+                                ? "video"
+                                : "image";
+
+                        return {
+
+                            title:
+                                String(
+                                    req.body.title ||
+                                    "Home Background"
+                                ).trim(),
+
+                            type,
+
+                            url:
+                                normalizeUploadUrl(
+                                    file
+                                ),
+
+                            originalName:
+                                file.originalname,
+
+                            mimeType:
+                                file.mimetype,
+
+                            order:
+                                order + index,
+
+                            createdAt:
+                                new Date(),
+
+                            updatedAt:
+                                new Date()
+                        };
+                    }
+                );
+
+            await collection.insertMany(
+                documents
+            );
+
+            notifyClients(
+                "home-background-updated"
+            );
+
+            res.status(201).json({
+
+                success: true,
+
+                message:
+                    `${documents.length} background media file(s) uploaded successfully.`,
+
+                data: documents
+            });
+
+        } catch (error) {
+
+            removeNewFiles(req);
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to upload background media",
+
+                error:
+                    error.message
+            });
         }
+    }
+);
 
-        const documents = files.map((file, index) => {
+app.put(
+    "/api/home-background/:id",
+    async (req, res) => {
 
-            const type = (file.mimetype || "").startsWith("video/")
-                ? "video"
-                : "image";
+        try {
 
-            return {
-                title: String(
-                    req.body.title || "Home Background"
-                ).trim(),
-                type,
-                url: normalizeUploadUrl(file),
-                originalName: file.originalname,
-                mimeType: file.mimetype,
-                order: order + index,
-                createdAt: new Date(),
-                updatedAt: new Date()
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid background media ID"
+                });
+            }
+
+            const collection =
+                getBackgroundCollection();
+
+            const id =
+                new mongoose.Types.ObjectId(
+                    req.params.id
+                );
+
+            const update = {
+                updatedAt:
+                    new Date()
             };
-        });
 
-        await collection.insertMany(documents);
+            if (
+                req.body.title !==
+                undefined
+            ) {
 
-        notifyClients("home-background-updated");
+                update.title =
+                    String(
+                        req.body.title
+                    );
+            }
 
-        res.status(201).json({
-            success: true,
-            message: `${documents.length} background media file(s) uploaded successfully.`,
-            data: documents
-        });
+            if (
+                req.body.order !==
+                undefined
+            ) {
 
-    } catch (error) {
+                update.order =
+                    Number(
+                        req.body.order
+                    ) || 0;
+            }
 
-        removeNewFiles(req);
+            const result =
+                await collection.updateOne(
+                    { _id: id },
+                    { $set: update }
+                );
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to upload background media",
-            error: error.message
-        });
+            if (
+                result.matchedCount === 0
+            ) {
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Background media not found"
+                });
+            }
+
+            const updated =
+                await collection.findOne({
+                    _id: id
+                });
+
+            notifyClients(
+                "home-background-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Background media updated successfully",
+
+                data: updated
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to update background media",
+
+                error:
+                    error.message
+            });
+        }
     }
-});
+);
 
-app.put("/api/home-background/:id", async (req, res) => {
+app.delete(
+    "/api/home-background/:id",
+    async (req, res) => {
 
-    try {
+        try {
 
-        if (!validObjectId(req.params.id)) {
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
 
-            return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid background media ID"
+                });
+            }
+
+            const collection =
+                getBackgroundCollection();
+
+            const id =
+                new mongoose.Types.ObjectId(
+                    req.params.id
+                );
+
+            const item =
+                await collection.findOne({
+                    _id: id
+                });
+
+            if (!item) {
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Background media not found"
+                });
+            }
+
+            await collection.deleteOne({
+                _id: id
+            });
+
+            deleteUploadedFile(
+                item.url
+            );
+
+            notifyClients(
+                "home-background-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Background media deleted successfully"
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
                 success: false,
-                message: "Invalid background media ID"
+
+                message:
+                    "Failed to delete background media",
+
+                error:
+                    error.message
             });
         }
-
-        const collection = getBackgroundCollection();
-
-        const id = new mongoose.Types.ObjectId(req.params.id);
-
-        const update = { updatedAt: new Date() };
-
-        if (req.body.title !== undefined) {
-            update.title = String(req.body.title);
-        }
-
-        if (req.body.order !== undefined) {
-            update.order = Number(req.body.order) || 0;
-        }
-
-        const result = await collection.updateOne(
-            { _id: id },
-            { $set: update }
-        );
-
-        if (result.matchedCount === 0) {
-
-            return res.status(404).json({
-                success: false,
-                message: "Background media not found"
-            });
-        }
-
-        const updated = await collection.findOne({ _id: id });
-
-        notifyClients("home-background-updated");
-
-        res.json({
-            success: true,
-            message: "Background media updated successfully",
-            data: updated
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update background media",
-            error: error.message
-        });
     }
-});
-
-app.delete("/api/home-background/:id", async (req, res) => {
-
-    try {
-
-        if (!validObjectId(req.params.id)) {
-
-            return res.status(400).json({
-                success: false,
-                message: "Invalid background media ID"
-            });
-        }
-
-        const collection = getBackgroundCollection();
-
-        const id = new mongoose.Types.ObjectId(req.params.id);
-
-        const item = await collection.findOne({ _id: id });
-
-        if (!item) {
-
-            return res.status(404).json({
-                success: false,
-                message: "Background media not found"
-            });
-        }
-
-        await collection.deleteOne({ _id: id });
-
-        deleteUploadedFile(item.url);
-
-        notifyClients("home-background-updated");
-
-        res.json({
-            success: true,
-            message: "Background media deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete background media",
-            error: error.message
-        });
-    }
-});
+);
 
 /* =========================================================
    COMING EVENTS
 ========================================================= */
 
-app.get("/api/events", async (req, res) => {
+app.get(
+    "/api/events",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const events = await Event.find().sort({
-            order: 1,
-            createdAt: 1
-        });
+            const events =
+                await Event.find().sort({
+                    order: 1,
+                    createdAt: 1
+                });
 
-        res.setHeader("Cache-Control", "no-store");
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
 
-        res.json(events);
+            res.json(events);
 
-    } catch (error) {
+        } catch (error) {
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to load events",
-            error: error.message
-        });
-    }
-});
+            res.status(500).json({
 
-app.post("/api/events", upload.any(), async (req, res) => {
+                success: false,
 
-    try {
+                message:
+                    "Failed to load events",
 
-        const imageFile = getFileByFields(req, [
-            "image",
-            "eventImage"
-        ]);
-
-        const eventData = {
-            category: req.body.category || "Morning",
-            day: req.body.day || "Sunday",
-            service:
-                req.body.service ||
-                req.body.title ||
-                "Worship Service",
-            time: req.body.time || "10:30 AM",
-            order: Number(req.body.order) || 0
-        };
-
-        if (imageFile) {
-            eventData.image = normalizeUploadUrl(imageFile);
+                error:
+                    error.message
+            });
         }
-
-        const event = await Event.create(eventData);
-
-        notifyClients("events-updated");
-
-        res.status(201).json({
-            success: true,
-            message: "Event added successfully",
-            data: event
-        });
-
-    } catch (error) {
-
-        removeNewFiles(req);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to add event",
-            error: error.message
-        });
     }
-});
+);
 
-app.put("/api/events/:id", upload.any(), async (req, res) => {
+app.post(
+    "/api/events",
+    upload.any(),
+    async (req, res) => {
 
-    try {
+        try {
 
-        if (!validObjectId(req.params.id)) {
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "eventImage"
+                    ]
+                );
+
+            const eventData = {
+
+                category:
+                    req.body.category ||
+                    "Morning",
+
+                day:
+                    req.body.day ||
+                    "Sunday",
+
+                service:
+                    req.body.service ||
+                    req.body.title ||
+                    "Worship Service",
+
+                time:
+                    req.body.time ||
+                    "10:30 AM",
+
+                order:
+                    Number(
+                        req.body.order
+                    ) || 0
+            };
+
+            if (imageFile) {
+
+                eventData.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+            }
+
+            const event =
+                await Event.create(
+                    eventData
+                );
+
+            notifyClients(
+                "events-updated"
+            );
+
+            res.status(201).json({
+
+                success: true,
+
+                message:
+                    "Event added successfully",
+
+                data: event
+            });
+
+        } catch (error) {
 
             removeNewFiles(req);
 
-            return res.status(400).json({
+            res.status(500).json({
+
                 success: false,
-                message: "Invalid event ID"
+
+                message:
+                    "Failed to add event",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        const event = await Event.findById(req.params.id);
+app.put(
+    "/api/events/:id",
+    upload.any(),
+    async (req, res) => {
 
-        if (!event) {
+        try {
+
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                removeNewFiles(req);
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid event ID"
+                });
+            }
+
+            const event =
+                await Event.findById(
+                    req.params.id
+                );
+
+            if (!event) {
+
+                removeNewFiles(req);
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Event not found"
+                });
+            }
+
+            for (
+                const field of [
+                    "category",
+                    "day",
+                    "service",
+                    "time"
+                ]
+            ) {
+
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
+
+                    event[field] =
+                        req.body[field];
+                }
+            }
+
+            if (
+                req.body.order !==
+                undefined
+            ) {
+
+                event.order =
+                    Number(
+                        req.body.order
+                    ) || 0;
+            }
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "eventImage"
+                    ]
+                );
+
+            if (imageFile) {
+
+                const oldImage =
+                    event.image;
+
+                event.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+
+                await event.save();
+
+                if (
+                    oldImage &&
+                    oldImage !==
+                        event.image
+                ) {
+
+                    deleteUploadedFile(
+                        oldImage
+                    );
+                }
+
+            } else {
+
+                await event.save();
+            }
+
+            notifyClients(
+                "events-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Event updated successfully",
+
+                data: event
+            });
+
+        } catch (error) {
 
             removeNewFiles(req);
 
-            return res.status(404).json({
+            res.status(500).json({
+
                 success: false,
-                message: "Event not found"
+
+                message:
+                    "Failed to update event",
+
+                error:
+                    error.message
             });
         }
-
-        for (const field of ["category", "day", "service", "time"]) {
-
-            if (req.body[field] !== undefined) {
-                event[field] = req.body[field];
-            }
-        }
-
-        if (req.body.order !== undefined) {
-            event.order = Number(req.body.order) || 0;
-        }
-
-        const imageFile = getFileByFields(req, [
-            "image",
-            "eventImage"
-        ]);
-
-        if (imageFile) {
-
-            const oldImage = event.image;
-
-            event.image = normalizeUploadUrl(imageFile);
-
-            await event.save();
-
-            if (oldImage && oldImage !== event.image) {
-                deleteUploadedFile(oldImage);
-            }
-
-        } else {
-
-            await event.save();
-        }
-
-        notifyClients("events-updated");
-
-        res.json({
-            success: true,
-            message: "Event updated successfully",
-            data: event
-        });
-
-    } catch (error) {
-
-        removeNewFiles(req);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update event",
-            error: error.message
-        });
     }
-});
+);
 
-app.delete("/api/events/:id", async (req, res) => {
+app.delete(
+    "/api/events/:id",
+    async (req, res) => {
 
-    try {
+        try {
 
-        if (!validObjectId(req.params.id)) {
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
 
-            return res.status(400).json({
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid event ID"
+                });
+            }
+
+            const event =
+                await Event.findByIdAndDelete(
+                    req.params.id
+                );
+
+            if (!event) {
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Event not found"
+                });
+            }
+
+            if (event.image) {
+
+                deleteUploadedFile(
+                    event.image
+                );
+            }
+
+            notifyClients(
+                "events-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Event deleted successfully"
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
                 success: false,
-                message: "Invalid event ID"
+
+                message:
+                    "Failed to delete event",
+
+                error:
+                    error.message
             });
         }
-
-        const event = await Event.findByIdAndDelete(req.params.id);
-
-        if (!event) {
-
-            return res.status(404).json({
-                success: false,
-                message: "Event not found"
-            });
-        }
-
-        if (event.image) deleteUploadedFile(event.image);
-
-        notifyClients("events-updated");
-
-        res.json({
-            success: true,
-            message: "Event deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete event",
-            error: error.message
-        });
     }
-});
+);
 
 /* =========================================================
    SPECIAL EVENTS
 ========================================================= */
 
-app.get("/api/special-events", async (req, res) => {
+app.get(
+    "/api/special-events",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const events = await SpecialEvent.find().sort({
-            order: 1,
-            createdAt: 1
-        });
+            const events =
+                await SpecialEvent.find().sort({
+                    order: 1,
+                    createdAt: 1
+                });
 
-        res.setHeader("Cache-Control", "no-store");
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
 
-        res.json(events);
+            res.json(events);
 
-    } catch (error) {
+        } catch (error) {
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to load special events",
-            error: error.message
-        });
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to load special events",
+
+                error:
+                    error.message
+            });
+        }
     }
-});
+);
 
-app.post("/api/special-events", upload.any(), async (req, res) => {
+app.post(
+    "/api/special-events",
+    upload.any(),
+    async (req, res) => {
 
-    try {
+        try {
 
-        const imageFile = getFileByFields(req, [
-            "image",
-            "eventImage",
-            "specialImage"
-        ]);
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "eventImage",
+                        "specialImage"
+                    ]
+                );
 
-        const event = await SpecialEvent.create({
-            title: req.body.title || "",
-            date: req.body.date || "",
-            time: req.body.time || "",
-            description: req.body.description || "",
-            link: req.body.link || "#",
-            image: imageFile ? normalizeUploadUrl(imageFile) : "",
-            order: Number(req.body.order) || 0
-        });
+            const event =
+                await SpecialEvent.create({
 
-        notifyClients("special-events-updated");
+                    title:
+                        req.body.title ||
+                        "",
 
-        res.status(201).json({
-            success: true,
-            message: "Special event added successfully",
-            data: event
-        });
+                    date:
+                        req.body.date ||
+                        "",
 
-    } catch (error) {
+                    time:
+                        req.body.time ||
+                        "",
 
-        removeNewFiles(req);
+                    description:
+                        req.body.description ||
+                        "",
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to add special event",
-            error: error.message
-        });
-    }
-});
+                    link:
+                        req.body.link ||
+                        "#",
 
-app.put("/api/special-events/:id", upload.any(), async (req, res) => {
+                    image:
+                        imageFile
+                            ? normalizeUploadUrl(
+                                imageFile
+                            )
+                            : "",
 
-    try {
+                    order:
+                        Number(
+                            req.body.order
+                        ) || 0
+                });
 
-        if (!validObjectId(req.params.id)) {
+            notifyClients(
+                "special-events-updated"
+            );
+
+            res.status(201).json({
+
+                success: true,
+
+                message:
+                    "Special event added successfully",
+
+                data: event
+            });
+
+        } catch (error) {
 
             removeNewFiles(req);
 
-            return res.status(400).json({
+            res.status(500).json({
+
                 success: false,
-                message: "Invalid special event ID"
+
+                message:
+                    "Failed to add special event",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        const event = await SpecialEvent.findById(req.params.id);
+app.put(
+    "/api/special-events/:id",
+    upload.any(),
+    async (req, res) => {
 
-        if (!event) {
+        try {
+
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                removeNewFiles(req);
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid special event ID"
+                });
+            }
+
+            const event =
+                await SpecialEvent.findById(
+                    req.params.id
+                );
+
+            if (!event) {
+
+                removeNewFiles(req);
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Special event not found"
+                });
+            }
+
+            for (
+                const field of [
+                    "title",
+                    "date",
+                    "time",
+                    "description",
+                    "link"
+                ]
+            ) {
+
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
+
+                    event[field] =
+                        req.body[field];
+                }
+            }
+
+            if (
+                req.body.order !==
+                undefined
+            ) {
+
+                event.order =
+                    Number(
+                        req.body.order
+                    ) || 0;
+            }
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "eventImage",
+                        "specialImage"
+                    ]
+                );
+
+            if (imageFile) {
+
+                const oldImage =
+                    event.image;
+
+                event.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+
+                await event.save();
+
+                if (
+                    oldImage &&
+                    oldImage !==
+                        event.image
+                ) {
+
+                    deleteUploadedFile(
+                        oldImage
+                    );
+                }
+
+            } else {
+
+                await event.save();
+            }
+
+            notifyClients(
+                "special-events-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Special event updated successfully",
+
+                data: event
+            });
+
+        } catch (error) {
 
             removeNewFiles(req);
 
-            return res.status(404).json({
+            res.status(500).json({
+
                 success: false,
-                message: "Special event not found"
+
+                message:
+                    "Failed to update special event",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        for (const field of [
-            "title",
-            "date",
-            "time",
-            "description",
-            "link"
-        ]) {
-            if (req.body[field] !== undefined) {
-                event[field] = req.body[field];
-            }
-        }
+app.delete(
+    "/api/special-events/:id",
+    async (req, res) => {
 
-        if (req.body.order !== undefined) {
-            event.order = Number(req.body.order) || 0;
-        }
+        try {
 
-        const imageFile = getFileByFields(req, [
-            "image",
-            "eventImage",
-            "specialImage"
-        ]);
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
 
-        if (imageFile) {
+                return res.status(
+                    400
+                ).json({
 
-            const oldImage = event.image;
+                    success: false,
 
-            event.image = normalizeUploadUrl(imageFile);
-
-            await event.save();
-
-            if (oldImage && oldImage !== event.image) {
-                deleteUploadedFile(oldImage);
+                    message:
+                        "Invalid special event ID"
+                });
             }
 
-        } else {
+            const event =
+                await SpecialEvent.findByIdAndDelete(
+                    req.params.id
+                );
 
-            await event.save();
-        }
+            if (!event) {
 
-        notifyClients("special-events-updated");
+                return res.status(
+                    404
+                ).json({
 
-        res.json({
-            success: true,
-            message: "Special event updated successfully",
-            data: event
-        });
+                    success: false,
 
-    } catch (error) {
+                    message:
+                        "Special event not found"
+                });
+            }
 
-        removeNewFiles(req);
+            if (event.image) {
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to update special event",
-            error: error.message
-        });
-    }
-});
+                deleteUploadedFile(
+                    event.image
+                );
+            }
 
-app.delete("/api/special-events/:id", async (req, res) => {
+            notifyClients(
+                "special-events-updated"
+            );
 
-    try {
+            res.json({
 
-        if (!validObjectId(req.params.id)) {
+                success: true,
 
-            return res.status(400).json({
+                message:
+                    "Special event deleted successfully"
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
                 success: false,
-                message: "Invalid special event ID"
+
+                message:
+                    "Failed to delete special event",
+
+                error:
+                    error.message
             });
         }
-
-        const event = await SpecialEvent.findByIdAndDelete(
-            req.params.id
-        );
-
-        if (!event) {
-
-            return res.status(404).json({
-                success: false,
-                message: "Special event not found"
-            });
-        }
-
-        if (event.image) deleteUploadedFile(event.image);
-
-        notifyClients("special-events-updated");
-
-        res.json({
-            success: true,
-            message: "Special event deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete special event",
-            error: error.message
-        });
     }
-});
+);
 
 /* =========================================================
    FEATURED
 ========================================================= */
 
-app.get("/api/featured", async (req, res) => {
+app.get(
+    "/api/featured",
+    async (req, res) => {
 
-    try {
+        try {
 
-        let featured = await Featured.findOne();
+            let featured =
+                await Featured.findOne();
 
-        if (!featured) {
+            if (!featured) {
 
-            featured = await Featured.create({
-                badge: "Featured Message",
-                title: "Time Is Running Out",
-                subtitle: "Bible Conference 2026",
-                backgroundImage: "",
-                watchLink: "#",
-                sermonsLink: "#"
+                featured =
+                    await Featured.create({
+
+                        badge:
+                            "Featured Message",
+
+                        title:
+                            "Time Is Running Out",
+
+                        subtitle:
+                            "Bible Conference 2026",
+
+                        backgroundImage:
+                            "",
+
+                        watchLink:
+                            "#",
+
+                        sermonsLink:
+                            "#"
+                    });
+            }
+
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
+
+            res.json(featured);
+
+        } catch (error) {
+
+            console.error(
+                "Featured GET error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to load featured section",
+
+                error:
+                    error.message
             });
         }
-
-        res.setHeader("Cache-Control", "no-store");
-
-        res.json(featured);
-
-    } catch (error) {
-
-        console.error("Featured GET error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to load featured section",
-            error: error.message
-        });
     }
-});
+);
 
-app.put("/api/featured", upload.any(), async (req, res) => {
+app.put(
+    "/api/featured",
+    upload.any(),
+    async (req, res) => {
 
-    try {
+        try {
 
-        let featured = await Featured.findOne();
+            let featured =
+                await Featured.findOne();
 
-        if (!featured) featured = new Featured();
-
-        const textFields = [
-            "badge",
-            "title",
-            "subtitle",
-            "watchLink",
-            "sermonsLink"
-        ];
-
-        for (const field of textFields) {
-
-            if (req.body[field] !== undefined) {
-                featured[field] = String(req.body[field]);
-            }
-        }
-
-        const backgroundFile = getFileByFields(req, [
-            "backgroundImage",
-            "backgroundImageFile",
-            "featuredBackground",
-            "featuredBackgroundImage",
-            "image",
-            "file"
-        ]);
-
-        if (backgroundFile) {
-
-            const oldImage = featured.backgroundImage;
-
-            featured.backgroundImage =
-                normalizeUploadUrl(backgroundFile);
-
-            await featured.save();
-
-            if (oldImage && oldImage !== featured.backgroundImage) {
-                deleteUploadedFile(oldImage);
+            if (!featured) {
+                featured =
+                    new Featured();
             }
 
-        } else {
+            const textFields = [
+                "badge",
+                "title",
+                "subtitle",
+                "watchLink",
+                "sermonsLink"
+            ];
 
-            let backgroundUrl;
+            for (
+                const field of textFields
+            ) {
 
-            if (req.body.backgroundImageUrl !== undefined) {
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
 
-                backgroundUrl = String(
-                    req.body.backgroundImageUrl || ""
-                ).trim();
-
-            } else if (req.body.backgroundUrl !== undefined) {
-
-                backgroundUrl = String(
-                    req.body.backgroundUrl || ""
-                ).trim();
+                    featured[field] =
+                        String(
+                            req.body[field]
+                        );
+                }
             }
 
-            if (backgroundUrl) {
+            const backgroundFile =
+                getFileByFields(
+                    req,
+                    [
+                        "backgroundImage",
+                        "backgroundImageFile",
+                        "featuredBackground",
+                        "featuredBackgroundImage",
+                        "image",
+                        "file"
+                    ]
+                );
 
-                const oldImage = featured.backgroundImage;
+            if (backgroundFile) {
 
-                featured.backgroundImage = backgroundUrl;
+                const oldImage =
+                    featured.backgroundImage;
+
+                featured.backgroundImage =
+                    normalizeUploadUrl(
+                        backgroundFile
+                    );
 
                 await featured.save();
 
-                if (oldImage && oldImage !== backgroundUrl) {
-                    deleteUploadedFile(oldImage);
+                if (
+                    oldImage &&
+                    oldImage !==
+                        featured.backgroundImage
+                ) {
+
+                    deleteUploadedFile(
+                        oldImage
+                    );
                 }
 
             } else {
 
-                await featured.save();
+                let backgroundUrl;
+
+                if (
+                    req.body.backgroundImageUrl !==
+                    undefined
+                ) {
+
+                    backgroundUrl =
+                        String(
+                            req.body.backgroundImageUrl ||
+                            ""
+                        ).trim();
+
+                } else if (
+                    req.body.backgroundUrl !==
+                    undefined
+                ) {
+
+                    backgroundUrl =
+                        String(
+                            req.body.backgroundUrl ||
+                            ""
+                        ).trim();
+                }
+
+                if (backgroundUrl) {
+
+                    const oldImage =
+                        featured.backgroundImage;
+
+                    featured.backgroundImage =
+                        backgroundUrl;
+
+                    await featured.save();
+
+                    if (
+                        oldImage &&
+                        oldImage !==
+                            backgroundUrl
+                    ) {
+
+                        deleteUploadedFile(
+                            oldImage
+                        );
+                    }
+
+                } else {
+
+                    await featured.save();
+                }
             }
+
+            notifyClients(
+                "featured-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Featured section updated successfully",
+
+                data: featured
+            });
+
+        } catch (error) {
+
+            removeNewFiles(req);
+
+            console.error(
+                "Featured PUT error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to update featured section",
+
+                error:
+                    error.message
+            });
         }
-
-        notifyClients("featured-updated");
-
-        res.json({
-            success: true,
-            message: "Featured section updated successfully",
-            data: featured
-        });
-
-    } catch (error) {
-
-        removeNewFiles(req);
-
-        console.error("Featured PUT error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update featured section",
-            error: error.message
-        });
     }
-});
+);
 
 /* =========================================================
    WELCOME
 ========================================================= */
 
-app.get("/api/welcome", async (req, res) => {
+app.get(
+    "/api/welcome",
+    async (req, res) => {
 
-    try {
+        try {
 
-        let welcome = await Welcome.findOne();
+            let welcome =
+                await Welcome.findOne();
 
-        if (!welcome) {
+            if (!welcome) {
 
-            welcome = await Welcome.create({
-                badge: "A Message From Leadership",
-                title: "Welcome To Church",
-                paragraph1: "Thank you for visiting us online.",
-                paragraph2:
-                    "We invite you to join us at any of our weekly services.",
-                leaderName: "Leadership Team",
-                newHereText: "New Here?",
-                newHereLink: "#",
-                contactText: "Contact Us",
-                contactLink: "#",
-                image: ""
+                welcome =
+                    await Welcome.create({
+
+                        badge:
+                            "A Message From Leadership",
+
+                        title:
+                            "Welcome To Church",
+
+                        paragraph1:
+                            "Thank you for visiting us online.",
+
+                        paragraph2:
+                            "We invite you to join us at any of our weekly services.",
+
+                        leaderName:
+                            "Leadership Team",
+
+                        newHereText:
+                            "New Here?",
+
+                        newHereLink:
+                            "#",
+
+                        contactText:
+                            "Contact Us",
+
+                        contactLink:
+                            "#",
+
+                        image:
+                            ""
+                    });
+            }
+
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
+
+            res.json(welcome);
+
+        } catch (error) {
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to load welcome section",
+
+                error:
+                    error.message
             });
         }
-
-        res.setHeader("Cache-Control", "no-store");
-
-        res.json(welcome);
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to load welcome section",
-            error: error.message
-        });
     }
-});
+);
 
-app.put("/api/welcome", upload.any(), async (req, res) => {
+app.put(
+    "/api/welcome",
+    upload.any(),
+    async (req, res) => {
 
-    try {
+        try {
 
-        let welcome = await Welcome.findOne();
+            let welcome =
+                await Welcome.findOne();
 
-        if (!welcome) welcome = new Welcome();
-
-        const fields = [
-            "badge",
-            "title",
-            "paragraph1",
-            "paragraph2",
-            "leaderName",
-            "newHereText",
-            "newHereLink",
-            "contactText",
-            "contactLink"
-        ];
-
-        for (const field of fields) {
-            if (req.body[field] !== undefined) {
-                welcome[field] = req.body[field];
-            }
-        }
-
-        const imageFile = getFileByFields(req, [
-            "image",
-            "welcomeImage"
-        ]);
-
-        if (imageFile) {
-
-            const oldImage = welcome.image;
-
-            welcome.image = normalizeUploadUrl(imageFile);
-
-            await welcome.save();
-
-            if (oldImage && oldImage !== welcome.image) {
-                deleteUploadedFile(oldImage);
+            if (!welcome) {
+                welcome =
+                    new Welcome();
             }
 
-        } else {
+            const fields = [
+                "badge",
+                "title",
+                "paragraph1",
+                "paragraph2",
+                "leaderName",
+                "newHereText",
+                "newHereLink",
+                "contactText",
+                "contactLink"
+            ];
 
-            await welcome.save();
+            for (
+                const field of fields
+            ) {
+
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
+
+                    welcome[field] =
+                        req.body[field];
+                }
+            }
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "welcomeImage"
+                    ]
+                );
+
+            if (imageFile) {
+
+                const oldImage =
+                    welcome.image;
+
+                welcome.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+
+                await welcome.save();
+
+                if (
+                    oldImage &&
+                    oldImage !==
+                        welcome.image
+                ) {
+
+                    deleteUploadedFile(
+                        oldImage
+                    );
+                }
+
+            } else {
+
+                await welcome.save();
+            }
+
+            notifyClients(
+                "welcome-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Welcome section updated successfully",
+
+                data: welcome
+            });
+
+        } catch (error) {
+
+            removeNewFiles(req);
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to update welcome section",
+
+                error:
+                    error.message
+            });
         }
-
-        notifyClients("welcome-updated");
-
-        res.json({
-            success: true,
-            message: "Welcome section updated successfully",
-            data: welcome
-        });
-
-    } catch (error) {
-
-        removeNewFiles(req);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to update welcome section",
-            error: error.message
-        });
     }
-});
+);
 
 /* =========================================================
    EXPLORE
@@ -1466,18 +2383,34 @@ app.put("/api/welcome", upload.any(), async (req, res) => {
 
 async function normalizeExploreOrders() {
 
-    const items = await Explore.find().sort({
-        order: 1,
-        createdAt: 1
-    });
+    const items =
+        await Explore.find().sort({
+            order: 1,
+            createdAt: 1
+        });
 
-    for (let i = 0; i < items.length; i++) {
+    for (
+        let i = 0;
+        i < items.length;
+        i++
+    ) {
 
-        if (items[i].order !== i) {
+        if (
+            items[i].order !== i
+        ) {
 
             await Explore.updateOne(
-                { _id: items[i]._id },
-                { $set: { order: i } }
+
+                {
+                    _id:
+                        items[i]._id
+                },
+
+                {
+                    $set: {
+                        order: i
+                    }
+                }
             );
         }
     }
@@ -1485,166 +2418,289 @@ async function normalizeExploreOrders() {
     return items;
 }
 
-app.get("/api/explore", async (req, res) => {
+app.get(
+    "/api/explore",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const items = await Explore.find().sort({
-            order: 1,
-            createdAt: 1
-        });
+            const items =
+                await Explore.find().sort({
+                    order: 1,
+                    createdAt: 1
+                });
 
-        res.setHeader("Cache-Control", "no-store");
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
 
-        res.json(items);
+            res.json(items);
 
-    } catch (error) {
+        } catch (error) {
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to load explore items",
-            error: error.message
-        });
-    }
-});
+            res.status(500).json({
 
-app.post("/api/explore", async (req, res) => {
-
-    try {
-
-        const count = await Explore.countDocuments();
-
-        const item = await Explore.create({
-            title: String(req.body.title || "").trim(),
-            description: String(req.body.description || "").trim(),
-            buttonText: String(
-                req.body.buttonText || "Learn More"
-            ).trim(),
-            buttonLink: String(req.body.buttonLink || "#").trim(),
-            order: count
-        });
-
-        await normalizeExploreOrders();
-
-        const saved = await Explore.findById(item._id);
-
-        notifyClients("explore-updated");
-
-        res.status(201).json({
-            success: true,
-            message: "Explore item added successfully",
-            data: saved
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to add explore item",
-            error: error.message
-        });
-    }
-});
-
-app.put("/api/explore/:id", async (req, res) => {
-
-    try {
-
-        if (!validObjectId(req.params.id)) {
-
-            return res.status(400).json({
                 success: false,
-                message: "Invalid explore item ID"
+
+                message:
+                    "Failed to load explore items",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        const item = await Explore.findById(req.params.id);
+app.post(
+    "/api/explore",
+    async (req, res) => {
 
-        if (!item) {
+        try {
 
-            return res.status(404).json({
+            const count =
+                await Explore.countDocuments();
+
+            const item =
+                await Explore.create({
+
+                    title:
+                        String(
+                            req.body.title ||
+                            ""
+                        ).trim(),
+
+                    description:
+                        String(
+                            req.body.description ||
+                            ""
+                        ).trim(),
+
+                    buttonText:
+                        String(
+                            req.body.buttonText ||
+                            "Learn More"
+                        ).trim(),
+
+                    buttonLink:
+                        String(
+                            req.body.buttonLink ||
+                            "#"
+                        ).trim(),
+
+                    order:
+                        count
+                });
+
+            await normalizeExploreOrders();
+
+            const saved =
+                await Explore.findById(
+                    item._id
+                );
+
+            notifyClients(
+                "explore-updated"
+            );
+
+            res.status(201).json({
+
+                success: true,
+
+                message:
+                    "Explore item added successfully",
+
+                data: saved
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
                 success: false,
-                message: "Explore item not found"
+
+                message:
+                    "Failed to add explore item",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        for (const field of [
-            "title",
-            "description",
-            "buttonText",
-            "buttonLink"
-        ]) {
-            if (req.body[field] !== undefined) {
-                item[field] = String(req.body[field]).trim();
+app.put(
+    "/api/explore/:id",
+    async (req, res) => {
+
+        try {
+
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid explore item ID"
+                });
             }
-        }
 
-        await item.save();
+            const item =
+                await Explore.findById(
+                    req.params.id
+                );
 
-        await normalizeExploreOrders();
+            if (!item) {
 
-        const saved = await Explore.findById(item._id);
+                return res.status(
+                    404
+                ).json({
 
-        notifyClients("explore-updated");
+                    success: false,
 
-        res.json({
-            success: true,
-            message: "Explore item updated successfully",
-            data: saved
-        });
+                    message:
+                        "Explore item not found"
+                });
+            }
 
-    } catch (error) {
+            for (
+                const field of [
+                    "title",
+                    "description",
+                    "buttonText",
+                    "buttonLink"
+                ]
+            ) {
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to update explore item",
-            error: error.message
-        });
-    }
-});
+                if (
+                    req.body[field] !==
+                    undefined
+                ) {
 
-app.delete("/api/explore/:id", async (req, res) => {
+                    item[field] =
+                        String(
+                            req.body[field]
+                        ).trim();
+                }
+            }
 
-    try {
+            await item.save();
 
-        if (!validObjectId(req.params.id)) {
+            await normalizeExploreOrders();
 
-            return res.status(400).json({
+            const saved =
+                await Explore.findById(
+                    item._id
+                );
+
+            notifyClients(
+                "explore-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Explore item updated successfully",
+
+                data: saved
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
                 success: false,
-                message: "Invalid explore item ID"
+
+                message:
+                    "Failed to update explore item",
+
+                error:
+                    error.message
             });
         }
+    }
+);
 
-        const item = await Explore.findByIdAndDelete(
-            req.params.id
-        );
+app.delete(
+    "/api/explore/:id",
+    async (req, res) => {
 
-        if (!item) {
+        try {
 
-            return res.status(404).json({
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid explore item ID"
+                });
+            }
+
+            const item =
+                await Explore.findByIdAndDelete(
+                    req.params.id
+                );
+
+            if (!item) {
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Explore item not found"
+                });
+            }
+
+            await normalizeExploreOrders();
+
+            notifyClients(
+                "explore-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Explore item deleted successfully"
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
                 success: false,
-                message: "Explore item not found"
+
+                message:
+                    "Failed to delete explore item",
+
+                error:
+                    error.message
             });
         }
-
-        await normalizeExploreOrders();
-
-        notifyClients("explore-updated");
-
-        res.json({
-            success: true,
-            message: "Explore item deleted successfully"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to delete explore item",
-            error: error.message
-        });
     }
-});
+);
 
 /* =========================================================
    CALENDAR
@@ -1653,116 +2709,202 @@ app.delete("/api/explore/:id", async (req, res) => {
 function getCalendarCollection() {
 
     if (!mongoose.connection.db) {
-        throw new Error("MongoDB is not connected");
+
+        throw new Error(
+            "MongoDB is not connected"
+        );
     }
 
-    return mongoose.connection.db.collection("calendar_settings");
+    return mongoose.connection.db.collection(
+        "calendar_settings"
+    );
 }
 
-app.get("/api/calendar", async (req, res) => {
+app.get(
+    "/api/calendar",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const collection = getCalendarCollection();
+            const collection =
+                getCalendarCollection();
 
-        const calendar = await collection.findOne({ _id: "main" });
+            const calendar =
+                await collection.findOne({
+                    _id: "main"
+                });
 
-        res.setHeader("Cache-Control", "no-store");
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
 
-        res.json({
-            success: true,
-            label: calendar?.label || "Church Calendar",
-            url: calendar?.url || ""
-        });
+            res.json({
 
-    } catch (error) {
+                success: true,
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to load calendar",
-            error: error.message
-        });
+                label:
+                    calendar?.label ||
+                    "Church Calendar",
+
+                url:
+                    calendar?.url ||
+                    ""
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to load calendar",
+
+                error:
+                    error.message
+            });
+        }
     }
-});
+);
 
-async function saveCalendar(req, res) {
+async function saveCalendar(
+    req,
+    res
+) {
 
     try {
 
-        const collection = getCalendarCollection();
+        const collection =
+            getCalendarCollection();
 
-        const current = await collection.findOne({ _id: "main" });
+        const current =
+            await collection.findOne({
+                _id: "main"
+            });
 
-        let url = current?.url || "";
+        let url =
+            current?.url || "";
 
-        if (req.body.url !== undefined) {
+        if (
+            req.body.url !==
+            undefined
+        ) {
 
-            url = String(req.body.url || "").trim();
+            url =
+                String(
+                    req.body.url || ""
+                ).trim();
 
-        } else if (req.body.calendarUrl !== undefined) {
+        } else if (
+            req.body.calendarUrl !==
+            undefined
+        ) {
 
-            url = String(req.body.calendarUrl || "").trim();
+            url =
+                String(
+                    req.body.calendarUrl ||
+                    ""
+                ).trim();
         }
 
         const label =
             String(
                 req.body.label ||
-                    req.body.title ||
-                    req.body.calendarTitle ||
-                    current?.label ||
-                    "Church Calendar"
-            ).trim() || "Church Calendar";
+                req.body.title ||
+                req.body.calendarTitle ||
+                current?.label ||
+                "Church Calendar"
+            ).trim() ||
+            "Church Calendar";
 
         const file =
-            getFileByFields(req, [
-                "file",
-                "calendarFile",
-                "calendar",
-                "image",
-                "calendarImage",
-                "upload"
-            ]) || getFirstFile(req);
+            getFileByFields(
+                req,
+                [
+                    "file",
+                    "calendarFile",
+                    "calendar",
+                    "image",
+                    "calendarImage",
+                    "upload"
+                ]
+            ) ||
+            getFirstFile(req);
 
         if (file) {
-            url = normalizeUploadUrl(file);
+
+            url =
+                normalizeUploadUrl(
+                    file
+                );
         }
 
         if (!url) {
 
             removeNewFiles(req);
 
-            return res.status(400).json({
+            return res.status(
+                400
+            ).json({
+
                 success: false,
+
                 message:
                     "Please enter a calendar URL or upload a calendar file."
             });
         }
 
         await collection.updateOne(
-            { _id: "main" },
+
+            {
+                _id: "main"
+            },
+
             {
                 $set: {
                     label,
                     url,
-                    updatedAt: new Date()
+                    updatedAt:
+                        new Date()
                 },
+
                 $setOnInsert: {
-                    createdAt: new Date()
+                    createdAt:
+                        new Date()
                 }
             },
-            { upsert: true }
+
+            {
+                upsert: true
+            }
         );
 
-        if (current?.url && current.url !== url) {
-            deleteUploadedFile(current.url);
+        if (
+            current?.url &&
+            current.url !== url
+        ) {
+
+            deleteUploadedFile(
+                current.url
+            );
         }
 
-        notifyClients("calendar-updated");
+        notifyClients(
+            "calendar-updated"
+        );
 
         res.json({
+
             success: true,
-            message: "Calendar updated successfully",
-            data: { label, url }
+
+            message:
+                "Calendar updated successfully",
+
+            data: {
+                label,
+                url
+            }
         });
 
     } catch (error) {
@@ -1770,45 +2912,82 @@ async function saveCalendar(req, res) {
         removeNewFiles(req);
 
         res.status(500).json({
+
             success: false,
-            message: "Failed to update calendar",
-            error: error.message
+
+            message:
+                "Failed to update calendar",
+
+            error:
+                error.message
         });
     }
 }
 
-app.put("/api/calendar", upload.any(), saveCalendar);
+app.put(
+    "/api/calendar",
+    upload.any(),
+    saveCalendar
+);
 
-app.put("/api/content/calendar", upload.any(), saveCalendar);
+app.put(
+    "/api/content/calendar",
+    upload.any(),
+    saveCalendar
+);
 
-app.delete("/api/calendar", async (req, res) => {
+app.delete(
+    "/api/calendar",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const collection = getCalendarCollection();
+            const collection =
+                getCalendarCollection();
 
-        const current = await collection.findOne({ _id: "main" });
+            const current =
+                await collection.findOne({
+                    _id: "main"
+                });
 
-        if (current?.url) deleteUploadedFile(current.url);
+            if (current?.url) {
 
-        await collection.deleteOne({ _id: "main" });
+                deleteUploadedFile(
+                    current.url
+                );
+            }
 
-        notifyClients("calendar-updated");
+            await collection.deleteOne({
+                _id: "main"
+            });
 
-        res.json({
-            success: true,
-            message: "Calendar removed successfully"
-        });
+            notifyClients(
+                "calendar-updated"
+            );
 
-    } catch (error) {
+            res.json({
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to remove calendar",
-            error: error.message
-        });
+                success: true,
+
+                message:
+                    "Calendar removed successfully"
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to remove calendar",
+
+                error:
+                    error.message
+            });
+        }
     }
-});
+);
 
 /* =========================================================
    PAGE ROUTES
@@ -1816,41 +2995,128 @@ app.delete("/api/calendar", async (req, res) => {
 
 /* ---------- Public website ---------- */
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+app.get(
+    "/",
+    (req, res) => {
 
-app.get("/index.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+        res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "index.html"
+            )
+        );
+    }
+);
 
-app.get("/website", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+app.get(
+    "/index.html",
+    (req, res) => {
 
-/* ---------- Login / Register (from project root) ---------- */
+        res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "index.html"
+            )
+        );
+    }
+);
 
-app.get("/login.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "login.html"));
-});
+app.get(
+    "/website",
+    (req, res) => {
 
-app.get("/register.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "register.html"));
-});
+        res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "index.html"
+            )
+        );
+    }
+);
 
-/* ---------- Protected admin ---------- */
+/* ---------- Login / Register ---------- */
 
-app.get("/admin", requireAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
+app.get(
+    "/login.html",
+    (req, res) => {
 
-app.get("/admin.html", requireAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
+        res.sendFile(
+            path.join(
+                __dirname,
+                "login.html"
+            )
+        );
+    }
+);
 
-/* ---------- Static fallback (root, no auto index) ---------- */
-/* WARNING: This exposes files in the project root.           */
-/* Consider removing and serving only from /public instead.   */
+app.get(
+    "/register.html",
+    (req, res) => {
+
+        res.sendFile(
+            path.join(
+                __dirname,
+                "register.html"
+            )
+        );
+    }
+);
+
+/* =========================================================
+   PROTECTED ADMIN
+========================================================= */
+
+/*
+   IMPORTANT:
+   These routes MUST appear before the root static fallback.
+
+   A user without a valid authToken is redirected to login.
+*/
+
+app.get(
+    "/admin",
+    requireAuth,
+    (req, res) => {
+
+        res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "admin.html"
+            )
+        );
+    }
+);
+
+app.get(
+    "/admin.html",
+    requireAuth,
+    (req, res) => {
+
+        res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "admin.html"
+            )
+        );
+    }
+);
+
+/* =========================================================
+   STATIC FALLBACK
+========================================================= */
+
+/*
+   This allows root-level files such as login.html and
+   register.html to work.
+
+   Admin routes above are already protected before this
+   middleware is reached.
+*/
 
 app.use(
     express.static(__dirname, {
@@ -1862,52 +3128,94 @@ app.use(
    API 404
 ========================================================= */
 
-app.use((req, res, next) => {
+app.use(
+    (req, res, next) => {
 
-    if (req.path.startsWith("/api/")) {
+        if (
+            req.path.startsWith("/api/")
+        ) {
 
-        return res.status(404).json({
-            success: false,
-            message: `API endpoint not found: ${req.method} ${req.path}`
-        });
+            return res.status(
+                404
+            ).json({
+
+                success: false,
+
+                message:
+                    `API endpoint not found: ${req.method} ${req.path}`
+            });
+        }
+
+        next();
     }
-
-    next();
-});
+);
 
 /* =========================================================
    GENERAL 404
 ========================================================= */
 
-app.use((req, res) => {
-    res.status(404).send("Page not found");
-});
+app.use(
+    (req, res) => {
+
+        res.status(404).send(
+            "Page not found"
+        );
+    }
+);
 
 /* =========================================================
    ERROR HANDLER
 ========================================================= */
 
-app.use((error, req, res, next) => {
+app.use(
+    (error, req, res, next) => {
 
-    console.error("SERVER ERROR:", error);
+        console.error(
+            "SERVER ERROR:",
+            error
+        );
 
-    if (error instanceof multer.MulterError) {
+        if (
+            error instanceof
+            multer.MulterError
+        ) {
 
-        return res.status(400).json({
+            return res.status(
+                400
+            ).json({
+
+                success: false,
+
+                message:
+                    "Upload error: " +
+                    error.message,
+
+                code:
+                    error.code ||
+                    "MULTER_ERROR"
+            });
+        }
+
+        const status =
+            Number(
+                error.status ||
+                error.statusCode
+            ) || 500;
+
+        res.status(status).json({
+
             success: false,
-            message: "Upload error: " + error.message,
-            code: error.code || "MULTER_ERROR"
+
+            message:
+                error.message ||
+                "Internal server error",
+
+            error:
+                error.message ||
+                "Internal server error"
         });
     }
-
-    const status = Number(error.status || error.statusCode) || 500;
-
-    res.status(status).json({
-        success: false,
-        message: error.message || "Internal server error",
-        error: error.message || "Internal server error"
-    });
-});
+);
 
 /* =========================================================
    DATABASE SEED
@@ -1915,123 +3223,257 @@ app.use((error, req, res, next) => {
 
 async function seedDatabase() {
 
-    if (!(await Home.findOne())) {
+    if (
+        !(await Home.findOne())
+    ) {
 
         await Home.create({
-            badge: "Welcome Home",
-            title: "The Potter's House",
-            subtitle: "Church Bengaluru",
-            location: "Bengaluru, Karnataka, India",
-            mapLink: "https://maps.google.com",
+
+            badge:
+                "Welcome Home",
+
+            title:
+                "The Potter's House",
+
+            subtitle:
+                "Church Bengaluru",
+
+            location:
+                "Bengaluru, Karnataka, India",
+
+            mapLink:
+                "https://maps.google.com",
+
             logo: ""
         });
     }
 
-    if ((await Event.countDocuments()) === 0) {
+    if (
+        (await Event.countDocuments()) ===
+        0
+    ) {
 
         await Event.insertMany([
+
             {
-                category: "Morning",
-                day: "Sunday",
-                service: "Worship Service",
-                time: "10:30 AM",
+                category:
+                    "Morning",
+
+                day:
+                    "Sunday",
+
+                service:
+                    "Worship Service",
+
+                time:
+                    "10:30 AM",
+
                 order: 0
             },
+
             {
-                category: "Evening",
-                day: "Sunday",
-                service: "Revival Service",
-                time: "6:00 PM",
+                category:
+                    "Evening",
+
+                day:
+                    "Sunday",
+
+                service:
+                    "Revival Service",
+
+                time:
+                    "6:00 PM",
+
                 order: 1
             },
+
             {
-                category: "Midweek",
-                day: "Wednesday",
-                service: "Gospel Service",
-                time: "7:30 PM",
+                category:
+                    "Midweek",
+
+                day:
+                    "Wednesday",
+
+                service:
+                    "Gospel Service",
+
+                time:
+                    "7:30 PM",
+
                 order: 2
             }
         ]);
     }
 
-    if ((await SpecialEvent.countDocuments()) === 0) {
+    if (
+        (await SpecialEvent.countDocuments()) ===
+        0
+    ) {
 
         await SpecialEvent.insertMany([
+
             {
-                title: "Men's Discipleship",
-                date: "August 24",
-                time: "7:30 PM",
-                description: "",
-                link: "#",
-                image: "",
+                title:
+                    "Men's Discipleship",
+
+                date:
+                    "August 24",
+
+                time:
+                    "7:30 PM",
+
+                description:
+                    "",
+
+                link:
+                    "#",
+
+                image:
+                    "",
+
                 order: 0
             },
+
             {
-                title: "Youth Rally & Concert",
-                date: "September 12",
-                time: "6:30 PM",
-                description: "",
-                link: "#",
-                image: "",
+                title:
+                    "Youth Rally & Concert",
+
+                date:
+                    "September 12",
+
+                time:
+                    "6:30 PM",
+
+                description:
+                    "",
+
+                link:
+                    "#",
+
+                image:
+                    "",
+
                 order: 1
             }
         ]);
     }
 
-    if (!(await Featured.findOne())) {
+    if (
+        !(await Featured.findOne())
+    ) {
 
         await Featured.create({
-            badge: "Featured Message",
-            title: "Time Is Running Out",
-            subtitle: "Bible Conference 2026",
-            backgroundImage: "",
-            watchLink: "#",
-            sermonsLink: "#"
+
+            badge:
+                "Featured Message",
+
+            title:
+                "Time Is Running Out",
+
+            subtitle:
+                "Bible Conference 2026",
+
+            backgroundImage:
+                "",
+
+            watchLink:
+                "#",
+
+            sermonsLink:
+                "#"
         });
     }
 
-    if (!(await Welcome.findOne())) {
+    if (
+        !(await Welcome.findOne())
+    ) {
 
         await Welcome.create({
-            badge: "A Message From Leadership",
-            title: "Welcome To Church",
-            paragraph1: "Thank you for visiting us online.",
+
+            badge:
+                "A Message From Leadership",
+
+            title:
+                "Welcome To Church",
+
+            paragraph1:
+                "Thank you for visiting us online.",
+
             paragraph2:
                 "We invite you to join us at any of our weekly services.",
-            leaderName: "Leadership Team",
-            newHereText: "New Here?",
-            newHereLink: "#",
-            contactText: "Contact Us",
-            contactLink: "#",
-            image: ""
+
+            leaderName:
+                "Leadership Team",
+
+            newHereText:
+                "New Here?",
+
+            newHereLink:
+                "#",
+
+            contactText:
+                "Contact Us",
+
+            contactLink:
+                "#",
+
+            image:
+                ""
         });
     }
 
-    if ((await Explore.countDocuments()) === 0) {
+    if (
+        (await Explore.countDocuments()) ===
+        0
+    ) {
 
         await Explore.insertMany([
+
             {
-                title: "Staff",
+                title:
+                    "Staff",
+
                 description:
                     "Learn about our pastors, leaders, and history.",
-                buttonText: "Meet Staff",
-                buttonLink: "#",
+
+                buttonText:
+                    "Meet Staff",
+
+                buttonLink:
+                    "#",
+
                 order: 0
             },
+
             {
-                title: "Mission & Vision",
+                title:
+                    "Mission & Vision",
+
                 description:
                     "Reaching local communities and foreign mission fields.",
-                buttonText: "Our Mission",
-                buttonLink: "#",
+
+                buttonText:
+                    "Our Mission",
+
+                buttonLink:
+                    "#",
+
                 order: 1
             },
+
             {
-                title: "About Us",
+                title:
+                    "About Us",
+
                 description:
                     "Part of a worldwide fellowship of over 2,800 churches.",
-                buttonText: "Learn More",
-                buttonLink: "#",
+
+                buttonText:
+                    "Learn More",
+
+                buttonLink:
+                    "#",
+
                 order: 2
             }
         ]);
@@ -2039,7 +3481,9 @@ async function seedDatabase() {
 
     await normalizeExploreOrders();
 
-    console.log("Database initialization complete.");
+    console.log(
+        "Database initialization complete."
+    );
 }
 
 /* =========================================================
@@ -2051,44 +3495,111 @@ async function startServer() {
     try {
 
         console.log("");
-        console.log("========================================");
-        console.log("THE POTTER'S HOUSE CHURCH SERVER");
-        console.log("========================================");
 
-        console.log("Connecting to MongoDB...");
+        console.log(
+            "========================================"
+        );
 
-        await mongoose.connect(MONGO_URI);
+        console.log(
+            "THE POTTER'S HOUSE CHURCH SERVER"
+        );
 
-        console.log("MongoDB connected successfully.");
-        console.log("Database:", mongoose.connection.name);
+        console.log(
+            "========================================"
+        );
+
+        console.log(
+            "Connecting to MongoDB..."
+        );
+
+        await mongoose.connect(
+            MONGO_URI
+        );
+
+        console.log(
+            "MongoDB connected successfully."
+        );
+
+        console.log(
+            "Database:",
+            mongoose.connection.name
+        );
 
         await seedDatabase();
 
-        app.listen(PORT, () => {
+        app.listen(
+            PORT,
+            () => {
 
-            console.log("");
-            console.log("========================================");
-            console.log(`Server running on port ${PORT}`);
-            console.log(`Website:   http://localhost:${PORT}`);
-            console.log(`Login:     http://localhost:${PORT}/login.html`);
-            console.log(`Register:  http://localhost:${PORT}/register.html`);
-            console.log(`Admin:     http://localhost:${PORT}/admin`);
-            console.log(`Status:    http://localhost:${PORT}/api/status`);
-            console.log(`Health:    http://localhost:${PORT}/api/health`);
-            console.log(`Updates:   http://localhost:${PORT}/api/updates`);
-            console.log("========================================");
-            console.log("");
-        });
+                console.log("");
+
+                console.log(
+                    "========================================"
+                );
+
+                console.log(
+                    `Server running on port ${PORT}`
+                );
+
+                console.log(
+                    `Website:   http://localhost:${PORT}`
+                );
+
+                console.log(
+                    `Login:     http://localhost:${PORT}/login.html`
+                );
+
+                console.log(
+                    `Register:  http://localhost:${PORT}/register.html`
+                );
+
+                console.log(
+                    `Admin:     http://localhost:${PORT}/admin`
+                );
+
+                console.log(
+                    `Status:    http://localhost:${PORT}/api/status`
+                );
+
+                console.log(
+                    `Health:    http://localhost:${PORT}/api/health`
+                );
+
+                console.log(
+                    `Updates:   http://localhost:${PORT}/api/updates`
+                );
+
+                console.log(
+                    "========================================"
+                );
+
+                console.log("");
+            }
+        );
 
     } catch (error) {
 
         console.error("");
-        console.error("========================================");
-        console.error("SERVER START FAILED");
-        console.error("========================================");
+
+        console.error(
+            "========================================"
+        );
+
+        console.error(
+            "SERVER START FAILED"
+        );
+
+        console.error(
+            "========================================"
+        );
+
         console.error(error);
+
         console.error("");
-        console.error("Check that MongoDB is running.");
+
+        console.error(
+            "Check that MongoDB is running."
+        );
 
         process.exit(1);
     }
@@ -2100,14 +3611,22 @@ async function startServer() {
 
 async function shutdown(signal) {
 
-    console.log(`${signal} received. Shutting down...`);
+    console.log(
+        `${signal} received. Shutting down...`
+    );
 
-    clearInterval(sseHeartbeat);
+    clearInterval(
+        sseHeartbeat
+    );
 
-    for (const client of sseClients) {
+    for (
+        const client of sseClients
+    ) {
 
         try {
+
             client.end();
+
         } catch {}
     }
 
@@ -2117,21 +3636,37 @@ async function shutdown(signal) {
 
         await mongoose.connection.close();
 
-        console.log("MongoDB connection closed.");
+        console.log(
+            "MongoDB connection closed."
+        );
 
     } catch (error) {
 
-        console.error("MongoDB close error:", error);
+        console.error(
+            "MongoDB close error:",
+            error
+        );
     }
 
     process.exit(0);
 }
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on(
+    "SIGINT",
+    () => shutdown("SIGINT")
+);
+
+process.on(
+    "SIGTERM",
+    () => shutdown("SIGTERM")
+);
 
 /* =========================================================
-   START
+   VERCEL EXPORT / LOCAL START
 ========================================================= */
 
-startServer();
+module.exports = app;
+
+if (require.main === module) {
+    startServer();
+}

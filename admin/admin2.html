@@ -1,0 +1,3115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Potter's House — Admin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    html:not(.authenticated) body { visibility: hidden; }
+</style>
+
+<script>
+(async function () {
+    try {
+        const response = await fetch("/api/auth/verify", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            window.location.replace("/login.html");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            window.location.replace("/login.html");
+            return;
+        }
+
+        document.documentElement.classList.add("authenticated");
+    } catch (error) {
+        console.error("Authentication check failed:", error);
+        window.location.replace("/login.html");
+    }
+})();
+</script>
+
+<style>
+/* =========================================================
+   TOKENS
+========================================================= */
+
+:root{
+    --bg:#0b0d10;
+    --bg-elev:#111418;
+    --bg-elev-2:#171b21;
+    --bg-hover:#1c2027;
+
+    --line:#1f242c;
+    --line-2:#2a3038;
+    --line-3:#3a4150;
+
+    --txt:#f0f2f5;
+    --txt-2:#a8b0bd;
+    --txt-3:#6b7481;
+    --txt-4:#4a525e;
+
+    --accent:#3b82f6;
+    --accent-soft:rgba(59,130,246,.12);
+    --accent-glow:rgba(59,130,246,.35);
+
+    --success:#10b981;
+    --success-soft:rgba(16,185,129,.12);
+
+    --warning:#f59e0b;
+    --warning-soft:rgba(245,158,11,.12);
+
+    --danger:#ef4444;
+    --danger-soft:rgba(239,68,68,.12);
+
+    --r-sm:6px;
+    --r:8px;
+    --r-md:10px;
+    --r-lg:14px;
+
+    --sidebar-w:240px;
+    --topbar-h:60px;
+
+    --sh-sm:0 1px 2px rgba(0,0,0,.3);
+    --sh:0 4px 16px rgba(0,0,0,.25);
+    --sh-lg:0 12px 40px rgba(0,0,0,.4);
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{ scroll-behavior:smooth; }
+
+body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);
+    color:var(--txt);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    font-size:14px;
+    line-height:1.5;
+    overflow-x:hidden;
+}
+
+button,input,textarea,select{
+    font:inherit;
+    color:inherit;
+}
+
+button{ cursor:pointer; }
+
+::selection{
+    background:rgba(59,130,246,.3);
+    color:#fff;
+}
+
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{
+    background:#232830;
+    border-radius:20px;
+    border:2px solid transparent;
+    background-clip:content-box;
+}
+::-webkit-scrollbar-thumb:hover{
+    background:#313843;
+    background-clip:content-box;
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar{
+    position:fixed;
+    inset:0 auto 0 0;
+    width:var(--sidebar-w);
+    background:var(--bg-elev);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    z-index:100;
+}
+
+.sb-brand{
+    height:var(--topbar-h);
+    padding:0 20px;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+}
+
+.sb-brand-mark{
+    width:28px;
+    height:28px;
+    border-radius:var(--r-sm);
+    background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    color:#fff;
+    font-weight:700;
+    flex-shrink:0;
+    box-shadow:0 2px 8px rgba(59,130,246,.3);
+}
+
+.sb-brand-text{
+    display:flex;
+    flex-direction:column;
+    line-height:1.2;
+    min-width:0;
+}
+
+.sb-brand-name{
+    font-size:13.5px;
+    font-weight:600;
+    letter-spacing:-.01em;
+    color:var(--txt);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.sb-brand-sub{
+    font-size:10.5px;
+    font-weight:500;
+    color:var(--txt-3);
+    letter-spacing:.04em;
+    text-transform:uppercase;
+}
+
+.sb-nav{
+    flex:1;
+    padding:14px 12px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+}
+
+.sb-group{
+    padding:14px 12px 6px;
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--txt-4);
+    letter-spacing:.09em;
+    text-transform:uppercase;
+}
+
+.sb-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:7px 10px;
+    border:0;
+    background:transparent;
+    color:var(--txt-2);
+    font-size:13.5px;
+    font-weight:500;
+    border-radius:var(--r-sm);
+    text-align:left;
+    text-decoration:none;
+    transition:background .12s ease, color .12s ease;
+    line-height:1.4;
+    width:100%;
+}
+
+.sb-item:hover{
+    background:var(--bg-hover);
+    color:var(--txt);
+}
+
+.sb-item.active{
+    background:var(--bg-hover);
+    color:var(--txt);
+}
+
+.sb-item.active .sb-item-icon{
+    color:var(--accent);
+}
+
+.sb-item-icon{
+    width:16px;
+    height:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    color:var(--txt-3);
+    transition:color .12s ease;
+}
+
+.sb-item-icon svg{
+    width:16px;
+    height:16px;
+    stroke-width:1.75;
+    stroke:currentColor;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.sb-divider{
+    height:1px;
+    background:var(--line);
+    margin:10px 12px;
+}
+
+.sb-footer{
+    padding:12px;
+    border-top:1px solid var(--line);
+    flex-shrink:0;
+}
+
+.sb-user{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border-radius:var(--r-sm);
+    transition:background .12s ease;
+}
+
+.sb-user:hover{
+    background:var(--bg-hover);
+}
+
+.sb-user-avatar{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:600;
+    color:#fff;
+    flex-shrink:0;
+}
+
+.sb-user-info{
+    flex:1;
+    min-width:0;
+}
+
+.sb-user-name{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--txt);
+    line-height:1.2;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.sb-user-role{
+    font-size:11px;
+    color:var(--txt-3);
+    line-height:1.2;
+}
+
+.sb-logout{
+    border:0;
+    background:transparent;
+    color:var(--txt-3);
+    width:26px;
+    height:26px;
+    border-radius:var(--r-sm);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .12s ease, color .12s ease;
+    flex-shrink:0;
+}
+
+.sb-logout:hover{
+    background:var(--danger-soft);
+    color:var(--danger);
+}
+
+.sb-logout svg{
+    width:15px;
+    height:15px;
+    stroke-width:1.75;
+    stroke:currentColor;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.main{
+    margin-left:var(--sidebar-w);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+.topbar{
+    position:sticky;
+    top:0;
+    height:var(--topbar-h);
+    background:rgba(11,13,16,.8);
+    backdrop-filter:blur(14px) saturate(160%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 28px;
+    gap:16px;
+    z-index:50;
+}
+
+.crumbs{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--txt-3);
+    min-width:0;
+}
+
+.crumbs-sep{
+    color:var(--txt-4);
+    font-size:12px;
+}
+
+.crumbs-current{
+    color:var(--txt);
+    font-weight:500;
+}
+
+.topbar-right{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+}
+
+.status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:5px 11px 5px 9px;
+    border-radius:100px;
+    background:var(--bg-elev);
+    border:1px solid var(--line);
+    font-size:12px;
+    font-weight:500;
+    color:var(--txt-2);
+}
+
+.status-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--success);
+    box-shadow:0 0 0 3px rgba(16,185,129,.14);
+    animation:pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(16,185,129,.14); }
+    50%{ box-shadow:0 0 0 5px rgba(16,185,129,.06); }
+}
+
+.menu-btn{
+    display:none;
+    width:34px;
+    height:34px;
+    border:1px solid var(--line);
+    background:var(--bg-elev);
+    color:var(--txt-2);
+    border-radius:var(--r-sm);
+    align-items:center;
+    justify-content:center;
+    transition:background .12s ease;
+}
+
+.menu-btn:hover{
+    background:var(--bg-hover);
+}
+
+.menu-btn svg{
+    width:16px;
+    height:16px;
+    stroke-width:1.75;
+    stroke:currentColor;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.content{
+    flex:1;
+    padding:32px 28px 60px;
+    max-width:1280px;
+    width:100%;
+    margin:0 auto;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.admin-section{
+    display:none;
+}
+
+.admin-section.active{
+    display:block;
+    animation:fadeIn .35s cubic-bezier(.2,.7,.3,1);
+}
+
+@keyframes fadeIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+}
+
+.page-head{
+    margin-bottom:28px;
+}
+
+.page-head h1{
+    font-size:24px;
+    font-weight:600;
+    letter-spacing:-.02em;
+    color:var(--txt);
+    margin-bottom:5px;
+    line-height:1.2;
+}
+
+.page-head p{
+    font-size:13.5px;
+    color:var(--txt-3);
+    line-height:1.55;
+    max-width:560px;
+}
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    overflow:hidden;
+    margin-bottom:28px;
+}
+
+.stat{
+    background:var(--bg-elev);
+    padding:20px 22px 22px;
+    transition:background .15s ease;
+    position:relative;
+}
+
+.stat:hover{
+    background:var(--bg-elev-2);
+}
+
+.stat-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:14px;
+    color:var(--txt-3);
+}
+
+.stat-icon{
+    width:14px;
+    height:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.stat-icon svg{
+    width:14px;
+    height:14px;
+    stroke-width:2;
+    stroke:currentColor;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.stat-label{
+    font-size:12px;
+    font-weight:500;
+    letter-spacing:.02em;
+}
+
+.stat-value{
+    font-size:26px;
+    font-weight:600;
+    letter-spacing:-.02em;
+    color:var(--txt);
+    line-height:1;
+    font-variant-numeric:tabular-nums;
+}
+
+.stat-hint{
+    font-size:11.5px;
+    color:var(--txt-4);
+    margin-top:8px;
+    line-height:1.4;
+}
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.card{
+    background:var(--bg-elev);
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    margin-bottom:20px;
+    overflow:hidden;
+}
+
+.card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    padding:18px 22px;
+    border-bottom:1px solid var(--line);
+}
+
+.card-head-text h3{
+    font-size:14.5px;
+    font-weight:600;
+    letter-spacing:-.005em;
+    color:var(--txt);
+    line-height:1.3;
+}
+
+.card-head-text p{
+    font-size:12.5px;
+    color:var(--txt-3);
+    margin-top:3px;
+    line-height:1.5;
+}
+
+.card-body{
+    padding:22px;
+}
+
+/* =========================================================
+   FORMS
+========================================================= */
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+}
+
+.form-grid.three{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.field.full{
+    grid-column:1/-1;
+}
+
+.field label{
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--txt-2);
+    letter-spacing:.005em;
+}
+
+.field input,
+.field textarea,
+.field select{
+    width:100%;
+    border:1px solid var(--line-2);
+    border-radius:var(--r-sm);
+    padding:9px 12px;
+    outline:none;
+    background:var(--bg);
+    color:var(--txt);
+    font-size:13.5px;
+    font-family:inherit;
+    transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    line-height:1.45;
+}
+
+.field input:hover,
+.field textarea:hover,
+.field select:hover{
+    border-color:var(--line-3);
+}
+
+.field textarea{
+    min-height:110px;
+    resize:vertical;
+    line-height:1.6;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+    background:var(--bg-elev);
+}
+
+.field input::placeholder,
+.field textarea::placeholder{
+    color:var(--txt-4);
+}
+
+.file-input{
+    padding:7px 8px !important;
+    cursor:pointer;
+    font-size:12.5px !important;
+}
+
+.file-input::file-selector-button{
+    border:0;
+    margin-right:10px;
+    padding:6px 12px;
+    border-radius:var(--r-sm);
+    background:var(--bg-elev-2);
+    color:var(--txt-2);
+    font-weight:500;
+    font-size:12px;
+    font-family:inherit;
+    cursor:pointer;
+    border:1px solid var(--line-2);
+    transition:background .12s ease, color .12s ease;
+}
+
+.file-input::file-selector-button:hover{
+    background:var(--bg-hover);
+    color:var(--txt);
+}
+
+.help{
+    font-size:11.5px;
+    color:var(--txt-4);
+    line-height:1.5;
+}
+
+.form-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:16px 22px;
+    border-top:1px solid var(--line);
+    background:var(--bg-elev);
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:8px 14px;
+    border-radius:var(--r-sm);
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:.005em;
+    border:1px solid transparent;
+    transition:background .12s ease, border-color .12s ease, color .12s ease, opacity .12s ease;
+    white-space:nowrap;
+    line-height:1.4;
+    text-decoration:none;
+    cursor:pointer;
+}
+
+.btn:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+
+.btn svg{
+    width:14px;
+    height:14px;
+    stroke-width:1.75;
+    stroke:currentColor;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.btn-primary{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+}
+
+.btn-primary:hover{
+    background:#4f8ff7;
+    border-color:#4f8ff7;
+}
+
+.btn-secondary{
+    background:var(--bg-elev-2);
+    color:var(--txt-2);
+    border-color:var(--line-2);
+}
+
+.btn-secondary:hover{
+    background:var(--bg-hover);
+    color:var(--txt);
+    border-color:var(--line-3);
+}
+
+.btn-success{
+    background:var(--success-soft);
+    color:var(--success);
+    border-color:rgba(16,185,129,.25);
+}
+
+.btn-success:hover{
+    background:rgba(16,185,129,.18);
+}
+
+.btn-danger{
+    background:var(--danger-soft);
+    color:var(--danger);
+    border-color:rgba(239,68,68,.25);
+}
+
+.btn-danger:hover{
+    background:rgba(239,68,68,.18);
+}
+
+.btn-warning{
+    background:var(--warning-soft);
+    color:var(--warning);
+    border-color:rgba(245,158,11,.25);
+}
+
+.btn-warning:hover{
+    background:rgba(245,158,11,.18);
+}
+
+.btn-sm{
+    padding:5px 10px;
+    font-size:12px;
+    border-radius:var(--r-sm);
+}
+
+.btn-sm svg{
+    width:13px;
+    height:13px;
+}
+
+/* =========================================================
+   ITEM GRID
+========================================================= */
+
+.item-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:14px;
+    padding:22px;
+}
+
+.item-card{
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    overflow:hidden;
+    background:var(--bg);
+    transition:border-color .15s ease;
+}
+
+.item-card:hover{
+    border-color:var(--line-2);
+}
+
+.item-media{
+    width:100%;
+    height:160px;
+    background:var(--bg-elev-2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    border-bottom:1px solid var(--line);
+    color:var(--txt-4);
+    font-size:12px;
+}
+
+.item-media img,
+.item-media video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.item-body{
+    padding:14px 16px 16px;
+}
+
+.item-body h4{
+    font-size:13.5px;
+    font-weight:600;
+    letter-spacing:-.005em;
+    color:var(--txt);
+    margin-bottom:8px;
+    line-height:1.35;
+    word-break:break-word;
+}
+
+.item-body p{
+    font-size:12px;
+    color:var(--txt-3);
+    margin-bottom:4px;
+    line-height:1.5;
+    word-break:break-word;
+}
+
+.item-actions{
+    display:flex;
+    gap:6px;
+    margin-top:12px;
+    flex-wrap:wrap;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:640px;
+}
+
+th{
+    text-align:left;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--txt-3);
+    background:var(--bg);
+    padding:11px 22px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+}
+
+td{
+    padding:13px 22px;
+    font-size:13px;
+    color:var(--txt-2);
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+}
+
+tbody tr:last-child td{
+    border-bottom:0;
+}
+
+tbody tr{
+    transition:background .1s ease;
+}
+
+tbody tr:hover{
+    background:var(--bg-elev-2);
+}
+
+.table-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+/* =========================================================
+   PREVIEWS
+========================================================= */
+
+.preview-large{
+    width:180px;
+    max-width:100%;
+    max-height:130px;
+    object-fit:cover;
+    border-radius:var(--r-sm);
+    background:var(--bg);
+    border:1px solid var(--line);
+    display:block;
+}
+
+.preview-box{
+    padding:14px;
+    border:1px dashed var(--line-2);
+    border-radius:var(--r-sm);
+    color:var(--txt-4);
+    font-size:12.5px;
+    background:var(--bg);
+    line-height:1.55;
+}
+
+/* =========================================================
+   STATES
+========================================================= */
+
+.loading{
+    padding:36px;
+    text-align:center;
+    color:var(--txt-3);
+    font-size:13px;
+    grid-column:1/-1;
+}
+
+.spinner{
+    width:22px;
+    height:22px;
+    border:2px solid var(--line-2);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    margin:0 auto 10px;
+}
+
+@keyframes spin{
+    to{ transform:rotate(360deg); }
+}
+
+.empty{
+    padding:36px;
+    text-align:center;
+    color:var(--txt-4);
+    font-size:13px;
+    grid-column:1/-1;
+}
+
+/* =========================================================
+   TOASTS
+========================================================= */
+
+.toast-container{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    z-index:99999;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    pointer-events:none;
+}
+
+.toast{
+    min-width:260px;
+    max-width:400px;
+    background:var(--bg-elev-2);
+    color:var(--txt);
+    padding:11px 16px;
+    border-radius:var(--r);
+    font-size:13px;
+    font-weight:500;
+    border:1px solid var(--line-2);
+    box-shadow:var(--sh-lg);
+    animation:toastIn .3s cubic-bezier(.2,.7,.3,1);
+    position:relative;
+    padding-left:32px;
+    pointer-events:auto;
+    line-height:1.45;
+}
+
+.toast::before{
+    content:"";
+    position:absolute;
+    left:13px;
+    top:50%;
+    transform:translateY(-50%);
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--accent);
+}
+
+.toast.success::before{ background:var(--success); }
+.toast.error::before{ background:var(--danger); }
+
+@keyframes toastIn{
+    from{ opacity:0; transform:translateX(20px); }
+    to{ opacity:1; transform:translateX(0); }
+}
+
+/* =========================================================
+   CALENDAR
+========================================================= */
+
+.calendar-preview{
+    width:100%;
+    min-height:420px;
+    border-radius:var(--r-sm);
+    background:var(--bg);
+    border:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    color:var(--txt-4);
+    font-size:13px;
+}
+
+.calendar-preview iframe{
+    width:100%;
+    height:600px;
+    border:0;
+}
+
+.calendar-preview img{
+    max-width:100%;
+    max-height:600px;
+    object-fit:contain;
+}
+
+.calendar-preview embed{
+    width:100%;
+    height:600px;
+    border:0;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1100px){
+    .stats{ grid-template-columns:repeat(2,1fr); }
+    .form-grid.three{ grid-template-columns:repeat(2,1fr); }
+}
+
+@media(max-width:820px){
+
+    .sidebar{
+        transform:translateX(-100%);
+        transition:transform .25s cubic-bezier(.2,.7,.3,1);
+        box-shadow:20px 0 60px rgba(0,0,0,.4);
+    }
+
+    .sidebar.open{
+        transform:translateX(0);
+    }
+
+    .main{ margin-left:0; }
+
+    .menu-btn{ display:flex; }
+
+    .content{
+        padding:24px 18px 60px;
+    }
+
+    .topbar{
+        padding:0 18px;
+    }
+
+    .form-grid,
+    .form-grid.three{
+        grid-template-columns:1fr;
+    }
+
+    .stats{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:520px){
+    .status-pill span:last-child{
+        display:none;
+    }
+
+    .status-pill{
+        padding:5px 8px;
+    }
+
+    .toast-container{
+        left:16px;
+        right:16px;
+        bottom:16px;
+    }
+
+    .toast{
+        min-width:0;
+        width:100%;
+    }
+
+    .crumbs{
+        font-size:12px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGOUT MODAL -->
+
+<div class="modal-overlay" id="logoutModal" aria-hidden="true">
+    <div class="logout-card" role="status" aria-live="polite">
+        <div class="logo-loader" aria-hidden="true">
+            <div class="loader-ring loader-ring-one"></div>
+            <div class="loader-ring loader-ring-two"></div>
+            <img class="logout-logo" src="./potters_house_logo_transparent_no_shadow.png" alt="">
+        </div>
+        <h3 class="card-title">Logging Out</h3>
+        <p class="card-message">Please wait while we securely log you out.</p>
+        <div class="loading-dots" aria-hidden="true">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</div>
+
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sb-brand">
+        <div class="sb-brand-mark">⛪</div>
+        <div class="sb-brand-text">
+            <div class="sb-brand-name">Potter's House</div>
+            <div class="sb-brand-sub">Admin</div>
+        </div>
+    </div>
+
+    <nav class="sb-nav">
+
+        <div class="sb-group">Overview</div>
+
+        <button class="sb-item active" onclick="showSection('dashboard',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            </span>
+            Dashboard
+        </button>
+
+        <div class="sb-group">Content</div>
+
+        <button class="sb-item" onclick="showSection('home',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            Home
+        </button>
+
+        <button class="sb-item" onclick="showSection('background',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </span>
+            Background
+        </button>
+
+        <button class="sb-item" onclick="showSection('events',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
+            Coming Events
+        </button>
+
+        <button class="sb-item" onclick="showSection('special-events',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+            </span>
+            Special Events
+        </button>
+
+        <button class="sb-item" onclick="showSection('featured',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </span>
+            Featured
+        </button>
+
+        <button class="sb-item" onclick="showSection('welcome',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            Welcome
+        </button>
+
+        <button class="sb-item" onclick="showSection('explore',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+            </span>
+            Explore
+        </button>
+
+        <button class="sb-item" onclick="showSection('calendar',this)">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="15" r="1"/></svg>
+            </span>
+            Calendar
+        </button>
+
+        <div class="sb-divider"></div>
+
+        <a class="sb-item" href="index.html" target="_blank">
+            <span class="sb-item-icon">
+                <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </span>
+            Open Website
+        </a>
+
+    </nav>
+
+    <div class="sb-footer">
+        <div class="sb-user">
+            <div class="sb-user-avatar">PH</div>
+            <div class="sb-user-info">
+                <div class="sb-user-name">Administrator</div>
+                <div class="sb-user-role">Signed in</div>
+            </div>
+            <button class="sb-logout" type="button" onclick="logout()" aria-label="Logout">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+        </div>
+    </div>
+
+</aside>
+
+
+<!-- MAIN -->
+
+<main class="main">
+
+    <header class="topbar">
+        <div class="crumbs">
+            <button class="menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+                <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span>Admin</span>
+            <span class="crumbs-sep">/</span>
+            <span class="crumbs-current" id="pageTitle">Dashboard</span>
+        </div>
+
+        <div class="topbar-right">
+            <div class="status-pill">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting…</span>
+            </div>
+        </div>
+    </header>
+
+
+    <div class="content">
+
+    <!-- DASHBOARD -->
+
+    <section id="dashboard" class="admin-section active">
+
+        <div class="page-head">
+            <h1>Dashboard</h1>
+            <p>Manage all website content from one place.</p>
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                <div class="stat-head">
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </span>
+                    <span class="stat-label">Coming Events</span>
+                </div>
+                <div class="stat-value" id="countEvents">0</div>
+                <div class="stat-hint">Regular services listed</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-head">
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                    </span>
+                    <span class="stat-label">Special Events</span>
+                </div>
+                <div class="stat-value" id="countSpecial">0</div>
+                <div class="stat-hint">Special event cards</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-head">
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                    </span>
+                    <span class="stat-label">Explore Items</span>
+                </div>
+                <div class="stat-value" id="countExplore">0</div>
+                <div class="stat-hint">Explore cards published</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-head">
+                    <span class="stat-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </span>
+                    <span class="stat-label">Background Media</span>
+                </div>
+                <div class="stat-value" id="countBackground">0</div>
+                <div class="stat-hint">Images & videos uploaded</div>
+            </div>
+
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-head-text">
+                    <h3>Quick Actions</h3>
+                    <p>Jump directly to a section of the admin panel.</p>
+                </div>
+            </div>
+            <div class="form-actions" style="border-top:0; background:transparent; padding:0 22px 22px;">
+                <button class="btn btn-primary" onclick="openSection('home')">
+                    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    Edit Home
+                </button>
+                <button class="btn btn-secondary" onclick="openSection('events')">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Manage Events
+                </button>
+                <button class="btn btn-secondary" onclick="openSection('special-events')">
+                    <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                    Special Events
+                </button>
+                <button class="btn btn-secondary" onclick="openSection('background')">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    Background
+                </button>
+                <button class="btn btn-secondary" onclick="openSection('calendar')">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Calendar
+                </button>
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- HOME -->
+
+    <section id="home" class="admin-section">
+
+        <div class="page-head">
+            <h1>Home</h1>
+            <p>Update your main website heading, location and logo.</p>
+        </div>
+
+        <form id="homeForm">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-text">
+                        <h3>Home Information</h3>
+                        <p>Changes are saved directly to MongoDB.</p>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>Badge</label>
+                            <input type="text" id="homeBadge" placeholder="WELCOME HOME">
+                        </div>
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" id="homeTitle">
+                        </div>
+                        <div class="field full">
+                            <label>Subtitle</label>
+                            <input type="text" id="homeSubtitle">
+                        </div>
+                        <div class="field">
+                            <label>Location</label>
+                            <input type="text" id="homeLocation">
+                        </div>
+                        <div class="field">
+                            <label>Google Maps Link</label>
+                            <input type="url" id="homeMapLink">
+                        </div>
+                        <div class="field">
+                            <label>Logo</label>
+                            <input class="file-input" type="file" id="homeLogo" name="logo" accept="image/*">
+                            <span class="help">JPG, PNG, WEBP or GIF.</span>
+                        </div>
+                        <div class="field">
+                            <label>Current Logo</label>
+                            <div class="preview-box" id="homeLogoPreview">No logo uploaded.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Save Home</button>
+                    <button class="btn btn-secondary" type="button" onclick="loadHome()">Reload</button>
+                </div>
+            </div>
+        </form>
+
+    </section>
+
+
+    <!-- BACKGROUND -->
+
+    <section id="background" class="admin-section">
+
+        <div class="page-head">
+            <h1>Home Background</h1>
+            <p>Upload multiple background images or videos for the home page.</p>
+        </div>
+
+        <form id="backgroundForm">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-text">
+                        <h3>Upload Background Media</h3>
+                        <p>Select one or multiple images/videos.</p>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="field full">
+                            <label>Media Files</label>
+                            <input class="file-input" type="file" id="backgroundMedia" name="media" multiple
+                                accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v">
+                            <span class="help">Maximum 100 MB per file.</span>
+                        </div>
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" id="backgroundTitle" placeholder="Home Background">
+                        </div>
+                        <div class="field">
+                            <label>Starting Order</label>
+                            <input type="number" id="backgroundOrder" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Upload Media</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-head-text">
+                    <h3>Background Media</h3>
+                    <p>Edit title/order or delete media.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadBackground()">Refresh</button>
+            </div>
+            <div id="backgroundList" class="item-grid"></div>
+        </div>
+
+    </section>
+
+
+    <!-- EVENTS -->
+
+    <section id="events" class="admin-section">
+
+        <div class="page-head">
+            <h1>Coming Events</h1>
+            <p>Add, edit and delete your regular church services.</p>
+        </div>
+
+        <form id="eventForm">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-text">
+                        <h3 id="eventFormTitle">Add Event</h3>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <input type="hidden" id="eventId">
+                    <div class="form-grid three">
+                        <div class="field">
+                            <label>Category</label>
+                            <input type="text" id="eventCategory" placeholder="Morning">
+                        </div>
+                        <div class="field">
+                            <label>Day</label>
+                            <input type="text" id="eventDay" placeholder="Sunday">
+                        </div>
+                        <div class="field">
+                            <label>Service</label>
+                            <input type="text" id="eventService" placeholder="Worship Service">
+                        </div>
+                        <div class="field">
+                            <label>Time</label>
+                            <input type="text" id="eventTime" placeholder="10:30 AM">
+                        </div>
+                        <div class="field">
+                            <label>Order</label>
+                            <input type="number" id="eventOrder" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="eventSaveBtn">Add Event</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetEventForm()">Clear</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-head-text">
+                    <h3>Coming Events List</h3>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadEvents()">Refresh</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th><th>Category</th><th>Day</th><th>Service</th><th>Time</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- SPECIAL EVENTS -->
+
+    <section id="special-events" class="admin-section">
+
+        <div class="page-head">
+            <h1>Special Events</h1>
+            <p>Add, edit and delete special event cards.</p>
+        </div>
+
+        <form id="specialForm">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-text">
+                        <h3 id="specialFormTitle">Add Special Event</h3>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <input type="hidden" id="specialId">
+                    <div class="form-grid">
+                        <div class="field full">
+                            <label>Event Title</label>
+                            <input type="text" id="specialTitle" placeholder="Youth Rally">
+                        </div>
+                        <div class="field">
+                            <label>Date</label>
+                            <input type="text" id="specialDate" placeholder="September 12, 2026">
+                        </div>
+                        <div class="field">
+                            <label>Time</label>
+                            <input type="text" id="specialTime" placeholder="6:30 PM">
+                        </div>
+                        <div class="field">
+                            <label>Link</label>
+                            <input type="text" id="specialLink" value="#">
+                        </div>
+                        <div class="field">
+                            <label>Display Order</label>
+                            <input type="number" id="specialOrder" value="0">
+                        </div>
+                        <div class="field full">
+                            <label>Event Image</label>
+                            <input class="file-input" type="file" id="specialImage" name="image" accept="image/*">
+                            <span class="help">The backend accepts the field name "image".</span>
+                        </div>
+                        <div class="field full">
+                            <div class="preview-box" id="specialCurrentImage"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="specialSaveBtn">Add Special Event</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetSpecialForm()">Clear</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-head-text">
+                    <h3>Special Event List</h3>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadSpecialEvents()">Refresh</button>
+            </div>
+            <div id="specialEventsList" class="item-grid"></div>
+        </div>
+
+    </section>
+
+
+    <!-- FEATURED -->
+
+    <section id="featured" class="admin-section">
+
+        <div class="page-head">
+            <h1>Featured</h1>
+            <p>Update the featured message and background.</p>
+        </div>
+
+        <form id="featuredForm">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>Badge</label>
+                            <input type="text" id="featuredBadge">
+                        </div>
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" id="featuredTitle">
+                        </div>
+                        <div class="field full">
+                            <label>Subtitle</label>
+                            <input type="text" id="featuredSubtitle">
+                        </div>
+                        <div class="field">
+                            <label>Watch Link</label>
+                            <input type="text" id="featuredWatchLink">
+                        </div>
+                        <div class="field">
+                            <label>Sermons Link</label>
+                            <input type="text" id="featuredSermonsLink">
+                        </div>
+                        <div class="field">
+                            <label>Background Image</label>
+                            <input class="file-input" type="file" id="featuredBackground" name="backgroundImage" accept="image/*">
+                        </div>
+                        <div class="field">
+                            <label>Background Image URL</label>
+                            <input type="text" id="featuredBackgroundUrl" placeholder="https://...">
+                        </div>
+                        <div class="field full">
+                            <label>Preview</label>
+                            <div id="featuredPreview" class="preview-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Featured</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadFeatured()">Reload</button>
+                </div>
+            </div>
+        </form>
+
+    </section>
+
+
+    <!-- WELCOME -->
+
+    <section id="welcome" class="admin-section">
+
+        <div class="page-head">
+            <h1>Welcome</h1>
+            <p>Manage the welcome message and leadership information.</p>
+        </div>
+
+        <form id="welcomeForm">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>Badge</label>
+                            <input type="text" id="welcomeBadge">
+                        </div>
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" id="welcomeTitle">
+                        </div>
+                        <div class="field full">
+                            <label>Paragraph 1</label>
+                            <textarea id="welcomeParagraph1"></textarea>
+                        </div>
+                        <div class="field full">
+                            <label>Paragraph 2</label>
+                            <textarea id="welcomeParagraph2"></textarea>
+                        </div>
+                        <div class="field">
+                            <label>Leader Name</label>
+                            <input type="text" id="welcomeLeaderName">
+                        </div>
+                        <div class="field">
+                            <label>New Here Text</label>
+                            <input type="text" id="welcomeNewHereText">
+                        </div>
+                        <div class="field">
+                            <label>New Here Link</label>
+                            <input type="text" id="welcomeNewHereLink">
+                        </div>
+                        <div class="field">
+                            <label>Contact Text</label>
+                            <input type="text" id="welcomeContactText">
+                        </div>
+                        <div class="field">
+                            <label>Contact Link</label>
+                            <input type="text" id="welcomeContactLink">
+                        </div>
+                        <div class="field">
+                            <label>Welcome Image</label>
+                            <input class="file-input" type="file" id="welcomeImage" name="image" accept="image/*">
+                        </div>
+                        <div class="field">
+                            <label>Current Image</label>
+                            <div id="welcomePreview" class="preview-box">No welcome image.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Welcome</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadWelcome()">Reload</button>
+                </div>
+            </div>
+        </form>
+
+    </section>
+
+
+    <!-- EXPLORE -->
+
+    <section id="explore" class="admin-section">
+
+        <div class="page-head">
+            <h1>Explore</h1>
+            <p>Add, update and delete Explore cards.</p>
+        </div>
+
+        <form id="exploreForm">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-head-text">
+                        <h3 id="exploreFormTitle">Add Explore Item</h3>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <input type="hidden" id="exploreId">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" id="exploreTitle">
+                        </div>
+                        <div class="field">
+                            <label>Display Order</label>
+                            <input type="number" id="exploreOrder" value="0">
+                        </div>
+                        <div class="field full">
+                            <label>Description</label>
+                            <textarea id="exploreDescription"></textarea>
+                        </div>
+                        <div class="field">
+                            <label>Button Text</label>
+                            <input type="text" id="exploreButtonText" value="Learn More">
+                        </div>
+                        <div class="field">
+                            <label>Button Link</label>
+                            <input type="text" id="exploreButtonLink" value="#">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="exploreSaveBtn">Add Explore Item</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetExploreForm()">Clear</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-head-text">
+                    <h3>Explore Items</h3>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadExplore()">Refresh</button>
+            </div>
+            <div id="exploreList" class="item-grid"></div>
+        </div>
+
+    </section>
+
+
+    <!-- CALENDAR -->
+
+    <section id="calendar" class="admin-section">
+
+        <div class="page-head">
+            <h1>Calendar</h1>
+            <p>Set the calendar displayed when visitors click VIEW CALENDAR.</p>
+        </div>
+
+        <form id="calendarForm">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="field full">
+                            <label>Calendar URL</label>
+                            <input type="text" id="calendarUrl" placeholder="https://example.com/calendar.pdf">
+                            <span class="help">You can use a Google Calendar link, PDF URL, image URL, etc.</span>
+                        </div>
+                        <div class="field full">
+                            <label>Or Upload Calendar</label>
+                            <input class="file-input" type="file" id="calendarFile" name="calendarFile"
+                                accept=".pdf,image/jpeg,image/png,image/webp">
+                            <span class="help">PDF, JPG, PNG or WEBP.</span>
+                        </div>
+                        <div class="field full">
+                            <label>Calendar Title</label>
+                            <input type="text" id="calendarTitle" value="Church Calendar">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="calendarSaveBtn">Save Calendar</button>
+                    <button type="button" class="btn btn-danger" onclick="removeCalendar()">Remove Calendar</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-head-text">
+                    <h3>Calendar Preview</h3>
+                    <p id="calendarStatus">Loading calendar…</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadCalendar()">Refresh</button>
+            </div>
+            <div class="card-body">
+                <div id="calendarPreview" class="calendar-preview">
+                    <span>No calendar available.</span>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    </div>
+</main>
+
+
+<div id="toastContainer" class="toast-container"></div>
+
+
+<script>
+
+const API = "";
+
+let eventsCache = [];
+let specialEventsCache = [];
+let backgroundCache = [];
+let exploreCache = [];
+let eventSource = null;
+
+
+/* HELPERS */
+
+function escapeHTML(value){
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+function fileUrl(value){
+    if(!value){ return ""; }
+    if(/^https?:\/\//i.test(value)){ return value; }
+    if(value.startsWith("/")){ return value; }
+    return "/" + value;
+}
+
+
+async function api(url,options={}){
+    const response = await fetch(API + url,{
+        ...options,
+        credentials:"include"
+    });
+
+    const text = await response.text();
+    let data;
+
+    try{
+        data = text ? JSON.parse(text) : {};
+    }catch{
+        throw new Error(text || `Server returned invalid response (${response.status})`);
+    }
+
+    if(!response.ok){
+        throw new Error(data.message || data.error || `Request failed (${response.status})`);
+    }
+
+    return data;
+}
+
+
+function showToast(message,type="success"){
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(()=>{ toast.remove(); },4500);
+}
+
+
+/* NAVIGATION */
+
+function showSection(sectionId,button){
+
+    document.querySelectorAll(".admin-section").forEach(section=>{
+        section.classList.remove("active");
+    });
+
+    const section = document.getElementById(sectionId);
+    if(section){ section.classList.add("active"); }
+
+    document.querySelectorAll(".sb-item").forEach(btn=>{
+        btn.classList.remove("active");
+    });
+
+    if(button){ button.classList.add("active"); }
+
+    const titles = {
+        dashboard:"Dashboard",
+        home:"Home",
+        background:"Background",
+        events:"Coming Events",
+        "special-events":"Special Events",
+        featured:"Featured",
+        welcome:"Welcome",
+        explore:"Explore",
+        calendar:"Calendar"
+    };
+
+    document.getElementById("pageTitle").textContent = titles[sectionId] || "Admin";
+
+    document.getElementById("sidebar").classList.remove("open");
+
+    window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+
+function openSection(sectionId){
+    const button = [...document.querySelectorAll(".sb-item")]
+        .find(btn => btn.getAttribute("onclick")?.includes(`'${sectionId}'`));
+    showSection(sectionId, button);
+}
+
+
+function toggleSidebar(){
+    document.getElementById("sidebar").classList.toggle("open");
+}
+
+
+/* HOME */
+
+async function loadHome(){
+    try{
+        const data = await api("/api/home");
+
+        document.getElementById("homeBadge").value = data.badge || "";
+        document.getElementById("homeTitle").value = data.title || "";
+        document.getElementById("homeSubtitle").value = data.subtitle || "";
+        document.getElementById("homeLocation").value = data.location || "";
+        document.getElementById("homeMapLink").value = data.mapLink || "";
+
+        const preview = document.getElementById("homeLogoPreview");
+
+        if(data.logo){
+            preview.innerHTML = `<img src="${escapeHTML(fileUrl(data.logo))}" class="preview-large" alt="Logo">`;
+        }else{
+            preview.textContent = "No logo uploaded.";
+        }
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+document.getElementById("homeForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("badge", document.getElementById("homeBadge").value);
+    formData.append("title", document.getElementById("homeTitle").value);
+    formData.append("subtitle", document.getElementById("homeSubtitle").value);
+    formData.append("location", document.getElementById("homeLocation").value);
+    formData.append("mapLink", document.getElementById("homeMapLink").value);
+
+    const file = document.getElementById("homeLogo").files[0];
+    if(file){ formData.append("logo",file); }
+
+    try{
+        const data = await api("/api/home",{ method:"PUT", body:formData });
+        showToast(data.message || "Home updated successfully.");
+        document.getElementById("homeLogo").value="";
+        loadHome();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+/* BACKGROUND */
+
+async function loadBackground(){
+
+    const container = document.getElementById("backgroundList");
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading background media…
+        </div>
+    `;
+
+    try{
+        backgroundCache = await api("/api/home-background");
+        renderBackground();
+        document.getElementById("countBackground").textContent = backgroundCache.length;
+    }catch(error){
+        container.innerHTML = `<div class="empty">${escapeHTML(error.message)}</div>`;
+    }
+}
+
+
+function renderBackground(){
+
+    const container = document.getElementById("backgroundList");
+
+    if(!backgroundCache.length){
+        container.innerHTML = `<div class="empty">No background media uploaded.</div>`;
+        return;
+    }
+
+    container.innerHTML = backgroundCache.map(item=>{
+
+        const isVideo = item.type === "video";
+
+        const media = isVideo
+            ? `<video src="${escapeHTML(fileUrl(item.url))}" controls></video>`
+            : `<img src="${escapeHTML(fileUrl(item.url))}" alt="${escapeHTML(item.title)}">`;
+
+        return `
+            <div class="item-card">
+                <div class="item-media">${media}</div>
+                <div class="item-body">
+                    <h4>${escapeHTML(item.title || "Home Background")}</h4>
+                    <p>Type: ${escapeHTML(item.type)}</p>
+                    <p>Order: ${escapeHTML(item.order)}</p>
+                    <p>${escapeHTML(item.originalName || "")}</p>
+                    <div class="item-actions">
+                        <button class="btn btn-warning btn-sm" onclick="editBackground('${item._id}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteBackground('${item._id}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+
+document.getElementById("backgroundForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const files = document.getElementById("backgroundMedia").files;
+
+    if(!files.length){
+        showToast("Please select at least one file.","error");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", document.getElementById("backgroundTitle").value);
+    formData.append("order", document.getElementById("backgroundOrder").value);
+
+    for(const file of files){
+        formData.append("media", file);
+    }
+
+    try{
+        const data = await api("/api/home-background",{ method:"POST", body:formData });
+        showToast(data.message || "Background uploaded successfully.");
+        document.getElementById("backgroundForm").reset();
+        document.getElementById("backgroundOrder").value=0;
+        loadBackground();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+async function editBackground(id){
+
+    const item = backgroundCache.find(x=>String(x._id)===String(id));
+    if(!item){ return; }
+
+    const title = prompt("Enter media title:", item.title || "");
+    if(title===null){ return; }
+
+    const order = prompt("Enter order:", item.order ?? 0);
+    if(order===null){ return; }
+
+    try{
+        const data = await api(`/api/home-background/${id}`,{
+            method:"PUT",
+            headers:{ "Content-Type":"application/json" },
+            body:JSON.stringify({ title, order:Number(order)||0 })
+        });
+        showToast(data.message || "Background updated.");
+        loadBackground();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+async function deleteBackground(id){
+    if(!confirm("Delete this background media?\n\nThe uploaded file will also be deleted.")){ return; }
+
+    try{
+        const data = await api(`/api/home-background/${id}`,{ method:"DELETE" });
+        showToast(data.message || "Background deleted.");
+        loadBackground();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+/* EVENTS */
+
+async function loadEvents(){
+
+    const tbody = document.getElementById("eventsTable");
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading events…
+                </div>
+            </td>
+        </tr>
+    `;
+
+    try{
+        eventsCache = await api("/api/events");
+        renderEvents();
+        document.getElementById("countEvents").textContent = eventsCache.length;
+    }catch(error){
+        tbody.innerHTML = `<tr><td colspan="6">${escapeHTML(error.message)}</td></tr>`;
+    }
+}
+
+
+function renderEvents(){
+
+    const tbody = document.getElementById("eventsTable");
+
+    if(!eventsCache.length){
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty">No events found.</div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = eventsCache.map(event=>`
+        <tr>
+            <td>${escapeHTML(event.order)}</td>
+            <td>${escapeHTML(event.category)}</td>
+            <td>${escapeHTML(event.day)}</td>
+            <td>${escapeHTML(event.service)}</td>
+            <td>${escapeHTML(event.time)}</td>
+            <td>
+                <div class="table-actions">
+                    <button class="btn btn-warning btn-sm" onclick="editEvent('${event._id}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteEvent('${event._id}')">Delete</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+
+document.getElementById("eventForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const id = document.getElementById("eventId").value;
+
+    const body = {
+        category: document.getElementById("eventCategory").value,
+        day: document.getElementById("eventDay").value,
+        service: document.getElementById("eventService").value,
+        time: document.getElementById("eventTime").value,
+        order: Number(document.getElementById("eventOrder").value) || 0
+    };
+
+    try{
+        const data = await api(
+            id ? `/api/events/${id}` : "/api/events",
+            {
+                method: id ? "PUT" : "POST",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify(body)
+            }
+        );
+
+        showToast(data.message || "Event saved.");
+        resetEventForm();
+        loadEvents();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+function editEvent(id){
+
+    const event = eventsCache.find(x=>String(x._id)===String(id));
+    if(!event){ return; }
+
+    document.getElementById("eventId").value = event._id;
+    document.getElementById("eventCategory").value = event.category || "";
+    document.getElementById("eventDay").value = event.day || "";
+    document.getElementById("eventService").value = event.service || "";
+    document.getElementById("eventTime").value = event.time || "";
+    document.getElementById("eventOrder").value = event.order || 0;
+
+    document.getElementById("eventFormTitle").textContent = "Edit Event";
+    document.getElementById("eventSaveBtn").textContent = "Update Event";
+
+    openSection("events");
+}
+
+
+function resetEventForm(){
+    document.getElementById("eventForm").reset();
+    document.getElementById("eventId").value="";
+    document.getElementById("eventOrder").value=0;
+    document.getElementById("eventFormTitle").textContent = "Add Event";
+    document.getElementById("eventSaveBtn").textContent = "Add Event";
+}
+
+
+async function deleteEvent(id){
+    if(!confirm("Delete this event?")){ return; }
+
+    try{
+        const data = await api(`/api/events/${id}`,{ method:"DELETE" });
+        showToast(data.message || "Event deleted.");
+        loadEvents();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+/* SPECIAL EVENTS */
+
+async function loadSpecialEvents(){
+
+    const container = document.getElementById("specialEventsList");
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading special events…
+        </div>
+    `;
+
+    try{
+        specialEventsCache = await api("/api/special-events");
+        renderSpecialEvents();
+        document.getElementById("countSpecial").textContent = specialEventsCache.length;
+    }catch(error){
+        container.innerHTML = `<div class="empty">${escapeHTML(error.message)}</div>`;
+    }
+}
+
+
+function renderSpecialEvents(){
+
+    const container = document.getElementById("specialEventsList");
+
+    if(!specialEventsCache.length){
+        container.innerHTML = `<div class="empty">No special events found.</div>`;
+        return;
+    }
+
+    container.innerHTML = specialEventsCache.map(event=>{
+
+        const image = event.image
+            ? `<img src="${escapeHTML(fileUrl(event.image))}" alt="${escapeHTML(event.title)}">`
+            : `<span>No image</span>`;
+
+        return `
+            <div class="item-card">
+                <div class="item-media">${image}</div>
+                <div class="item-body">
+                    <h4>${escapeHTML(event.title)}</h4>
+                    <p>Date: ${escapeHTML(event.date)}</p>
+                    <p>Time: ${escapeHTML(event.time)}</p>
+                    <p>Order: ${escapeHTML(event.order)}</p>
+                    <div class="item-actions">
+                        <button class="btn btn-warning btn-sm" onclick="editSpecialEvent('${event._id}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSpecialEvent('${event._id}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+
+document.getElementById("specialForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const id = document.getElementById("specialId").value;
+
+    const formData = new FormData();
+    formData.append("title", document.getElementById("specialTitle").value);
+    formData.append("date", document.getElementById("specialDate").value);
+    formData.append("time", document.getElementById("specialTime").value);
+    formData.append("link", document.getElementById("specialLink").value);
+    formData.append("order", document.getElementById("specialOrder").value);
+
+    const file = document.getElementById("specialImage").files[0];
+    if(file){ formData.append("image", file); }
+
+    try{
+        const data = await api(
+            id ? `/api/special-events/${id}` : "/api/special-events",
+            { method: id ? "PUT" : "POST", body: formData }
+        );
+
+        showToast(data.message || "Special event saved.");
+        resetSpecialForm();
+        loadSpecialEvents();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+function editSpecialEvent(id){
+
+    const event = specialEventsCache.find(x=>String(x._id)===String(id));
+    if(!event){ return; }
+
+    document.getElementById("specialId").value = event._id;
+    document.getElementById("specialTitle").value = event.title || "";
+    document.getElementById("specialDate").value = event.date || "";
+    document.getElementById("specialTime").value = event.time || "";
+    document.getElementById("specialLink").value = event.link || "#";
+    document.getElementById("specialOrder").value = event.order || 0;
+    document.getElementById("specialImage").value="";
+
+    const preview = document.getElementById("specialCurrentImage");
+
+    if(event.image){
+        preview.innerHTML = `
+            <p style="margin-bottom:8px">Current image:</p>
+            <img src="${escapeHTML(fileUrl(event.image))}" class="preview-large" alt="Current image">
+        `;
+    }else{
+        preview.textContent = "No current image.";
+    }
+
+    document.getElementById("specialFormTitle").textContent = "Edit Special Event";
+    document.getElementById("specialSaveBtn").textContent = "Update Special Event";
+
+    openSection("special-events");
+}
+
+
+function resetSpecialForm(){
+    document.getElementById("specialForm").reset();
+    document.getElementById("specialId").value="";
+    document.getElementById("specialOrder").value=0;
+    document.getElementById("specialLink").value="#";
+    document.getElementById("specialFormTitle").textContent = "Add Special Event";
+    document.getElementById("specialSaveBtn").textContent = "Add Special Event";
+    document.getElementById("specialCurrentImage").textContent="";
+}
+
+
+async function deleteSpecialEvent(id){
+    if(!confirm("Delete this special event?\n\nIts uploaded image will also be deleted.")){ return; }
+
+    try{
+        const data = await api(`/api/special-events/${id}`,{ method:"DELETE" });
+        showToast(data.message || "Special event deleted.");
+        loadSpecialEvents();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+/* FEATURED */
+
+async function loadFeatured(){
+    try{
+        const data = await api("/api/featured");
+
+        document.getElementById("featuredBadge").value = data.badge || "";
+        document.getElementById("featuredTitle").value = data.title || "";
+        document.getElementById("featuredSubtitle").value = data.subtitle || "";
+        document.getElementById("featuredWatchLink").value = data.watchLink || "";
+        document.getElementById("featuredSermonsLink").value = data.sermonsLink || "";
+
+        document.getElementById("featuredBackgroundUrl").value =
+            data.backgroundImage && !data.backgroundImage.startsWith("/uploads/")
+            ? data.backgroundImage
+            : "";
+
+        const preview = document.getElementById("featuredPreview");
+
+        if(data.backgroundImage){
+            preview.innerHTML = `
+                <p style="margin-bottom:8px">Current background:</p>
+                <img src="${escapeHTML(fileUrl(data.backgroundImage))}" class="preview-large" alt="Featured background">
+            `;
+        }else{
+            preview.textContent = "No background image.";
+        }
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+document.getElementById("featuredForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("badge", document.getElementById("featuredBadge").value);
+    formData.append("title", document.getElementById("featuredTitle").value);
+    formData.append("subtitle", document.getElementById("featuredSubtitle").value);
+    formData.append("watchLink", document.getElementById("featuredWatchLink").value);
+    formData.append("sermonsLink", document.getElementById("featuredSermonsLink").value);
+
+    const url = document.getElementById("featuredBackgroundUrl").value.trim();
+    if(url){ formData.append("backgroundImage", url); }
+
+    const file = document.getElementById("featuredBackground").files[0];
+    if(file){ formData.append("backgroundImage", file); }
+
+    try{
+        const data = await api("/api/featured",{ method:"PUT", body:formData });
+        showToast(data.message || "Featured updated.");
+        document.getElementById("featuredBackground").value="";
+        loadFeatured();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+/* WELCOME */
+
+async function loadWelcome(){
+    try{
+        const data = await api("/api/welcome");
+
+        document.getElementById("welcomeBadge").value = data.badge || "";
+        document.getElementById("welcomeTitle").value = data.title || "";
+        document.getElementById("welcomeParagraph1").value = data.paragraph1 || "";
+        document.getElementById("welcomeParagraph2").value = data.paragraph2 || "";
+        document.getElementById("welcomeLeaderName").value = data.leaderName || "";
+        document.getElementById("welcomeNewHereText").value = data.newHereText || "";
+        document.getElementById("welcomeNewHereLink").value = data.newHereLink || "";
+        document.getElementById("welcomeContactText").value = data.contactText || "";
+        document.getElementById("welcomeContactLink").value = data.contactLink || "";
+
+        const preview = document.getElementById("welcomePreview");
+
+        if(data.image){
+            preview.innerHTML = `<img src="${escapeHTML(fileUrl(data.image))}" class="preview-large" alt="Welcome">`;
+        }else{
+            preview.textContent = "No welcome image.";
+        }
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+document.getElementById("welcomeForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const formData = new FormData();
+
+    const fields = [
+        "badge","title","paragraph1","paragraph2",
+        "leaderName","newHereText","newHereLink",
+        "contactText","contactLink"
+    ];
+
+    fields.forEach(field=>{
+        const id = "welcome" + field.charAt(0).toUpperCase() + field.slice(1);
+        formData.append(field, document.getElementById(id).value);
+    });
+
+    const file = document.getElementById("welcomeImage").files[0];
+    if(file){ formData.append("image", file); }
+
+    try{
+        const data = await api("/api/welcome",{ method:"PUT", body:formData });
+        showToast(data.message || "Welcome updated.");
+        document.getElementById("welcomeImage").value="";
+        loadWelcome();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+/* EXPLORE */
+
+async function loadExplore(){
+
+    const container = document.getElementById("exploreList");
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading explore items…
+        </div>
+    `;
+
+    try{
+        exploreCache = await api("/api/explore");
+        renderExplore();
+        document.getElementById("countExplore").textContent = exploreCache.length;
+    }catch(error){
+        container.innerHTML = `<div class="empty">${escapeHTML(error.message)}</div>`;
+    }
+}
+
+
+function renderExplore(){
+
+    const container = document.getElementById("exploreList");
+
+    if(!exploreCache.length){
+        container.innerHTML = `<div class="empty">No explore items found.</div>`;
+        return;
+    }
+
+    container.innerHTML = exploreCache.map(item=>`
+        <div class="item-card">
+            <div class="item-body">
+                <h4>${escapeHTML(item.title)}</h4>
+                <p>${escapeHTML(item.description)}</p>
+                <p>Button: ${escapeHTML(item.buttonText)}</p>
+                <p>Order: ${escapeHTML(item.order)}</p>
+                <div class="item-actions">
+                    <button class="btn btn-warning btn-sm" onclick="editExplore('${item._id}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteExplore('${item._id}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
+
+document.getElementById("exploreForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const id = document.getElementById("exploreId").value;
+
+    const body = {
+        title: document.getElementById("exploreTitle").value,
+        description: document.getElementById("exploreDescription").value,
+        buttonText: document.getElementById("exploreButtonText").value,
+        buttonLink: document.getElementById("exploreButtonLink").value,
+        order: Number(document.getElementById("exploreOrder").value) || 0
+    };
+
+    try{
+        const data = await api(
+            id ? `/api/explore/${id}` : "/api/explore",
+            {
+                method: id ? "PUT" : "POST",
+                headers:{ "Content-Type":"application/json" },
+                body: JSON.stringify(body)
+            }
+        );
+
+        showToast(data.message || "Explore item saved.");
+        resetExploreForm();
+        loadExplore();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+});
+
+
+function editExplore(id){
+
+    const item = exploreCache.find(x=>String(x._id)===String(id));
+    if(!item){ return; }
+
+    document.getElementById("exploreId").value = item._id;
+    document.getElementById("exploreTitle").value = item.title || "";
+    document.getElementById("exploreDescription").value = item.description || "";
+    document.getElementById("exploreButtonText").value = item.buttonText || "";
+    document.getElementById("exploreButtonLink").value = item.buttonLink || "#";
+    document.getElementById("exploreOrder").value = item.order || 0;
+
+    document.getElementById("exploreFormTitle").textContent = "Edit Explore Item";
+    document.getElementById("exploreSaveBtn").textContent = "Update Explore Item";
+
+    openSection("explore");
+}
+
+
+function resetExploreForm(){
+    document.getElementById("exploreForm").reset();
+    document.getElementById("exploreId").value="";
+    document.getElementById("exploreButtonText").value = "Learn More";
+    document.getElementById("exploreButtonLink").value = "#";
+    document.getElementById("exploreOrder").value=0;
+    document.getElementById("exploreFormTitle").textContent = "Add Explore Item";
+    document.getElementById("exploreSaveBtn").textContent = "Add Explore Item";
+}
+
+
+async function deleteExplore(id){
+    if(!confirm("Delete this Explore item?")){ return; }
+
+    try{
+        const data = await api(`/api/explore/${id}`,{ method:"DELETE" });
+        showToast(data.message || "Explore item deleted.");
+        loadExplore();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+/* CALENDAR */
+
+async function loadCalendar(){
+    try{
+        const data = await api("/api/calendar");
+
+        document.getElementById("calendarUrl").value =
+            data.url && !data.url.startsWith("/uploads/")
+            ? data.url
+            : "";
+
+        document.getElementById("calendarTitle").value =
+            data.title || "Church Calendar";
+
+        const status = document.getElementById("calendarStatus");
+        const preview = document.getElementById("calendarPreview");
+
+        if(!data.url){
+            status.textContent = "No calendar has been configured.";
+            preview.innerHTML = `<span>No calendar available.</span>`;
+            return;
+        }
+
+        status.textContent = data.title || "Church Calendar";
+
+        const url = fileUrl(data.url);
+        const lower = url.toLowerCase();
+
+        if(lower.includes(".pdf") || data.type === "pdf"){
+            preview.innerHTML = `<embed src="${escapeHTML(url)}" type="application/pdf">`;
+        }else if(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)){
+            preview.innerHTML = `<img src="${escapeHTML(url)}" alt="Calendar">`;
+        }else{
+            preview.innerHTML = `<iframe src="${escapeHTML(url)}" title="Church Calendar"></iframe>`;
+        }
+    }catch(error){
+        document.getElementById("calendarStatus").textContent = "Unable to load calendar.";
+        showToast(error.message,"error");
+    }
+}
+
+
+document.getElementById("calendarForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const formData = new FormData();
+
+    const url = document.getElementById("calendarUrl").value.trim();
+    const title = document.getElementById("calendarTitle").value.trim();
+
+    formData.append("url", url);
+    formData.append("title", title || "Church Calendar");
+
+    const file = document.getElementById("calendarFile").files[0];
+    if(file){ formData.append("calendarFile", file); }
+
+    const button = document.getElementById("calendarSaveBtn");
+    button.disabled=true;
+    button.textContent="Saving…";
+
+    try{
+        const data = await api("/api/calendar",{ method:"PUT", body:formData });
+        showToast(data.message || "Calendar saved successfully.");
+        document.getElementById("calendarFile").value="";
+        loadCalendar();
+    }catch(error){
+        showToast("Calendar save failed: " + error.message,"error");
+    }finally{
+        button.disabled=false;
+        button.textContent="Save Calendar";
+    }
+});
+
+
+async function removeCalendar(){
+    if(!confirm("Remove the current calendar?")){ return; }
+
+    try{
+        const data = await api("/api/calendar",{ method:"DELETE" });
+        showToast(data.message || "Calendar removed.");
+        document.getElementById("calendarUrl").value="";
+        loadCalendar();
+    }catch(error){
+        showToast(error.message,"error");
+    }
+}
+
+
+/* SSE */
+
+function connectSSE(){
+
+    if(!window.EventSource){
+        document.getElementById("statusText").textContent = "Auto update unavailable";
+        document.getElementById("statusDot").style.background = "#f59e0b";
+        return;
+    }
+
+    if(eventSource){ eventSource.close(); }
+
+    eventSource = new EventSource("/api/updates");
+
+    eventSource.onopen=function(){
+        document.getElementById("statusText").textContent = "Live";
+        document.getElementById("statusDot").style.background = "#10b981";
+    };
+
+    eventSource.onmessage=function(event){
+        try{
+            const data = JSON.parse(event.data);
+            if(data.type==="connected"){ return; }
+            handleServerUpdate(data.type);
+        }catch(error){
+            console.error("SSE error:", error);
+        }
+    };
+
+    eventSource.onerror=function(){
+        document.getElementById("statusText").textContent = "Reconnecting…";
+        document.getElementById("statusDot").style.background = "#f59e0b";
+    };
+}
+
+
+function handleServerUpdate(type){
+    switch(type){
+        case "home-updated": loadHome(); break;
+        case "home-background-updated": loadBackground(); break;
+        case "events-updated": loadEvents(); break;
+        case "special-events-updated": loadSpecialEvents(); break;
+        case "featured-updated": loadFeatured(); break;
+        case "welcome-updated": loadWelcome(); break;
+        case "explore-updated": loadExplore(); break;
+        case "calendar-updated": loadCalendar(); break;
+    }
+}
+
+
+/* INIT */
+
+async function initialize(){
+    await Promise.allSettled([
+        loadHome(),
+        loadBackground(),
+        loadEvents(),
+        loadSpecialEvents(),
+        loadFeatured(),
+        loadWelcome(),
+        loadExplore(),
+        loadCalendar()
+    ]);
+    connectSSE();
+}
+
+
+document.addEventListener("DOMContentLoaded", initialize);
+
+window.addEventListener("beforeunload", function(){
+    if(eventSource){ eventSource.close(); }
+});
+
+</script>
+
+
+<script>
+
+async function logout(){
+
+    const logoutButton = document.querySelector(".sb-logout");
+
+    try{
+        if(logoutButton){ logoutButton.disabled=true; }
+
+        const response = await fetch("/api/auth/logout",{
+            method:"POST",
+            credentials:"include"
+        });
+
+        let data={};
+        try{ data = await response.json(); }catch(_){}
+
+        if(response.ok && data.success){
+            openLogoutModal();
+            setTimeout(function(){
+                window.location.replace("/login.html");
+            },6000);
+        }else{
+            if(logoutButton){ logoutButton.disabled=false; }
+            alert(data.message || "Logout failed");
+        }
+    }catch(error){
+        console.error("Logout error:", error);
+        if(logoutButton){ logoutButton.disabled=false; }
+        alert("Could not logout. Please try again.");
+    }
+}
+
+
+function openLogoutModal(){
+    const modal = document.getElementById("logoutModal");
+    if(!modal){ return; }
+    modal.classList.remove("active");
+    void modal.offsetWidth;
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden","false");
+}
+
+</script>
+
+
+<style>
+
+/* LOGOUT MODAL */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .3s ease, visibility .3s ease;
+    z-index: 100000;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.logout-card {
+    width: min(360px, 100%);
+    padding: 40px 28px 36px;
+    text-align: center;
+    border-radius: 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line-2);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    transform: translateY(12px) scale(.97);
+    transition: transform .35s cubic-bezier(.175,.885,.32,1.275);
+}
+
+.modal-overlay.active .logout-card {
+    transform: translateY(0) scale(1);
+}
+
+.logo-loader {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    margin: 0 auto 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-logo {
+    position: relative;
+    z-index: 3;
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    animation: logoFloat 1.8s ease-in-out infinite;
+}
+
+.loader-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    pointer-events: none;
+}
+
+.loader-ring-one {
+    width: 116px;
+    height: 116px;
+    border-top-color: var(--accent);
+    border-right-color: rgba(59,130,246,.3);
+    animation: spinRing 1.2s linear infinite;
+}
+
+.loader-ring-two {
+    width: 130px;
+    height: 130px;
+    border-bottom-color: rgba(59,130,246,.7);
+    border-left-color: rgba(59,130,246,.15);
+    animation: spinRingReverse 1.8s linear infinite;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--txt);
+    margin: 0 0 8px;
+}
+
+.card-message {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--txt-3);
+    margin: 0;
+}
+
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 18px;
+}
+
+.loading-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: .35;
+    animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: .18s; }
+.loading-dots span:nth-child(3) { animation-delay: .36s; }
+
+@keyframes spinRing { to { transform: rotate(360deg); } }
+@keyframes spinRingReverse { to { transform: rotate(-360deg); } }
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: .25; transform: translateY(0) scale(.8); }
+    50% { opacity: 1; transform: translateY(-2px) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .logout-card,
+    .logout-logo,
+    .loader-ring,
+    .loading-dots span {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+</style>
+
+</body>
+</html>

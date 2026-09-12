@@ -4,32 +4,38 @@ const homeSchema = new mongoose.Schema(
   {
     badge: {
       type: String,
-      default: "Welcome Home",
+      required: true,
+      trim: true,
     },
 
     title: {
       type: String,
-      default: "The Potter's House",
+      required: true,
+      trim: true,
     },
 
     subtitle: {
       type: String,
-      default: "Church Bengaluru",
+      required: true,
+      trim: true,
     },
 
     location: {
       type: String,
-      default: "Bengaluru, Karnataka, India",
+      required: true,
+      trim: true,
     },
 
     mapLink: {
       type: String,
-      default: "https://maps.google.com",
+      required: true,
+      trim: true,
     },
 
     logo: {
       type: String,
-      default: "",
+      required: true,
+      trim: true,
     },
   },
   {

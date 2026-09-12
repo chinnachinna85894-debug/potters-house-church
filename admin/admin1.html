@@ -1,0 +1,6424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Potter's House - Admin Panel</title>
+
+<style>
+    html:not(.authenticated) body {
+        visibility: hidden;
+    }
+</style>
+
+<script>
+(async function () {
+
+    /*
+     * AUTHENTICATION
+     *
+     * Login uses a server-side cookie/session.
+     * Therefore admin.html must also verify that same session.
+     */
+
+    try {
+
+        const response = await fetch("/api/auth/verify", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            window.location.replace("/login.html");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            window.location.replace("/login.html");
+            return;
+        }
+
+        /*
+         * Authentication successful.
+         * Allow the page to become visible.
+         */
+        document.documentElement.classList.add("authenticated");
+
+    } catch (error) {
+
+        console.error(
+            "Authentication check failed:",
+            error
+        );
+
+        window.location.replace("/login.html");
+
+    }
+
+})();
+</script>
+
+<style>
+/* =========================================================
+   DESIGN TOKENS
+========================================================= */
+
+:root{
+    --bg:#060a11;
+    --bg-soft:#0a111c;
+
+    --panel:#0e1626;
+    --panel-2:#111c2e;
+    --panel-3:#0a1220;
+
+    --border:#1e2b40;
+    --border-soft:#182436;
+    --border-strong:#2c3d57;
+
+    --text:#f8fafc;
+    --text-soft:#e2e8f0;
+    --muted:#93a3b8;
+    --muted-2:#64748b;
+
+    --accent:#ff3035;
+    --accent-dark:#e3262b;
+    --accent-glow:rgba(255,48,53,.28);
+
+    --success:#16a34a;
+    --danger:#dc2626;
+    --warning:#d97706;
+
+    --radius-lg:20px;
+    --radius:16px;
+    --radius-sm:12px;
+
+    --shadow-lg:0 24px 60px rgba(0,0,0,.55);
+    --shadow:0 12px 34px rgba(0,0,0,.35);
+    --shadow-sm:0 6px 18px rgba(0,0,0,.25);
+
+    --sidebar-w:270px;
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+}
+
+/* Ambient background glow */
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    background:
+        radial-gradient(900px 520px at 12% -8%, rgba(255,48,53,.10), transparent 62%),
+        radial-gradient(760px 500px at 100% 0%, rgba(56,120,255,.09), transparent 60%),
+        radial-gradient(700px 600px at 60% 110%, rgba(255,48,53,.05), transparent 65%);
+}
+
+button,input,textarea,select{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+::selection{
+    background:rgba(255,48,53,.35);
+    color:#fff;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar{
+    width:10px;
+    height:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#22314a;
+    border-radius:20px;
+    border:2px solid transparent;
+    background-clip:content-box;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#31456a;
+    background-clip:content-box;
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:var(--sidebar-w);
+    height:100vh;
+    background:
+        linear-gradient(180deg,#0d1524 0%,#0a1220 55%,#080e19 100%);
+    border-right:1px solid var(--border);
+    z-index:1000;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    box-shadow:18px 0 50px rgba(0,0,0,.35);
+}
+
+.sidebar::after{
+    content:"";
+    position:absolute;
+    top:0;
+    right:-1px;
+    width:1px;
+    height:100%;
+    background:linear-gradient(
+        180deg,
+        rgba(255,48,53,.55),
+        rgba(255,48,53,.05) 40%,
+        transparent 75%
+    );
+}
+
+.sidebar-header{
+    padding:26px 22px 24px;
+    border-bottom:1px solid var(--border-soft);
+    position:relative;
+}
+
+.sidebar-logo{
+    width:54px;
+    height:54px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(145deg,#1b2740,#0e1728);
+    border:1px solid var(--border-strong);
+    font-size:25px;
+    margin-bottom:14px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 10px 26px rgba(0,0,0,.4);
+}
+
+.sidebar-title{
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:.2px;
+    background:linear-gradient(90deg,#ffffff,#b9c6da);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.sidebar-subtitle{
+    color:var(--muted-2);
+    font-size:12px;
+    margin-top:5px;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+    font-weight:600;
+}
+
+.nav{
+    padding:16px 12px 26px;
+    display:flex;
+    flex-direction:column;
+    flex:1;
+}
+
+.nav button,
+.nav a{
+    position:relative;
+    width:100%;
+    display:flex;
+    align-items:center;
+    border:0;
+    background:transparent;
+    color:#b9c6d9;
+    padding:12px 14px;
+    margin-bottom:4px;
+    border-radius:12px;
+    text-align:left;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.1px;
+    transition:background .2s ease,color .2s ease,transform .2s ease;
+}
+
+.nav button::before,
+.nav a::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:50%;
+    transform:translateY(-50%) scaleY(0);
+    width:3px;
+    height:22px;
+    border-radius:0 4px 4px 0;
+    background:linear-gradient(180deg,#ff5a5e,#e3262b);
+    transition:transform .22s ease;
+}
+
+.nav button:hover,
+.nav a:hover{
+    background:rgba(255,255,255,.055);
+    color:#fff;
+    transform:translateX(2px);
+}
+
+.nav button:hover::before,
+.nav a:hover::before{
+    transform:translateY(-50%) scaleY(1);
+}
+
+.nav button.active{
+    background:linear-gradient(
+        90deg,
+        rgba(255,48,53,.18),
+        rgba(255,48,53,.04)
+    );
+    color:#fff;
+    box-shadow:inset 0 0 0 1px rgba(255,48,53,.22);
+}
+
+.nav button.active::before{
+    transform:translateY(-50%) scaleY(1);
+}
+
+.nav-icon{
+    width:30px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:flex-start;
+    font-size:16px;
+    flex-shrink:0;
+}
+
+/* =========================================================
+   MAIN LAYOUT
+========================================================= */
+
+.main{
+    margin-left:var(--sidebar-w);
+    min-height:100vh;
+    position:relative;
+    z-index:1;
+}
+
+.topbar{
+    position:sticky;
+    top:0;
+    height:84px;
+    background:rgba(6,10,17,.82);
+    backdrop-filter:blur(18px) saturate(140%);
+    -webkit-backdrop-filter:blur(18px) saturate(140%);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 32px;
+    z-index:500;
+}
+
+.topbar::after{
+    content:"";
+    position:absolute;
+    left:0;
+    bottom:-1px;
+    height:1px;
+    width:100%;
+    background:linear-gradient(
+        90deg,
+        rgba(255,48,53,.5),
+        rgba(255,48,53,.04) 35%,
+        transparent 70%
+    );
+}
+
+.topbar-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.topbar h1{
+    font-size:21px;
+    font-weight:800;
+    letter-spacing:.2px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    background:rgba(255,255,255,.035);
+    border:1px solid var(--border);
+}
+
+.status-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:#22c55e;
+    box-shadow:0 0 0 4px rgba(34,197,94,.16);
+    animation:pulseDot 2.2s ease-in-out infinite;
+}
+
+@keyframes pulseDot{
+    0%,100%{ box-shadow:0 0 0 3px rgba(34,197,94,.14); }
+    50%{ box-shadow:0 0 0 7px rgba(34,197,94,.05); }
+}
+
+.container{
+    padding:34px 32px 70px;
+    max-width:1520px;
+    margin:auto;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.admin-section{
+    display:none;
+}
+
+.admin-section.active{
+    display:block;
+    animation:sectionIn .42s cubic-bezier(.22,.9,.3,1);
+}
+
+@keyframes sectionIn{
+    from{
+        opacity:0;
+        transform:translateY(14px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.section-heading{
+    margin-bottom:26px;
+}
+
+.section-heading h2{
+    font-size:33px;
+    font-weight:900;
+    letter-spacing:-.6px;
+    margin-bottom:9px;
+    background:linear-gradient(90deg,#ffffff,#a9b8cd);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.section-heading p{
+    color:var(--muted);
+    font-size:15px;
+    max-width:720px;
+    line-height:1.6;
+}
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.card{
+    position:relative;
+    background:linear-gradient(160deg,#101a2c 0%,#0c1423 100%);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:28px;
+    margin-bottom:24px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+}
+
+.card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:1px;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.10) 30%,
+        rgba(255,48,53,.30) 60%,
+        transparent
+    );
+}
+
+.card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:24px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--border-soft);
+}
+
+.card-header h3{
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:.1px;
+}
+
+.card-header p{
+    color:var(--muted-2);
+    font-size:13px;
+    margin-top:5px;
+}
+
+/* =========================================================
+   FORMS
+========================================================= */
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+}
+
+.form-grid.three{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+}
+
+.form-group.full{
+    grid-column:1/-1;
+}
+
+.form-group label{
+    font-size:13px;
+    font-weight:700;
+    color:var(--text-soft);
+    letter-spacing:.25px;
+    text-transform:uppercase;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:13px 15px;
+    outline:none;
+    background:#080f1c;
+    color:var(--text);
+    font-size:14px;
+    transition:border-color .2s ease,box-shadow .2s ease,background .2s ease;
+}
+
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover{
+    border-color:var(--border-strong);
+}
+
+.form-group textarea{
+    min-height:120px;
+    resize:vertical;
+    line-height:1.6;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus{
+    border-color:rgba(255,48,53,.65);
+    background:#0a1220;
+    box-shadow:
+        0 0 0 3px rgba(255,48,53,.13),
+        0 8px 22px rgba(0,0,0,.28);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder{
+    color:var(--muted-2);
+}
+
+.file-input{
+    padding:11px !important;
+    cursor:pointer;
+}
+
+.file-input::file-selector-button{
+    border:0;
+    margin-right:14px;
+    padding:9px 14px;
+    border-radius:9px;
+    background:linear-gradient(145deg,#243css,#1b2740);
+    background:linear-gradient(145deg,#26374f,#1a2639);
+    color:#e7eefb;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:.3px;
+    cursor:pointer;
+    transition:background .2s ease;
+}
+
+.file-input::file-selector-button:hover{
+    background:linear-gradient(145deg,#31465f,#22304a);
+}
+
+.help{
+    color:var(--muted-2);
+    font-size:12px;
+    line-height:1.5;
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:24px;
+}
+
+.btn{
+    border:0;
+    border-radius:12px;
+    padding:12px 20px;
+    font-weight:800;
+    font-size:13.5px;
+    letter-spacing:.2px;
+    transition:transform .18s ease,box-shadow .18s ease,background .18s ease,opacity .18s ease;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    white-space:nowrap;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+.btn:active{
+    transform:translateY(0);
+}
+
+.btn:disabled{
+    opacity:.6;
+    cursor:wait;
+    transform:none;
+}
+
+.btn-primary{
+    background:linear-gradient(145deg,#ff3b40,#e3262b);
+    color:#fff;
+    box-shadow:
+        0 10px 26px rgba(255,48,53,.28),
+        inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+.btn-primary:hover{
+    background:linear-gradient(145deg,#ff4b50,#ec2a2f);
+    box-shadow:
+        0 14px 32px rgba(255,48,53,.36),
+        inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.btn-success{
+    background:linear-gradient(145deg,#1cb356,#128a41);
+    color:#fff;
+    box-shadow:0 10px 24px rgba(22,163,74,.26);
+}
+
+.btn-danger{
+    background:linear-gradient(145deg,#e33535,#b91c1c);
+    color:#fff;
+    box-shadow:0 10px 24px rgba(220,38,38,.26);
+}
+
+.btn-warning{
+    background:linear-gradient(145deg,#e08712,#b45309);
+    color:#fff;
+    box-shadow:0 10px 24px rgba(217,119,6,.24);
+}
+
+.btn-secondary{
+    background:rgba(255,255,255,.06);
+    color:#dbe4f0;
+    border:1px solid var(--border-strong);
+}
+
+.btn-secondary:hover{
+    background:rgba(255,255,255,.11);
+    color:#fff;
+}
+
+.btn-small{
+    padding:8px 13px;
+    font-size:12px;
+    border-radius:10px;
+}
+
+/* =========================================================
+   DASHBOARD STATS
+========================================================= */
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+}
+
+.stat{
+    position:relative;
+    background:linear-gradient(160deg,#101a2c 0%,#0b1322 100%);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:24px;
+    overflow:hidden;
+    transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+
+.stat::after{
+    content:"";
+    position:absolute;
+    right:-30px;
+    top:-30px;
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(255,48,53,.18),transparent 70%);
+    transition:transform .4s ease;
+}
+
+.stat:hover{
+    transform:translateY(-4px);
+    border-color:var(--border-strong);
+    box-shadow:var(--shadow);
+}
+
+.stat:hover::after{
+    transform:scale(1.35);
+}
+
+.stat-icon{
+    width:46px;
+    height:46px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:21px;
+    margin-bottom:16px;
+    background:linear-gradient(145deg,#1b2740,#0f1829);
+    border:1px solid var(--border-strong);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.stat-number{
+    font-size:32px;
+    font-weight:900;
+    letter-spacing:-.8px;
+    line-height:1;
+}
+
+.stat-label{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:7px;
+    font-weight:600;
+}
+
+/* =========================================================
+   ITEM GRIDS
+========================================================= */
+
+.item-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(275px,1fr));
+    gap:18px;
+}
+
+.item-card{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:linear-gradient(160deg,#0d1728,#0a1220);
+    transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+
+.item-card:hover{
+    transform:translateY(-4px);
+    border-color:var(--border-strong);
+    box-shadow:var(--shadow);
+}
+
+.item-media{
+    width:100%;
+    height:180px;
+    background:#030814;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    border-bottom:1px solid var(--border-soft);
+}
+
+.item-media img,
+.item-media video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:transform .45s ease;
+}
+
+.item-card:hover .item-media img,
+.item-card:hover .item-media video{
+    transform:scale(1.06);
+}
+
+.item-body{
+    padding:17px;
+}
+
+.item-body h4{
+    margin-bottom:10px;
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.1px;
+}
+
+.item-body p{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:6px;
+    line-height:1.5;
+    word-break:break-word;
+}
+
+.item-actions{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+    flex-wrap:wrap;
+}
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+.table-wrap{
+    overflow-x:auto;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--border-soft);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:640px;
+}
+
+th{
+    text-align:left;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.9px;
+    text-transform:uppercase;
+    color:var(--muted);
+    background:#0a1220;
+    padding:15px;
+    border-bottom:1px solid var(--border-soft);
+    white-space:nowrap;
+}
+
+td{
+    padding:15px;
+    border-top:1px solid var(--border-soft);
+    font-size:13.5px;
+    color:var(--text-soft);
+}
+
+tbody tr{
+    transition:background .18s ease;
+}
+
+tbody tr:hover{
+    background:rgba(255,255,255,.028);
+}
+
+.table-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+/* =========================================================
+   PREVIEWS
+========================================================= */
+
+.preview-large{
+    width:200px;
+    max-width:100%;
+    max-height:150px;
+    object-fit:cover;
+    border-radius:12px;
+    background:#030814;
+    border:1px solid var(--border);
+    display:block;
+}
+
+.preview-box{
+    padding:16px;
+    border:1px dashed var(--border-strong);
+    border-radius:var(--radius-sm);
+    color:var(--muted-2);
+    font-size:13px;
+    background:rgba(255,255,255,.018);
+}
+
+/* =========================================================
+   STATES
+========================================================= */
+
+.loading{
+    padding:38px;
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+}
+
+.spinner{
+    width:30px;
+    height:30px;
+    border:3px solid #1e2b40;
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    margin:0 auto 12px;
+}
+
+@keyframes spin{
+    to{ transform:rotate(360deg); }
+}
+
+.empty{
+    text-align:center;
+    padding:38px;
+    color:var(--muted-2);
+    font-size:14px;
+}
+
+/* =========================================================
+   TOASTS
+========================================================= */
+
+.toast-container{
+    position:fixed;
+    right:22px;
+    bottom:22px;
+    z-index:99999;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.toast{
+    min-width:280px;
+    max-width:480px;
+    background:linear-gradient(145deg,#1b2740,#131d2f);
+    color:#fff;
+    padding:15px 18px;
+    border-radius:14px;
+    font-size:14px;
+    font-weight:600;
+    border:1px solid var(--border-strong);
+    box-shadow:var(--shadow-lg);
+    animation:toastIn .35s cubic-bezier(.22,.9,.3,1);
+}
+
+@keyframes toastIn{
+    from{
+        opacity:0;
+        transform:translateX(40px) scale(.95);
+    }
+    to{
+        opacity:1;
+        transform:translateX(0) scale(1);
+    }
+}
+
+.toast.success{
+    background:linear-gradient(145deg,#17913f,#0f6b2e);
+    border-color:rgba(255,255,255,.14);
+}
+
+.toast.error{
+    background:linear-gradient(145deg,#d32c2c,#9f1717);
+    border-color:rgba(255,255,255,.14);
+}
+
+/* =========================================================
+   MOBILE MENU BUTTON
+========================================================= */
+
+.mobile-menu{
+    display:none;
+    border:1px solid var(--border-strong);
+    background:rgba(255,255,255,.06);
+    color:#fff;
+    border-radius:11px;
+    padding:9px 14px;
+    font-size:19px;
+    line-height:1;
+    transition:background .2s ease;
+}
+
+.mobile-menu:hover{
+    background:rgba(255,255,255,.12);
+}
+
+/* =========================================================
+   CALENDAR PREVIEW
+========================================================= */
+
+.calendar-preview{
+    width:100%;
+    min-height:500px;
+    border-radius:var(--radius);
+    background:#030814;
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+
+.calendar-preview iframe{
+    width:100%;
+    height:650px;
+    border:0;
+}
+
+.calendar-preview img{
+    max-width:100%;
+    max-height:650px;
+    object-fit:contain;
+}
+
+.calendar-preview embed{
+    width:100%;
+    height:650px;
+    border:0;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1100px){
+    .dashboard-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .form-grid.three{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:800px){
+    .sidebar{
+        transform:translateX(-100%);
+        transition:transform .28s cubic-bezier(.22,.9,.3,1);
+        box-shadow:24px 0 70px rgba(0,0,0,.6);
+    }
+
+    .sidebar.open{
+        transform:translateX(0);
+    }
+
+    .main{
+        margin-left:0;
+    }
+
+    .mobile-menu{
+        display:block;
+    }
+
+    .topbar{
+        padding:0 16px;
+        height:76px;
+    }
+
+    .container{
+        padding:20px 16px 60px;
+    }
+
+    .form-grid,
+    .form-grid.three{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-grid{
+        grid-template-columns:1fr;
+    }
+
+    .topbar h1{
+        font-size:17px;
+    }
+
+    .status{
+        font-size:11.5px;
+        padding:7px 12px;
+    }
+
+    .section-heading h2{
+        font-size:26px;
+    }
+
+    .card{
+        padding:20px;
+        border-radius:16px;
+    }
+}
+
+@media(max-width:520px){
+    .toast-container{
+        left:16px;
+        right:16px;
+        bottom:16px;
+    }
+
+    .toast{
+        min-width:0;
+        width:100%;
+    }
+
+    .status span:last-child{
+        display:none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGOUT LOADING ANIMATION -->
+
+<div class="modal-overlay" id="logoutModal" aria-hidden="true">
+
+    <div class="logout-card" role="status" aria-live="polite">
+
+        <div class="logo-loader" aria-hidden="true">
+
+            <div class="loader-ring loader-ring-one"></div>
+
+            <div class="loader-ring loader-ring-two"></div>
+
+            <img
+                class="logout-logo"
+                src="./potters_house_logo_transparent_no_shadow.png"
+                alt=""
+            >
+
+        </div>
+
+        <h3 class="card-title">
+            Logging Out
+        </h3>
+
+        <p class="card-message">
+            Please wait while we securely log you out.
+        </p>
+
+        <div
+            class="loading-dots"
+            aria-hidden="true"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+
+        <div class="sidebar-logo">
+            ⛪
+        </div>
+
+        <div class="sidebar-title">
+            Potter's House
+        </div>
+
+        <div class="sidebar-subtitle">
+            Administration Panel
+        </div>
+
+    </div>
+
+
+
+    <nav class="nav">
+
+        <button
+            class="active"
+            onclick="showSection('dashboard',this)"
+        >
+            <span class="nav-icon">📊</span>
+            Dashboard
+        </button>
+
+
+
+        <button
+            onclick="showSection('home',this)"
+        >
+            <span class="nav-icon">🏠</span>
+            Home
+        </button>
+
+
+
+        <button
+            onclick="showSection('background',this)"
+        >
+            <span class="nav-icon">🖼️</span>
+            Home Background
+        </button>
+
+
+
+        <button
+            onclick="showSection('events',this)"
+        >
+            <span class="nav-icon">📅</span>
+            Coming Events
+        </button>
+
+
+
+        <button
+            onclick="showSection('special-events',this)"
+        >
+            <span class="nav-icon">⭐</span>
+            Special Events
+        </button>
+
+
+
+        <button
+            onclick="showSection('featured',this)"
+        >
+            <span class="nav-icon">🎬</span>
+            Featured
+        </button>
+
+
+
+        <button
+            onclick="showSection('welcome',this)"
+        >
+            <span class="nav-icon">👋</span>
+            Welcome
+        </button>
+
+
+
+        <button
+            onclick="showSection('explore',this)"
+        >
+            <span class="nav-icon">🧭</span>
+            Explore
+        </button>
+
+
+
+        <button
+            onclick="showSection('calendar',this)"
+        >
+            <span class="nav-icon">📆</span>
+            Calendar
+        </button>
+
+
+
+        <a
+            href="index.html"
+            target="_blank"
+        >
+            <span class="nav-icon">🌐</span>
+            Open Website
+        </a>
+
+
+
+        <button
+            type="button"
+            onclick="logout()"
+            class="logout-btn"
+        >
+            <span class="nav-icon">🚪</span>
+            Logout
+        </button>
+
+    </nav>
+
+</aside>
+
+
+
+<main class="main">
+
+<header class="topbar">
+
+    <div class="topbar-left">
+
+        <button
+            class="mobile-menu"
+            onclick="toggleSidebar()"
+        >
+            ☰
+        </button>
+
+        <h1 id="pageTitle">
+            Dashboard
+        </h1>
+
+    </div>
+
+
+
+    <div class="status">
+
+        <span
+            class="status-dot"
+            id="statusDot"
+        ></span>
+
+        <span id="statusText">
+            Connecting...
+        </span>
+
+    </div>
+
+</header>
+
+
+
+<div class="container">
+
+<!-- =========================================================
+     DASHBOARD
+========================================================= -->
+
+<section
+    id="dashboard"
+    class="admin-section active"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Dashboard
+        </h2>
+
+        <p>
+            Manage all website content from one place.
+        </p>
+
+    </div>
+
+
+
+    <div class="dashboard-grid">
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                📅
+            </div>
+
+            <div
+                class="stat-number"
+                id="countEvents"
+            >
+                0
+            </div>
+
+            <div class="stat-label">
+                Coming Events
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                ⭐
+            </div>
+
+            <div
+                class="stat-number"
+                id="countSpecial"
+            >
+                0
+            </div>
+
+            <div class="stat-label">
+                Special Events
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🧭
+            </div>
+
+            <div
+                class="stat-number"
+                id="countExplore"
+            >
+                0
+            </div>
+
+            <div class="stat-label">
+                Explore Items
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-icon">
+                🖼️
+            </div>
+
+            <div
+                class="stat-number"
+                id="countBackground"
+            >
+                0
+            </div>
+
+            <div class="stat-label">
+                Background Media
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div
+        class="card"
+        style="margin-top:25px"
+    >
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Quick Actions
+                </h3>
+
+                <p>
+                    Quickly open a section.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="actions">
+
+            <button
+                class="btn btn-primary"
+                onclick="openSection('home')"
+            >
+                🏠 Edit Home
+            </button>
+
+
+
+            <button
+                class="btn btn-primary"
+                onclick="openSection('events')"
+            >
+                📅 Manage Events
+            </button>
+
+
+
+            <button
+                class="btn btn-primary"
+                onclick="openSection('special-events')"
+            >
+                ⭐ Special Events
+            </button>
+
+
+
+            <button
+                class="btn btn-primary"
+                onclick="openSection('background')"
+            >
+                🖼️ Background Media
+            </button>
+
+
+
+            <button
+                class="btn btn-primary"
+                onclick="openSection('calendar')"
+            >
+                📆 Calendar
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     HOME
+========================================================= -->
+
+<section
+    id="home"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Home
+        </h2>
+
+        <p>
+            Update your main website heading, location and logo.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Home Information
+                </h3>
+
+                <p>
+                    Changes are saved directly to MongoDB.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <form id="homeForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Badge
+                    </label>
+
+                    <input
+                        type="text"
+                        id="homeBadge"
+                        placeholder="WELCOME HOME"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="homeTitle"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Subtitle
+                    </label>
+
+                    <input
+                        type="text"
+                        id="homeSubtitle"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Location
+                    </label>
+
+                    <input
+                        type="text"
+                        id="homeLocation"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Google Maps Link
+                    </label>
+
+                    <input
+                        type="url"
+                        id="homeMapLink"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Logo
+                    </label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="homeLogo"
+                        name="logo"
+                        accept="image/*"
+                    >
+
+                    <span class="help">
+                        JPG, PNG, WEBP or GIF.
+                    </span>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Current Logo
+                    </label>
+
+                    <div
+                        class="preview-box"
+                        id="homeLogoPreview"
+                    >
+                        No logo uploaded.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    💾 Save Home
+                </button>
+
+
+
+                <button
+                    class="btn btn-secondary"
+                    type="button"
+                    onclick="loadHome()"
+                >
+                    ↻ Reload
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     HOME BACKGROUND
+========================================================= -->
+
+<section
+    id="background"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Home Background
+        </h2>
+
+        <p>
+            Upload multiple background images or videos for the home page.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Upload Background Media
+                </h3>
+
+                <p>
+                    Select one or multiple images/videos.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <form id="backgroundForm">
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label>
+                        Media Files
+                    </label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="backgroundMedia"
+                        name="media"
+                        multiple
+                        accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v"
+                    >
+
+                    <span class="help">
+                        Maximum 100 MB per file.
+                    </span>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="backgroundTitle"
+                        placeholder="Home Background"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Starting Order
+                    </label>
+
+                    <input
+                        type="number"
+                        id="backgroundOrder"
+                        value="0"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    ⬆ Upload Media
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Background Media
+                </h3>
+
+                <p>
+                    Edit title/order or delete media.
+                </p>
+
+            </div>
+
+
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadBackground()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+
+
+        <div
+            id="backgroundList"
+            class="item-grid"
+        ></div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     COMING EVENTS
+========================================================= -->
+
+<section
+    id="events"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Coming Events
+        </h2>
+
+        <p>
+            Add, edit and delete your regular church services.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3 id="eventFormTitle">
+                    Add Event
+                </h3>
+
+            </div>
+
+        </div>
+
+
+
+        <form id="eventForm">
+
+            <input
+                type="hidden"
+                id="eventId"
+            >
+
+
+
+            <div class="form-grid three">
+
+                <div class="form-group">
+
+                    <label>
+                        Category
+                    </label>
+
+                    <input
+                        type="text"
+                        id="eventCategory"
+                        placeholder="Morning"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Day
+                    </label>
+
+                    <input
+                        type="text"
+                        id="eventDay"
+                        placeholder="Sunday"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Service
+                    </label>
+
+                    <input
+                        type="text"
+                        id="eventService"
+                        placeholder="Worship Service"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Time
+                    </label>
+
+                    <input
+                        type="text"
+                        id="eventTime"
+                        placeholder="10:30 AM"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Order
+                    </label>
+
+                    <input
+                        type="number"
+                        id="eventOrder"
+                        value="0"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="eventSaveBtn"
+                >
+                    ➕ Add Event
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="resetEventForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Coming Events List
+                </h3>
+
+            </div>
+
+
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadEvents()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Order</th>
+                        <th>Category</th>
+                        <th>Day</th>
+                        <th>Service</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="eventsTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     SPECIAL EVENTS
+========================================================= -->
+
+<section
+    id="special-events"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Special Events
+        </h2>
+
+        <p>
+            Add, edit and delete special event cards.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3 id="specialFormTitle">
+                    Add Special Event
+                </h3>
+
+            </div>
+
+        </div>
+
+
+
+        <form id="specialForm">
+
+            <input
+                type="hidden"
+                id="specialId"
+            >
+
+
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label>
+                        Event Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="specialTitle"
+                        placeholder="Youth Rally"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Date
+                    </label>
+
+                    <input
+                        type="text"
+                        id="specialDate"
+                        placeholder="September 12, 2026"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Time
+                    </label>
+
+                    <input
+                        type="text"
+                        id="specialTime"
+                        placeholder="6:30 PM"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Link
+                    </label>
+
+                    <input
+                        type="text"
+                        id="specialLink"
+                        value="#"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Display Order
+                    </label>
+
+                    <input
+                        type="number"
+                        id="specialOrder"
+                        value="0"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Event Image
+                    </label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="specialImage"
+                        name="image"
+                        accept="image/*"
+                    >
+
+                    <span class="help">
+                        The backend accepts the field name "image".
+                    </span>
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <div
+                        class="preview-box"
+                        id="specialCurrentImage"
+                    ></div>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="specialSaveBtn"
+                >
+                    ➕ Add Special Event
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="resetSpecialForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Special Event List
+                </h3>
+
+            </div>
+
+
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadSpecialEvents()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+
+
+        <div
+            id="specialEventsList"
+            class="item-grid"
+        ></div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     FEATURED
+========================================================= -->
+
+<section
+    id="featured"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Featured
+        </h2>
+
+        <p>
+            Update the featured message and background.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <form id="featuredForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Badge
+                    </label>
+
+                    <input
+                        type="text"
+                        id="featuredBadge"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="featuredTitle"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Subtitle
+                    </label>
+
+                    <input
+                        type="text"
+                        id="featuredSubtitle"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Watch Link
+                    </label>
+
+                    <input
+                        type="text"
+                        id="featuredWatchLink"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Sermons Link
+                    </label>
+
+                    <input
+                        type="text"
+                        id="featuredSermonsLink"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Background Image
+                    </label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="featuredBackground"
+                        name="backgroundImage"
+                        accept="image/*"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Background Image URL
+                    </label>
+
+                    <input
+                        type="text"
+                        id="featuredBackgroundUrl"
+                        placeholder="https://..."
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <div
+                id="featuredPreview"
+                class="preview-box"
+                style="margin-top:20px"
+            ></div>
+
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    💾 Save Featured
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="loadFeatured()"
+                >
+                    ↻ Reload
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     WELCOME
+========================================================= -->
+
+<section
+    id="welcome"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Welcome
+        </h2>
+
+        <p>
+            Manage the welcome message and leadership information.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <form id="welcomeForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Badge
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeBadge"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeTitle"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Paragraph 1
+                    </label>
+
+                    <textarea id="welcomeParagraph1"></textarea>
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Paragraph 2
+                    </label>
+
+                    <textarea id="welcomeParagraph2"></textarea>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Leader Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeLeaderName"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        New Here Text
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeNewHereText"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        New Here Link
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeNewHereLink"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Contact Text
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeContactText"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Contact Link
+                    </label>
+
+                    <input
+                        type="text"
+                        id="welcomeContactLink"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Welcome Image
+                    </label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="welcomeImage"
+                        name="image"
+                        accept="image/*"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Current Image
+                    </label>
+
+                    <div
+                        id="welcomePreview"
+                        class="preview-box"
+                    >
+                        No welcome image.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    💾 Save Welcome
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="loadWelcome()"
+                >
+                    ↻ Reload
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     EXPLORE
+========================================================= -->
+
+<section
+    id="explore"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Explore
+        </h2>
+
+        <p>
+            Add, update and delete Explore cards.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3 id="exploreFormTitle">
+                Add Explore Item
+            </h3>
+
+        </div>
+
+
+
+        <form id="exploreForm">
+
+            <input
+                type="hidden"
+                id="exploreId"
+            >
+
+
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="exploreTitle"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Display Order
+                    </label>
+
+                    <input
+                        type="number"
+                        id="exploreOrder"
+                        value="0"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Description
+                    </label>
+
+                    <textarea
+                        id="exploreDescription"
+                    ></textarea>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Button Text
+                    </label>
+
+                    <input
+                        type="text"
+                        id="exploreButtonText"
+                        value="Learn More"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+                        Button Link
+                    </label>
+
+                    <input
+                        type="text"
+                        id="exploreButtonLink"
+                        value="#"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="exploreSaveBtn"
+                >
+                    ➕ Add Explore Item
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="resetExploreForm()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h3>
+                Explore Items
+            </h3>
+
+
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadExplore()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+
+
+        <div
+            id="exploreList"
+            class="item-grid"
+        ></div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     CALENDAR
+========================================================= -->
+
+<section
+    id="calendar"
+    class="admin-section"
+>
+
+    <div class="section-heading">
+
+        <h2>
+            Calendar
+        </h2>
+
+        <p>
+            Set the calendar displayed when visitors click VIEW CALENDAR.
+        </p>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <form id="calendarForm">
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label>
+                        Calendar URL
+                    </label>
+
+                    <input
+                        type="text"
+                        id="calendarUrl"
+                        placeholder="https://example.com/calendar.pdf"
+                    >
+
+                    <span class="help">
+                        You can use a Google Calendar link, PDF URL, image URL, etc.
+                    </span>
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Or Upload Calendar
+                    </label>
+
+                    <input
+                        class="file-input"
+                        type="file"
+                        id="calendarFile"
+                        name="calendarFile"
+                        accept=".pdf,image/jpeg,image/png,image/webp"
+                    >
+
+                    <span class="help">
+                        PDF, JPG, PNG or WEBP.
+                    </span>
+
+                </div>
+
+
+
+                <div class="form-group full">
+
+                    <label>
+                        Calendar Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="calendarTitle"
+                        value="Church Calendar"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="calendarSaveBtn"
+                >
+                    💾 Save Calendar
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    onclick="removeCalendar()"
+                >
+                    🗑 Remove Calendar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3>
+                    Calendar Preview
+                </h3>
+
+                <p id="calendarStatus">
+                    Loading calendar...
+                </p>
+
+            </div>
+
+
+
+            <button
+                class="btn btn-secondary btn-small"
+                onclick="loadCalendar()"
+            >
+                ↻ Refresh
+            </button>
+
+        </div>
+
+
+
+        <div
+            id="calendarPreview"
+            class="calendar-preview"
+        >
+            <span style="color:#64748b">
+                No calendar available.
+            </span>
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+</main>
+
+
+<div
+    id="toastContainer"
+    class="toast-container"
+></div>
+
+
+<script>
+
+const API = "";
+
+let eventsCache = [];
+let specialEventsCache = [];
+let backgroundCache = [];
+let exploreCache = [];
+let eventSource = null;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+function fileUrl(value){
+
+    if(!value){
+        return "";
+    }
+
+    if(/^https?:\/\//i.test(value)){
+        return value;
+    }
+
+    if(value.startsWith("/")){
+        return value;
+    }
+
+    return "/" + value;
+
+}
+
+
+/*
+ * API HELPER
+ *
+ * credentials: "include" makes sure the authentication
+ * cookie/session is sent with every same-origin API request.
+ */
+
+async function api(url,options={}){
+
+    const response = await fetch(API + url,{
+
+        ...options,
+
+        credentials:"include"
+
+    });
+
+    const text = await response.text();
+
+    let data;
+
+    try{
+
+        data = text
+            ? JSON.parse(text)
+            : {};
+
+    }catch{
+
+        throw new Error(
+            text ||
+            `Server returned invalid response (${response.status})`
+        );
+
+    }
+
+
+    if(!response.ok){
+
+        throw new Error(
+            data.message ||
+            data.error ||
+            `Request failed (${response.status})`
+        );
+
+    }
+
+
+    return data;
+
+}
+
+
+function showToast(message,type="success"){
+
+    const container =
+        document.getElementById("toastContainer");
+
+    const toast =
+        document.createElement("div");
+
+    toast.className =
+        `toast ${type}`;
+
+    toast.textContent =
+        message;
+
+    container.appendChild(toast);
+
+    setTimeout(()=>{
+        toast.remove();
+    },4500);
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function showSection(sectionId,button){
+
+    document
+        .querySelectorAll(".admin-section")
+        .forEach(section=>{
+            section.classList.remove("active");
+        });
+
+
+    const section =
+        document.getElementById(sectionId);
+
+
+    if(section){
+        section.classList.add("active");
+    }
+
+
+    document
+        .querySelectorAll(".nav button")
+        .forEach(btn=>{
+            btn.classList.remove("active");
+        });
+
+
+    if(button){
+        button.classList.add("active");
+    }
+
+
+    const titles = {
+
+        dashboard:"Dashboard",
+        home:"Home",
+        background:"Home Background",
+        events:"Coming Events",
+        "special-events":"Special Events",
+        featured:"Featured",
+        welcome:"Welcome",
+        explore:"Explore",
+        calendar:"Calendar"
+
+    };
+
+
+    document.getElementById("pageTitle").textContent =
+        titles[sectionId] || "Admin Panel";
+
+
+    document
+        .getElementById("sidebar")
+        .classList.remove("open");
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+}
+
+
+function openSection(sectionId){
+
+    const button =
+        [...document.querySelectorAll(".nav button")]
+        .find(btn =>
+            btn.getAttribute("onclick")?.includes(
+                `'${sectionId}'`
+            )
+        );
+
+
+    showSection(
+        sectionId,
+        button
+    );
+
+}
+
+
+function toggleSidebar(){
+
+    document
+        .getElementById("sidebar")
+        .classList.toggle("open");
+
+}
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+async function loadHome(){
+
+    try{
+
+        const data =
+            await api("/api/home");
+
+
+        document.getElementById("homeBadge").value =
+            data.badge || "";
+
+
+        document.getElementById("homeTitle").value =
+            data.title || "";
+
+
+        document.getElementById("homeSubtitle").value =
+            data.subtitle || "";
+
+
+        document.getElementById("homeLocation").value =
+            data.location || "";
+
+
+        document.getElementById("homeMapLink").value =
+            data.mapLink || "";
+
+
+        const preview =
+            document.getElementById("homeLogoPreview");
+
+
+        if(data.logo){
+
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(fileUrl(data.logo))}"
+                    class="preview-large"
+                    alt="Logo"
+                >
+            `;
+
+        }else{
+
+            preview.textContent =
+                "No logo uploaded.";
+
+        }
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("homeForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "badge",
+                document.getElementById("homeBadge").value
+            );
+
+
+            formData.append(
+                "title",
+                document.getElementById("homeTitle").value
+            );
+
+
+            formData.append(
+                "subtitle",
+                document.getElementById("homeSubtitle").value
+            );
+
+
+            formData.append(
+                "location",
+                document.getElementById("homeLocation").value
+            );
+
+
+            formData.append(
+                "mapLink",
+                document.getElementById("homeMapLink").value
+            );
+
+
+            const file =
+                document.getElementById("homeLogo").files[0];
+
+
+            if(file){
+                formData.append("logo",file);
+            }
+
+
+            try{
+
+                const data =
+                    await api(
+                        "/api/home",
+                        {
+                            method:"PUT",
+                            body:formData
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Home updated successfully."
+                );
+
+
+                document.getElementById("homeLogo").value="";
+
+
+                loadHome();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+async function loadBackground(){
+
+    const container =
+        document.getElementById("backgroundList");
+
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading background media...
+        </div>
+    `;
+
+
+    try{
+
+        backgroundCache =
+            await api("/api/home-background");
+
+
+        renderBackground();
+
+
+        document.getElementById("countBackground")
+            .textContent =
+            backgroundCache.length;
+
+    }catch(error){
+
+        container.innerHTML =
+            `<div class="empty">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+function renderBackground(){
+
+    const container =
+        document.getElementById("backgroundList");
+
+
+    if(!backgroundCache.length){
+
+        container.innerHTML =
+            `<div class="empty">
+                No background media uploaded.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        backgroundCache
+        .map(item=>{
+
+            const isVideo =
+                item.type === "video";
+
+
+            const media =
+                isVideo
+                ? `
+                    <video
+                        src="${escapeHTML(fileUrl(item.url))}"
+                        controls
+                    ></video>
+                `
+                : `
+                    <img
+                        src="${escapeHTML(fileUrl(item.url))}"
+                        alt="${escapeHTML(item.title)}"
+                    >
+                `;
+
+
+            return `
+                <div class="item-card">
+
+                    <div class="item-media">
+                        ${media}
+                    </div>
+
+                    <div class="item-body">
+
+                        <h4>
+                            ${escapeHTML(
+                                item.title ||
+                                "Home Background"
+                            )}
+                        </h4>
+
+                        <p>
+                            Type:
+                            ${escapeHTML(item.type)}
+                        </p>
+
+                        <p>
+                            Order:
+                            ${escapeHTML(item.order)}
+                        </p>
+
+                        <p>
+                            ${escapeHTML(
+                                item.originalName || ""
+                            )}
+                        </p>
+
+                        <div class="item-actions">
+
+                            <button
+                                class="btn btn-warning btn-small"
+                                onclick="editBackground('${item._id}')"
+                            >
+                                ✏ Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger btn-small"
+                                onclick="deleteBackground('${item._id}')"
+                            >
+                                🗑 Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+document
+    .getElementById("backgroundForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const files =
+                document.getElementById(
+                    "backgroundMedia"
+                ).files;
+
+
+            if(!files.length){
+
+                showToast(
+                    "Please select at least one file.",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "title",
+                document.getElementById(
+                    "backgroundTitle"
+                ).value
+            );
+
+
+            formData.append(
+                "order",
+                document.getElementById(
+                    "backgroundOrder"
+                ).value
+            );
+
+
+            for(const file of files){
+
+                formData.append(
+                    "media",
+                    file
+                );
+
+            }
+
+
+            try{
+
+                const data =
+                    await api(
+                        "/api/home-background",
+                        {
+                            method:"POST",
+                            body:formData
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Background uploaded successfully."
+                );
+
+
+                document
+                    .getElementById("backgroundForm")
+                    .reset();
+
+
+                document.getElementById(
+                    "backgroundOrder"
+                ).value=0;
+
+
+                loadBackground();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+async function editBackground(id){
+
+    const item =
+        backgroundCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+
+    if(!item){
+        return;
+    }
+
+
+    const title =
+        prompt(
+            "Enter media title:",
+            item.title || ""
+        );
+
+
+    if(title===null){
+        return;
+    }
+
+
+    const order =
+        prompt(
+            "Enter order:",
+            item.order ?? 0
+        );
+
+
+    if(order===null){
+        return;
+    }
+
+
+    try{
+
+        const data =
+            await api(
+                `/api/home-background/${id}`,
+                {
+                    method:"PUT",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+                        title,
+                        order:Number(order)||0
+                    })
+                }
+            );
+
+
+        showToast(
+            data.message ||
+            "Background updated."
+        );
+
+
+        loadBackground();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+async function deleteBackground(id){
+
+    if(!confirm(
+        "Delete this background media?\n\nThe uploaded file will also be deleted."
+    )){
+        return;
+    }
+
+
+    try{
+
+        const data =
+            await api(
+                `/api/home-background/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+
+        showToast(
+            data.message ||
+            "Background deleted."
+        );
+
+
+        loadBackground();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+async function loadEvents(){
+
+    const tbody =
+        document.getElementById("eventsTable");
+
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading events...
+                </div>
+            </td>
+        </tr>
+    `;
+
+
+    try{
+
+        eventsCache =
+            await api("/api/events");
+
+
+        renderEvents();
+
+
+        document.getElementById("countEvents")
+            .textContent =
+            eventsCache.length;
+
+    }catch(error){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6">
+                    ${escapeHTML(error.message)}
+                </td>
+            </tr>`;
+
+    }
+
+}
+
+
+function renderEvents(){
+
+    const tbody =
+        document.getElementById("eventsTable");
+
+
+    if(!eventsCache.length){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6">
+                    <div class="empty">
+                        No events found.
+                    </div>
+                </td>
+            </tr>`;
+
+        return;
+
+    }
+
+
+    tbody.innerHTML =
+        eventsCache
+        .map(event=>`
+
+            <tr>
+
+                <td>
+                    ${escapeHTML(event.order)}
+                </td>
+
+                <td>
+                    ${escapeHTML(event.category)}
+                </td>
+
+                <td>
+                    ${escapeHTML(event.day)}
+                </td>
+
+                <td>
+                    ${escapeHTML(event.service)}
+                </td>
+
+                <td>
+                    ${escapeHTML(event.time)}
+                </td>
+
+                <td>
+
+                    <div class="table-actions">
+
+                        <button
+                            class="btn btn-warning btn-small"
+                            onclick="editEvent('${event._id}')"
+                        >
+                            ✏ Edit
+                        </button>
+
+                        <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteEvent('${event._id}')"
+                        >
+                            🗑 Delete
+                        </button>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `)
+        .join("");
+
+}
+
+
+document
+    .getElementById("eventForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const id =
+                document.getElementById(
+                    "eventId"
+                ).value;
+
+
+            const body = {
+
+                category:
+                    document.getElementById(
+                        "eventCategory"
+                    ).value,
+
+                day:
+                    document.getElementById(
+                        "eventDay"
+                    ).value,
+
+                service:
+                    document.getElementById(
+                        "eventService"
+                    ).value,
+
+                time:
+                    document.getElementById(
+                        "eventTime"
+                    ).value,
+
+                order:
+                    Number(
+                        document.getElementById(
+                            "eventOrder"
+                        ).value
+                    ) || 0
+
+            };
+
+
+            try{
+
+                const data =
+                    await api(
+                        id
+                        ? `/api/events/${id}`
+                        : "/api/events",
+                        {
+                            method:
+                                id
+                                ? "PUT"
+                                : "POST",
+
+                            headers:{
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(body)
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Event saved."
+                );
+
+
+                resetEventForm();
+
+
+                loadEvents();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+function editEvent(id){
+
+    const event =
+        eventsCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+
+    if(!event){
+        return;
+    }
+
+
+    document.getElementById("eventId").value =
+        event._id;
+
+
+    document.getElementById("eventCategory").value =
+        event.category || "";
+
+
+    document.getElementById("eventDay").value =
+        event.day || "";
+
+
+    document.getElementById("eventService").value =
+        event.service || "";
+
+
+    document.getElementById("eventTime").value =
+        event.time || "";
+
+
+    document.getElementById("eventOrder").value =
+        event.order || 0;
+
+
+    document.getElementById(
+        "eventFormTitle"
+    ).textContent =
+        "Edit Event";
+
+
+    document.getElementById(
+        "eventSaveBtn"
+    ).textContent =
+        "💾 Update Event";
+
+
+    openSection("events");
+
+}
+
+
+function resetEventForm(){
+
+    document
+        .getElementById("eventForm")
+        .reset();
+
+
+    document.getElementById(
+        "eventId"
+    ).value="";
+
+
+    document.getElementById(
+        "eventOrder"
+    ).value=0;
+
+
+    document.getElementById(
+        "eventFormTitle"
+    ).textContent =
+        "Add Event";
+
+
+    document.getElementById(
+        "eventSaveBtn"
+    ).textContent =
+        "➕ Add Event";
+
+}
+
+
+async function deleteEvent(id){
+
+    if(!confirm(
+        "Delete this event?"
+    )){
+        return;
+    }
+
+
+    try{
+
+        const data =
+            await api(
+                `/api/events/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+
+        showToast(
+            data.message ||
+            "Event deleted."
+        );
+
+
+        loadEvents();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SPECIAL EVENTS
+========================================================= */
+
+async function loadSpecialEvents(){
+
+    const container =
+        document.getElementById(
+            "specialEventsList"
+        );
+
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading special events...
+        </div>
+    `;
+
+
+    try{
+
+        specialEventsCache =
+            await api(
+                "/api/special-events"
+            );
+
+
+        renderSpecialEvents();
+
+
+        document.getElementById(
+            "countSpecial"
+        ).textContent =
+            specialEventsCache.length;
+
+    }catch(error){
+
+        container.innerHTML =
+            `<div class="empty">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+function renderSpecialEvents(){
+
+    const container =
+        document.getElementById(
+            "specialEventsList"
+        );
+
+
+    if(!specialEventsCache.length){
+
+        container.innerHTML =
+            `<div class="empty">
+                No special events found.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        specialEventsCache
+        .map(event=>{
+
+            const image =
+                event.image
+                ? `
+                    <img
+                        src="${escapeHTML(
+                            fileUrl(event.image)
+                        )}"
+                        alt="${escapeHTML(
+                            event.title
+                        )}"
+                    >
+                `
+                : `
+                    <span style="color:#64748b">
+                        No image
+                    </span>
+                `;
+
+
+            return `
+                <div class="item-card">
+
+                    <div class="item-media">
+                        ${image}
+                    </div>
+
+                    <div class="item-body">
+
+                        <h4>
+                            ${escapeHTML(event.title)}
+                        </h4>
+
+                        <p>
+                            📅
+                            ${escapeHTML(event.date)}
+                        </p>
+
+                        <p>
+                            🕐
+                            ${escapeHTML(event.time)}
+                        </p>
+
+                        <p>
+                            Order:
+                            ${escapeHTML(event.order)}
+                        </p>
+
+                        <div class="item-actions">
+
+                            <button
+                                class="btn btn-warning btn-small"
+                                onclick="editSpecialEvent('${event._id}')"
+                            >
+                                ✏ Edit
+                            </button>
+
+                            <button
+                                class="btn btn-danger btn-small"
+                                onclick="deleteSpecialEvent('${event._id}')"
+                            >
+                                🗑 Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+document
+    .getElementById("specialForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const id =
+                document.getElementById(
+                    "specialId"
+                ).value;
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "title",
+                document.getElementById(
+                    "specialTitle"
+                ).value
+            );
+
+
+            formData.append(
+                "date",
+                document.getElementById(
+                    "specialDate"
+                ).value
+            );
+
+
+            formData.append(
+                "time",
+                document.getElementById(
+                    "specialTime"
+                ).value
+            );
+
+
+            formData.append(
+                "link",
+                document.getElementById(
+                    "specialLink"
+                ).value
+            );
+
+
+            formData.append(
+                "order",
+                document.getElementById(
+                    "specialOrder"
+                ).value
+            );
+
+
+            const file =
+                document.getElementById(
+                    "specialImage"
+                ).files[0];
+
+
+            /*
+             * IMPORTANT:
+             * This MUST be "image".
+             */
+
+            if(file){
+                formData.append(
+                    "image",
+                    file
+                );
+            }
+
+
+            try{
+
+                const data =
+                    await api(
+                        id
+                        ? `/api/special-events/${id}`
+                        : "/api/special-events",
+                        {
+                            method:
+                                id
+                                ? "PUT"
+                                : "POST",
+
+                            body:
+                                formData
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Special event saved."
+                );
+
+
+                resetSpecialForm();
+
+
+                loadSpecialEvents();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+function editSpecialEvent(id){
+
+    const event =
+        specialEventsCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+
+    if(!event){
+        return;
+    }
+
+
+    document.getElementById(
+        "specialId"
+    ).value =
+        event._id;
+
+
+    document.getElementById(
+        "specialTitle"
+    ).value =
+        event.title || "";
+
+
+    document.getElementById(
+        "specialDate"
+    ).value =
+        event.date || "";
+
+
+    document.getElementById(
+        "specialTime"
+    ).value =
+        event.time || "";
+
+
+    document.getElementById(
+        "specialLink"
+    ).value =
+        event.link || "#";
+
+
+    document.getElementById(
+        "specialOrder"
+    ).value =
+        event.order || 0;
+
+
+    document.getElementById(
+        "specialImage"
+    ).value="";
+
+
+    const preview =
+        document.getElementById(
+            "specialCurrentImage"
+        );
+
+
+    if(event.image){
+
+        preview.innerHTML = `
+            <p style="margin-bottom:8px">
+                Current image:
+            </p>
+
+            <img
+                src="${escapeHTML(
+                    fileUrl(event.image)
+                )}"
+                class="preview-large"
+                alt="Current image"
+            >
+        `;
+
+    }else{
+
+        preview.textContent =
+            "No current image.";
+
+    }
+
+
+    document.getElementById(
+        "specialFormTitle"
+    ).textContent =
+        "Edit Special Event";
+
+
+    document.getElementById(
+        "specialSaveBtn"
+    ).textContent =
+        "💾 Update Special Event";
+
+
+    openSection(
+        "special-events"
+    );
+
+}
+
+
+function resetSpecialForm(){
+
+    document
+        .getElementById("specialForm")
+        .reset();
+
+
+    document.getElementById(
+        "specialId"
+    ).value="";
+
+
+    document.getElementById(
+        "specialOrder"
+    ).value=0;
+
+
+    document.getElementById(
+        "specialLink"
+    ).value="#";
+
+
+    document.getElementById(
+        "specialFormTitle"
+    ).textContent =
+        "Add Special Event";
+
+
+    document.getElementById(
+        "specialSaveBtn"
+    ).textContent =
+        "➕ Add Special Event";
+
+
+    document.getElementById(
+        "specialCurrentImage"
+    ).textContent="";
+
+}
+
+
+async function deleteSpecialEvent(id){
+
+    if(!confirm(
+        "Delete this special event?\n\nIts uploaded image will also be deleted."
+    )){
+        return;
+    }
+
+
+    try{
+
+        const data =
+            await api(
+                `/api/special-events/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+
+        showToast(
+            data.message ||
+            "Special event deleted."
+        );
+
+
+        loadSpecialEvents();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   FEATURED
+========================================================= */
+
+async function loadFeatured(){
+
+    try{
+
+        const data =
+            await api(
+                "/api/featured"
+            );
+
+
+        document.getElementById(
+            "featuredBadge"
+        ).value =
+            data.badge || "";
+
+
+        document.getElementById(
+            "featuredTitle"
+        ).value =
+            data.title || "";
+
+
+        document.getElementById(
+            "featuredSubtitle"
+        ).value =
+            data.subtitle || "";
+
+
+        document.getElementById(
+            "featuredWatchLink"
+        ).value =
+            data.watchLink || "";
+
+
+        document.getElementById(
+            "featuredSermonsLink"
+        ).value =
+            data.sermonsLink || "";
+
+
+        document.getElementById(
+            "featuredBackgroundUrl"
+        ).value =
+            data.backgroundImage &&
+            !data.backgroundImage.startsWith(
+                "/uploads/"
+            )
+            ? data.backgroundImage
+            : "";
+
+
+        const preview =
+            document.getElementById(
+                "featuredPreview"
+            );
+
+
+        if(data.backgroundImage){
+
+            preview.innerHTML = `
+                <p style="margin-bottom:8px">
+                    Current background:
+                </p>
+
+                <img
+                    src="${escapeHTML(
+                        fileUrl(
+                            data.backgroundImage
+                        )
+                    )}"
+                    class="preview-large"
+                    alt="Featured background"
+                >
+            `;
+
+        }else{
+
+            preview.textContent =
+                "No background image.";
+
+        }
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("featuredForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "badge",
+                document.getElementById(
+                    "featuredBadge"
+                ).value
+            );
+
+
+            formData.append(
+                "title",
+                document.getElementById(
+                    "featuredTitle"
+                ).value
+            );
+
+
+            formData.append(
+                "subtitle",
+                document.getElementById(
+                    "featuredSubtitle"
+                ).value
+            );
+
+
+            formData.append(
+                "watchLink",
+                document.getElementById(
+                    "featuredWatchLink"
+                ).value
+            );
+
+
+            formData.append(
+                "sermonsLink",
+                document.getElementById(
+                    "featuredSermonsLink"
+                ).value
+            );
+
+
+            const url =
+                document.getElementById(
+                    "featuredBackgroundUrl"
+                )
+                .value
+                .trim();
+
+
+            if(url){
+
+                formData.append(
+                    "backgroundImage",
+                    url
+                );
+
+            }
+
+
+            const file =
+                document.getElementById(
+                    "featuredBackground"
+                ).files[0];
+
+
+            if(file){
+
+                formData.append(
+                    "backgroundImage",
+                    file
+                );
+
+            }
+
+
+            try{
+
+                const data =
+                    await api(
+                        "/api/featured",
+                        {
+                            method:"PUT",
+                            body:formData
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Featured updated."
+                );
+
+
+                document.getElementById(
+                    "featuredBackground"
+                ).value="";
+
+
+                loadFeatured();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   WELCOME
+========================================================= */
+
+async function loadWelcome(){
+
+    try{
+
+        const data =
+            await api(
+                "/api/welcome"
+            );
+
+
+        document.getElementById(
+            "welcomeBadge"
+        ).value =
+            data.badge || "";
+
+
+        document.getElementById(
+            "welcomeTitle"
+        ).value =
+            data.title || "";
+
+
+        document.getElementById(
+            "welcomeParagraph1"
+        ).value =
+            data.paragraph1 || "";
+
+
+        document.getElementById(
+            "welcomeParagraph2"
+        ).value =
+            data.paragraph2 || "";
+
+
+        document.getElementById(
+            "welcomeLeaderName"
+        ).value =
+            data.leaderName || "";
+
+
+        document.getElementById(
+            "welcomeNewHereText"
+        ).value =
+            data.newHereText || "";
+
+
+        document.getElementById(
+            "welcomeNewHereLink"
+        ).value =
+            data.newHereLink || "";
+
+
+        document.getElementById(
+            "welcomeContactText"
+        ).value =
+            data.contactText || "";
+
+
+        document.getElementById(
+            "welcomeContactLink"
+        ).value =
+            data.contactLink || "";
+
+
+        const preview =
+            document.getElementById(
+                "welcomePreview"
+            );
+
+
+        if(data.image){
+
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(
+                        fileUrl(data.image)
+                    )}"
+                    class="preview-large"
+                    alt="Welcome"
+                >
+            `;
+
+        }else{
+
+            preview.textContent =
+                "No welcome image.";
+
+        }
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("welcomeForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const formData =
+                new FormData();
+
+
+            const fields = [
+
+                "badge",
+                "title",
+                "paragraph1",
+                "paragraph2",
+                "leaderName",
+                "newHereText",
+                "newHereLink",
+                "contactText",
+                "contactLink"
+
+            ];
+
+
+            fields.forEach(field=>{
+
+                const id =
+                    "welcome" +
+                    field.charAt(0).toUpperCase() +
+                    field.slice(1);
+
+
+                formData.append(
+                    field,
+                    document.getElementById(id).value
+                );
+
+            });
+
+
+            const file =
+                document.getElementById(
+                    "welcomeImage"
+                ).files[0];
+
+
+            if(file){
+
+                formData.append(
+                    "image",
+                    file
+                );
+
+            }
+
+
+            try{
+
+                const data =
+                    await api(
+                        "/api/welcome",
+                        {
+                            method:"PUT",
+                            body:formData
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Welcome updated."
+                );
+
+
+                document.getElementById(
+                    "welcomeImage"
+                ).value="";
+
+
+                loadWelcome();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   EXPLORE
+========================================================= */
+
+async function loadExplore(){
+
+    const container =
+        document.getElementById(
+            "exploreList"
+        );
+
+
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading explore items...
+        </div>
+    `;
+
+
+    try{
+
+        exploreCache =
+            await api(
+                "/api/explore"
+            );
+
+
+        renderExplore();
+
+
+        document.getElementById(
+            "countExplore"
+        ).textContent =
+            exploreCache.length;
+
+    }catch(error){
+
+        container.innerHTML =
+            `<div class="empty">
+                ${escapeHTML(error.message)}
+            </div>`;
+
+    }
+
+}
+
+
+function renderExplore(){
+
+    const container =
+        document.getElementById(
+            "exploreList"
+        );
+
+
+    if(!exploreCache.length){
+
+        container.innerHTML =
+            `<div class="empty">
+                No explore items found.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        exploreCache
+        .map(item=>`
+
+            <div class="item-card">
+
+                <div class="item-body">
+
+                    <h4>
+                        ${escapeHTML(item.title)}
+                    </h4>
+
+                    <p>
+                        ${escapeHTML(
+                            item.description
+                        )}
+                    </p>
+
+                    <p>
+                        Button:
+                        ${escapeHTML(
+                            item.buttonText
+                        )}
+                    </p>
+
+                    <p>
+                        Order:
+                        ${escapeHTML(
+                            item.order
+                        )}
+                    </p>
+
+                    <div class="item-actions">
+
+                        <button
+                            class="btn btn-warning btn-small"
+                            onclick="editExplore('${item._id}')"
+                        >
+                            ✏ Edit
+                        </button>
+
+                        <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteExplore('${item._id}')"
+                        >
+                            🗑 Delete
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `)
+        .join("");
+
+}
+
+
+document
+    .getElementById("exploreForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const id =
+                document.getElementById(
+                    "exploreId"
+                ).value;
+
+
+            const body = {
+
+                title:
+                    document.getElementById(
+                        "exploreTitle"
+                    ).value,
+
+                description:
+                    document.getElementById(
+                        "exploreDescription"
+                    ).value,
+
+                buttonText:
+                    document.getElementById(
+                        "exploreButtonText"
+                    ).value,
+
+                buttonLink:
+                    document.getElementById(
+                        "exploreButtonLink"
+                    ).value,
+
+                order:
+                    Number(
+                        document.getElementById(
+                            "exploreOrder"
+                        ).value
+                    ) || 0
+
+            };
+
+
+            try{
+
+                const data =
+                    await api(
+                        id
+                        ? `/api/explore/${id}`
+                        : "/api/explore",
+                        {
+                            method:
+                                id
+                                ? "PUT"
+                                : "POST",
+
+                            headers:{
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(body)
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Explore item saved."
+                );
+
+
+                resetExploreForm();
+
+
+                loadExplore();
+
+            }catch(error){
+
+                showToast(
+                    error.message,
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+
+function editExplore(id){
+
+    const item =
+        exploreCache.find(
+            x=>String(x._id)===String(id)
+        );
+
+
+    if(!item){
+        return;
+    }
+
+
+    document.getElementById(
+        "exploreId"
+    ).value =
+        item._id;
+
+
+    document.getElementById(
+        "exploreTitle"
+    ).value =
+        item.title || "";
+
+
+    document.getElementById(
+        "exploreDescription"
+    ).value =
+        item.description || "";
+
+
+    document.getElementById(
+        "exploreButtonText"
+    ).value =
+        item.buttonText || "";
+
+
+    document.getElementById(
+        "exploreButtonLink"
+    ).value =
+        item.buttonLink || "#";
+
+
+    document.getElementById(
+        "exploreOrder"
+    ).value =
+        item.order || 0;
+
+
+    document.getElementById(
+        "exploreFormTitle"
+    ).textContent =
+        "Edit Explore Item";
+
+
+    document.getElementById(
+        "exploreSaveBtn"
+    ).textContent =
+        "💾 Update Explore Item";
+
+
+    openSection(
+        "explore"
+    );
+
+}
+
+
+function resetExploreForm(){
+
+    document
+        .getElementById("exploreForm")
+        .reset();
+
+
+    document.getElementById(
+        "exploreId"
+    ).value="";
+
+
+    document.getElementById(
+        "exploreButtonText"
+    ).value =
+        "Learn More";
+
+
+    document.getElementById(
+        "exploreButtonLink"
+    ).value =
+        "#";
+
+
+    document.getElementById(
+        "exploreOrder"
+    ).value=0;
+
+
+    document.getElementById(
+        "exploreFormTitle"
+    ).textContent =
+        "Add Explore Item";
+
+
+    document.getElementById(
+        "exploreSaveBtn"
+    ).textContent =
+        "➕ Add Explore Item";
+
+}
+
+
+async function deleteExplore(id){
+
+    if(!confirm(
+        "Delete this Explore item?"
+    )){
+        return;
+    }
+
+
+    try{
+
+        const data =
+            await api(
+                `/api/explore/${id}`,
+                {
+                    method:"DELETE"
+                }
+            );
+
+
+        showToast(
+            data.message ||
+            "Explore item deleted."
+        );
+
+
+        loadExplore();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CALENDAR
+========================================================= */
+
+async function loadCalendar(){
+
+    try{
+
+        const data =
+            await api(
+                "/api/calendar"
+            );
+
+
+        document.getElementById(
+            "calendarUrl"
+        ).value =
+            data.url &&
+            !data.url.startsWith(
+                "/uploads/"
+            )
+            ? data.url
+            : "";
+
+
+        document.getElementById(
+            "calendarTitle"
+        ).value =
+            data.title ||
+            "Church Calendar";
+
+
+        const status =
+            document.getElementById(
+                "calendarStatus"
+            );
+
+
+        const preview =
+            document.getElementById(
+                "calendarPreview"
+            );
+
+
+        if(!data.url){
+
+            status.textContent =
+                "No calendar has been configured.";
+
+
+            preview.innerHTML = `
+                <span style="color:#64748b">
+                    No calendar available.
+                </span>
+            `;
+
+
+            return;
+
+        }
+
+
+        status.textContent =
+            data.title ||
+            "Church Calendar";
+
+
+        const url =
+            fileUrl(data.url);
+
+
+        const lower =
+            url.toLowerCase();
+
+
+        if(
+            lower.includes(".pdf") ||
+            data.type === "pdf"
+        ){
+
+            preview.innerHTML = `
+                <embed
+                    src="${escapeHTML(url)}"
+                    type="application/pdf"
+                >
+            `;
+
+        }else if(
+            /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)
+        ){
+
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(url)}"
+                    alt="Calendar"
+                >
+            `;
+
+        }else{
+
+            preview.innerHTML = `
+                <iframe
+                    src="${escapeHTML(url)}"
+                    title="Church Calendar"
+                ></iframe>
+            `;
+
+        }
+
+    }catch(error){
+
+        document.getElementById(
+            "calendarStatus"
+        ).textContent =
+            "Unable to load calendar.";
+
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("calendarForm")
+    .addEventListener(
+        "submit",
+        async function(e){
+
+            e.preventDefault();
+
+
+            const formData =
+                new FormData();
+
+
+            const url =
+                document.getElementById(
+                    "calendarUrl"
+                )
+                .value
+                .trim();
+
+
+            const title =
+                document.getElementById(
+                    "calendarTitle"
+                )
+                .value
+                .trim();
+
+
+            formData.append(
+                "url",
+                url
+            );
+
+
+            formData.append(
+                "title",
+                title ||
+                "Church Calendar"
+            );
+
+
+            const file =
+                document.getElementById(
+                    "calendarFile"
+                ).files[0];
+
+
+            if(file){
+
+                /*
+                 * IMPORTANT:
+                 * Backend accepts calendarFile.
+                 */
+
+                formData.append(
+                    "calendarFile",
+                    file
+                );
+
+            }
+
+
+            const button =
+                document.getElementById(
+                    "calendarSaveBtn"
+                );
+
+
+            button.disabled=true;
+
+            button.textContent=
+                "Saving...";
+
+
+            try{
+
+                const data =
+                    await api(
+                        "/api/calendar",
+                        {
+                            method:"PUT",
+                            body:formData
+                        }
+                    );
+
+
+                showToast(
+                    data.message ||
+                    "Calendar saved successfully."
+                );
+
+
+                document.getElementById(
+                    "calendarFile"
+                ).value="";
+
+
+                loadCalendar();
+
+            }catch(error){
+
+                showToast(
+                    "Calendar save failed: " +
+                    error.message,
+                    "error"
+                );
+
+            }finally{
+
+                button.disabled=false;
+
+                button.textContent=
+                    "💾 Save Calendar";
+
+            }
+
+        }
+    );
+
+
+async function removeCalendar(){
+
+    if(!confirm(
+        "Remove the current calendar?"
+    )){
+        return;
+    }
+
+
+    try{
+
+        const data =
+            await api(
+                "/api/calendar",
+                {
+                    method:"DELETE"
+                }
+            );
+
+
+        showToast(
+            data.message ||
+            "Calendar removed."
+        );
+
+
+        document.getElementById(
+            "calendarUrl"
+        ).value="";
+
+
+        loadCalendar();
+
+    }catch(error){
+
+        showToast(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SSE
+========================================================= */
+
+function connectSSE(){
+
+    if(!window.EventSource){
+
+        document.getElementById(
+            "statusText"
+        ).textContent =
+            "Auto update unavailable";
+
+
+        document.getElementById(
+            "statusDot"
+        ).style.background =
+            "#d97706";
+
+
+        return;
+
+    }
+
+
+    if(eventSource){
+        eventSource.close();
+    }
+
+
+    /*
+     * Same-origin EventSource automatically sends the
+     * session cookie.
+     */
+
+    eventSource =
+        new EventSource(
+            "/api/updates"
+        );
+
+
+    eventSource.onopen=function(){
+
+        document.getElementById(
+            "statusText"
+        ).textContent =
+            "Live Connected";
+
+
+        document.getElementById(
+            "statusDot"
+        ).style.background =
+            "#22c55e";
+
+    };
+
+
+    eventSource.onmessage=function(event){
+
+        try{
+
+            const data =
+                JSON.parse(
+                    event.data
+                );
+
+
+            if(data.type==="connected"){
+                return;
+            }
+
+
+            handleServerUpdate(
+                data.type
+            );
+
+        }catch(error){
+
+            console.error(
+                "SSE error:",
+                error
+            );
+
+        }
+
+    };
+
+
+    eventSource.onerror=function(){
+
+        document.getElementById(
+            "statusText"
+        ).textContent =
+            "Reconnecting...";
+
+
+        document.getElementById(
+            "statusDot"
+        ).style.background =
+            "#d97706";
+
+    };
+
+}
+
+
+function handleServerUpdate(type){
+
+    switch(type){
+
+        case "home-updated":
+            loadHome();
+            break;
+
+        case "home-background-updated":
+            loadBackground();
+            break;
+
+        case "events-updated":
+            loadEvents();
+            break;
+
+        case "special-events-updated":
+            loadSpecialEvents();
+            break;
+
+        case "featured-updated":
+            loadFeatured();
+            break;
+
+        case "welcome-updated":
+            loadWelcome();
+            break;
+
+        case "explore-updated":
+            loadExplore();
+            break;
+
+        case "calendar-updated":
+            loadCalendar();
+            break;
+
+    }
+
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+async function initialize(){
+
+    await Promise.allSettled([
+
+        loadHome(),
+        loadBackground(),
+        loadEvents(),
+        loadSpecialEvents(),
+        loadFeatured(),
+        loadWelcome(),
+        loadExplore(),
+        loadCalendar()
+
+    ]);
+
+
+    connectSSE();
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initialize
+);
+
+
+window.addEventListener(
+    "beforeunload",
+    function(){
+
+        if(eventSource){
+            eventSource.close();
+        }
+
+    }
+);
+
+</script>
+
+
+<script>
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+async function logout(){
+
+    const logoutButton =
+        document.querySelector(
+            ".logout-btn"
+        );
+
+
+    try{
+
+        if(logoutButton){
+            logoutButton.disabled=true;
+        }
+
+
+        const response =
+            await fetch(
+                "/api/auth/logout",
+                {
+                    method:"POST",
+                    credentials:"include"
+                }
+            );
+
+
+        let data={};
+
+
+        try{
+
+            data =
+                await response.json();
+
+        }catch(_){}
+
+
+        if(
+            response.ok &&
+            data.success
+        ){
+
+            openLogoutModal();
+
+
+            /*
+             * Give the logout animation time
+             * to play before redirecting.
+             */
+
+            setTimeout(
+                function(){
+
+                    window.location.replace(
+                        "/login.html"
+                    );
+
+                },
+                6000
+            );
+
+        }else{
+
+            if(logoutButton){
+                logoutButton.disabled=false;
+            }
+
+
+            alert(
+                data.message ||
+                "Logout failed"
+            );
+
+        }
+
+    }catch(error){
+
+        console.error(
+            "Logout error:",
+            error
+        );
+
+
+        if(logoutButton){
+            logoutButton.disabled=false;
+        }
+
+
+        alert(
+            "Could not logout. Please try again."
+        );
+
+    }
+
+}
+
+
+function openLogoutModal(){
+
+    const modal =
+        document.getElementById(
+            "logoutModal"
+        );
+
+
+    if(!modal){
+        return;
+    }
+
+
+    /*
+     * Restart the CSS animation every time
+     * the modal opens.
+     */
+
+    modal.classList.remove(
+        "active"
+    );
+
+
+    void modal.offsetWidth;
+
+
+    modal.classList.add(
+        "active"
+    );
+
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "logout-active"
+    );
+
+}
+
+
+function returnToLogin(){
+
+    window.location.replace(
+        "/login.html"
+    );
+
+}
+
+</script>
+
+
+<style>
+
+.logout-btn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 13px 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    background: rgba(255,255,255,.045);
+    color: #ffffff;
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    transition: background .25s ease, border-color .25s ease, transform .25s ease;
+}
+
+.logout-btn:hover {
+    background: rgba(255,48,53,.16);
+    border-color: rgba(255,48,53,.45);
+    transform: translateX(3px);
+}
+
+.logout-btn:disabled {
+    opacity: 0.65;
+    cursor: wait;
+    transform: none;
+}
+
+.logout-btn .nav-icon {
+    margin-right: 10px;
+}
+
+
+/* ==========================================
+   LOGOUT LOGO LOADING ANIMATION
+   ========================================== */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        opacity .35s ease,
+        visibility .35s ease;
+    z-index: 100000;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.logout-card {
+    width: min(390px, 100%);
+    padding: 42px 30px 38px;
+    text-align: center;
+    border-radius: 24px;
+    background: linear-gradient(
+        145deg,
+        #111111,
+        #050505
+    );
+    border: 1px solid rgba(
+        255,
+        255,
+        255,
+        .10
+    );
+    box-shadow:
+        0 28px 80px rgba(
+            0,
+            0,
+            0,
+            .65
+        ),
+        0 0 45px rgba(
+            185,
+            28,
+            28,
+            .12
+        );
+    transform:
+        translateY(18px)
+        scale(.94);
+    transition:
+        transform .45s
+        cubic-bezier(
+            .175,
+            .885,
+            .32,
+            1.275
+        );
+}
+
+.modal-overlay.active
+.logout-card {
+    transform:
+        translateY(0)
+        scale(1);
+}
+
+.logo-loader {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logout-logo {
+    position: relative;
+    z-index: 3;
+    width: 112px;
+    height: 112px;
+    object-fit: contain;
+    filter:
+        drop-shadow(
+            0 0 12px
+            rgba(
+                220,
+                38,
+                38,
+                .24
+            )
+        );
+    animation:
+        logoFloat 1.8s ease-in-out infinite,
+        logoGlow 1.8s ease-in-out infinite;
+}
+
+.loader-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    pointer-events: none;
+}
+
+.loader-ring-one {
+    width: 136px;
+    height: 136px;
+    border-top-color: #dc2626;
+    border-right-color: rgba(
+        220,
+        38,
+        38,
+        .28
+    );
+    animation:
+        spinRing 1.25s linear infinite;
+}
+
+.loader-ring-two {
+    width: 150px;
+    height: 150px;
+    border-bottom-color: rgba(
+        239,
+        68,
+        68,
+        .75
+    );
+    border-left-color: rgba(
+        239,
+        68,
+        68,
+        .18
+    );
+    animation:
+        spinRingReverse 1.9s linear infinite;
+}
+
+.card-title {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    color: #ffffff;
+    margin: 0 0 9px;
+}
+
+.card-message {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #a1a1aa;
+    margin: 0;
+}
+
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+    margin-top: 20px;
+}
+
+.loading-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #dc2626;
+    opacity: .35;
+    animation:
+        dotPulse 1.2s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: .18s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: .36s;
+}
+
+@keyframes spinRing {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spinRingReverse {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes logoFloat {
+
+    0%, 100% {
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+    50% {
+        transform:
+            translateY(-5px)
+            scale(1.035);
+    }
+
+}
+
+@keyframes logoGlow {
+
+    0%, 100% {
+        filter:
+            drop-shadow(
+                0 0 10px
+                rgba(
+                    220,
+                    38,
+                    38,
+                    .18
+                )
+            );
+    }
+
+    50% {
+        filter:
+            drop-shadow(
+                0 0 22px
+                rgba(
+                    220,
+                    38,
+                    38,
+                    .42
+                )
+            );
+    }
+
+}
+
+@keyframes dotPulse {
+
+    0%, 100% {
+        opacity: .25;
+        transform:
+            translateY(0)
+            scale(.8);
+    }
+
+    50% {
+        opacity: 1;
+        transform:
+            translateY(-3px)
+            scale(1);
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .logout-card {
+        padding:
+            36px
+            22px
+            32px;
+    }
+
+    .logo-loader {
+        width: 135px;
+        height: 135px;
+    }
+
+    .logout-logo {
+        width: 100px;
+        height: 100px;
+    }
+
+    .loader-ring-one {
+        width: 122px;
+        height: 122px;
+    }
+
+    .loader-ring-two {
+        width: 135px;
+        height: 135px;
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .modal-overlay,
+    .logout-card,
+    .logout-logo,
+    .loader-ring,
+    .loading-dots span {
+        animation: none !important;
+        transition: none !important;
+    }
+
+}
+
+</style>
+
+</body>
+</html>

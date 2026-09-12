@@ -1,7 +1,7 @@
 /* =========================================================
    THE POTTER'S HOUSE CHURCH SERVER   // Hello from Nehem
    + EMAIL LOGIN / AUTHENTICATION
-   Merged single server.js
+   + MONGODB GRIDFS FILE UPLOADS FOR VERCEL
 ========================================================= */
 
 const express = require("express");
@@ -223,10 +223,29 @@ function getUploadFolder(req) {
 }
 
 /* =========================================================
-   MULTER STORAGE
+   FILE TYPES
 ========================================================= */
 
-const storage = multer.diskStorage({
+const allowedExtensions = new Set([
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".gif",
+    ".mp4",
+    ".webm",
+    ".mov",
+    ".m4v",
+    ".pdf"
+]);
+
+/* =========================================================
+   MULTER STORAGE
+   VERCEL = MEMORY
+   LOCAL = DISK
+========================================================= */
+
+const diskStorage = multer.diskStorage({
 
     destination: function (req, file, cb) {
 
@@ -251,22 +270,13 @@ const storage = multer.diskStorage({
     }
 });
 
-/* =========================================================
-   FILE TYPES
-========================================================= */
+const storage = process.env.VERCEL
+    ? multer.memoryStorage()
+    : diskStorage;
 
-const allowedExtensions = new Set([
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".webp",
-    ".gif",
-    ".mp4",
-    ".webm",
-    ".mov",
-    ".m4v",
-    ".pdf"
-]);
+/* =========================================================
+   MULTER
+========================================================= */
 
 const upload = multer({
 
@@ -344,44 +354,296 @@ function getFileByFields(req, names) {
     return files[0] || null;
 }
 
+/* =========================================================
+   GRIDFS
+========================================================= */
+
+let gridFSBucket = null;
+
+function getGridFSBucket() {
+
+    if (!mongoose.connection.db) {
+        throw new Error(
+            "MongoDB is not connected"
+        );
+    }
+
+    if (!gridFSBucket) {
+
+        gridFSBucket =
+            new mongoose.mongo.GridFSBucket(
+                mongoose.connection.db,
+                {
+                    bucketName: "uploads"
+                }
+            );
+    }
+
+    return gridFSBucket;
+}
+
+function saveBufferToGridFS(file) {
+
+    return new Promise((resolve, reject) => {
+
+        try {
+
+            const bucket =
+                getGridFSBucket();
+
+            const extension =
+                path.extname(
+                    file.originalname || ""
+                ).toLowerCase();
+
+            const filename =
+                Date.now() +
+                "-" +
+                Math.round(
+                    Math.random() * 1000000000
+                ) +
+                extension;
+
+            const stream =
+                bucket.openUploadStream(
+                    filename,
+                    {
+                        contentType:
+                            file.mimetype ||
+                            "application/octet-stream",
+
+                        metadata: {
+                            originalName:
+                                file.originalname ||
+                                filename
+                        }
+                    }
+                );
+
+            stream.on(
+                "error",
+                reject
+            );
+
+            stream.on(
+                "finish",
+                () => {
+
+                    file.gridfsId =
+                        stream.id.toString();
+
+                    file.gridfsFilename =
+                        filename;
+
+                    resolve(file);
+                }
+            );
+
+            stream.end(file.buffer);
+
+        } catch (error) {
+
+            reject(error);
+        }
+    });
+}
+
+async function persistUploadedFiles(
+    req,
+    res,
+    next
+) {
+
+    if (!process.env.VERCEL) {
+        return next();
+    }
+
+    try {
+
+        const files = getFiles(req);
+
+        for (const file of files) {
+
+            await saveBufferToGridFS(
+                file
+            );
+        }
+
+        next();
+
+    } catch (error) {
+
+        console.error(
+            "GridFS upload error:",
+            error
+        );
+
+        for (const file of getFiles(req)) {
+
+            if (file?.gridfsId) {
+
+                try {
+
+                    await getGridFSBucket()
+                        .delete(
+                            new mongoose.mongo.ObjectId(
+                                file.gridfsId
+                            )
+                        );
+
+                } catch {}
+            }
+        }
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to store uploaded media",
+
+            error:
+                error.message
+        });
+    }
+}
+
+/* =========================================================
+   UPLOAD MIDDLEWARE
+========================================================= */
+
+const uploadAny = [
+    upload.any(),
+    persistUploadedFiles
+];
+
+/* =========================================================
+   UPLOAD URL
+========================================================= */
+
 function normalizeUploadUrl(file) {
 
     if (!file) return "";
 
-    const uploadsRoot = path.join(
-        __dirname,
-        "uploads"
-    );
+    if (file.gridfsId) {
 
-    const relative = path.relative(
-        uploadsRoot,
-        file.path
-    );
+        return "/api/files/" +
+            file.gridfsId;
+    }
+
+    if (!file.path) return "";
+
+    const uploadsRoot =
+        path.resolve(
+            path.join(
+                __dirname,
+                "uploads"
+            )
+        );
+
+    const relative =
+        path.relative(
+            uploadsRoot,
+            file.path
+        );
 
     return "/uploads/" +
-        relative.replace(/\\/g, "/");
+        relative.replace(
+            /\\/g,
+            "/"
+        );
 }
+
+/* =========================================================
+   DELETE UPLOADED FILE
+========================================================= */
 
 function deleteUploadedFile(fileUrl) {
 
-    if (typeof fileUrl !== "string") return;
+    if (typeof fileUrl !== "string") {
+        return;
+    }
 
-    if (!fileUrl.startsWith("/uploads/")) return;
+    /* ---------- GRIDFS FILE ---------- */
 
-    const uploadsRoot = path.resolve(
-        path.join(__dirname, "uploads")
-    );
-
-    const fullPath = path.resolve(
-        path.join(
-            __dirname,
-            "uploads",
-            fileUrl.replace(
-                /^\/uploads\//,
-                ""
-            )
+    if (
+        fileUrl.startsWith(
+            "/api/files/"
         )
-    );
+    ) {
+
+        const idString =
+            fileUrl
+                .replace(
+                    /^\/api\/files\//,
+                    ""
+                )
+                .split("?")[0];
+
+        if (
+            !validObjectId(
+                idString
+            )
+        ) {
+            return;
+        }
+
+        try {
+
+            getGridFSBucket()
+                .delete(
+                    new mongoose.mongo.ObjectId(
+                        idString
+                    )
+                )
+                .catch(error => {
+
+                    console.error(
+                        "GridFS file delete error:",
+                        error.message
+                    );
+                });
+
+        } catch (error) {
+
+            console.error(
+                "GridFS file delete error:",
+                error.message
+            );
+        }
+
+        return;
+    }
+
+    /* ---------- OLD LOCAL FILE ---------- */
+
+    if (
+        !fileUrl.startsWith(
+            "/uploads/"
+        )
+    ) {
+        return;
+    }
+
+    const uploadsRoot =
+        path.resolve(
+            path.join(
+                __dirname,
+                "uploads"
+            )
+        );
+
+    const fullPath =
+        path.resolve(
+            path.join(
+                __dirname,
+                "uploads",
+                fileUrl.replace(
+                    /^\/uploads\//,
+                    ""
+                )
+            )
+        );
 
     if (
         !fullPath.startsWith(
@@ -391,11 +653,15 @@ function deleteUploadedFile(fileUrl) {
         return;
     }
 
-    if (fs.existsSync(fullPath)) {
+    if (
+        fs.existsSync(fullPath)
+    ) {
 
         try {
 
-            fs.unlinkSync(fullPath);
+            fs.unlinkSync(
+                fullPath
+            );
 
         } catch (error) {
 
@@ -407,19 +673,39 @@ function deleteUploadedFile(fileUrl) {
     }
 }
 
+/* =========================================================
+   REMOVE NEW FILES
+========================================================= */
+
 function removeNewFiles(req) {
 
     const files = getFiles(req);
 
     for (const file of files) {
 
+        if (file?.gridfsId) {
+
+            deleteUploadedFile(
+                "/api/files/" +
+                file.gridfsId
+            );
+
+            continue;
+        }
+
         if (
             file?.path &&
-            fs.existsSync(file.path)
+            fs.existsSync(
+                file.path
+            )
         ) {
 
             try {
-                fs.unlinkSync(file.path);
+
+                fs.unlinkSync(
+                    file.path
+                );
+
             } catch {}
         }
     }
@@ -429,6 +715,123 @@ function validObjectId(id) {
 
     return mongoose.Types.ObjectId.isValid(id);
 }
+
+/* =========================================================
+   GRIDFS FILE DOWNLOAD
+========================================================= */
+
+app.get(
+    "/api/files/:id",
+    async (req, res) => {
+
+        try {
+
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                return res
+                    .status(400)
+                    .send(
+                        "Invalid file ID"
+                    );
+            }
+
+            const id =
+                new mongoose.mongo.ObjectId(
+                    req.params.id
+                );
+
+            const bucket =
+                getGridFSBucket();
+
+            const files =
+                await mongoose.connection.db
+                    .collection(
+                        "uploads.files"
+                    )
+                    .find({
+                        _id: id
+                    })
+                    .limit(1)
+                    .toArray();
+
+            if (!files.length) {
+
+                return res
+                    .status(404)
+                    .send(
+                        "File not found"
+                    );
+            }
+
+            const file =
+                files[0];
+
+            res.setHeader(
+                "Content-Type",
+                file.contentType ||
+                    "application/octet-stream"
+            );
+
+            res.setHeader(
+                "Cache-Control",
+                "public, max-age=31536000, immutable"
+            );
+
+            bucket
+                .openDownloadStream(id)
+                .on(
+                    "error",
+                    error => {
+
+                        console.error(
+                            "GridFS download error:",
+                            error.message
+                        );
+
+                        if (
+                            !res.headersSent
+                        ) {
+
+                            res
+                                .status(500)
+                                .send(
+                                    "Failed to load file"
+                                );
+
+                        } else {
+
+                            res.end();
+                        }
+                    }
+                )
+                .pipe(res);
+
+        } catch (error) {
+
+            console.error(
+                "GridFS download error:",
+                error
+            );
+
+            if (
+                !res.headersSent
+            ) {
+
+                res
+                    .status(500)
+                    .send(
+                        "Failed to load file"
+                    );
+            }
+        }
+    }
+);
+
+
 
 /* =========================================================
    SERVER SENT EVENTS
@@ -605,6 +1008,7 @@ function requireAuth(req, res, next) {
     }
 }
 
+
 /* =========================================================
    AUTH ROUTES
 ========================================================= */
@@ -670,6 +1074,7 @@ app.use(
     authRoutes
 );
 
+
 /* =========================================================
    STATUS / HEALTH
 ========================================================= */
@@ -716,6 +1121,7 @@ app.get(
     }
 );
 
+
 /* =========================================================
    HOME
 ========================================================= */
@@ -749,7 +1155,6 @@ app.get(
                         mapLink:
                             "https://maps.google.com",
 
-                        /* FIXED: logo cannot be empty */
                         logo:
                             "/logo.jpeg"
                     });
@@ -783,9 +1188,14 @@ app.get(
     }
 );
 
+
+/* =========================================================
+   HOME UPDATE
+========================================================= */
+
 app.put(
     "/api/home",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
 
         try {
@@ -887,6 +1297,7 @@ app.put(
     }
 );
 
+
 /* =========================================================
    HOME BACKGROUND
 ========================================================= */
@@ -948,7 +1359,7 @@ app.get(
 
 app.post(
     "/api/home-background",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
 
         try {
@@ -1174,7 +1585,9 @@ app.delete(
 app.get(
     "/api/events",
     async (req, res) => {
+
         try {
+
             const events =
                 await Event.find().sort({
                     order: 1,
@@ -1189,10 +1602,14 @@ app.get(
             res.json(events);
 
         } catch (error) {
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to load events",
+
                 error:
                     error.message
             });
@@ -1202,9 +1619,11 @@ app.get(
 
 app.post(
     "/api/events",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             const imageFile =
                 getFileByFields(
                     req,
@@ -1215,6 +1634,7 @@ app.post(
                 );
 
             const eventData = {
+
                 category:
                     req.body.category ||
                     "Morning",
@@ -1239,6 +1659,7 @@ app.post(
             };
 
             if (imageFile) {
+
                 eventData.image =
                     normalizeUploadUrl(
                         imageFile
@@ -1255,19 +1676,26 @@ app.post(
             );
 
             res.status(201).json({
+
                 success: true,
+
                 message:
                     "Event added successfully",
+
                 data: event
             });
 
         } catch (error) {
+
             removeNewFiles(req);
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to add event",
+
                 error:
                     error.message
             });
@@ -1277,20 +1705,25 @@ app.post(
 
 app.put(
     "/api/events/:id",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
+
                 removeNewFiles(req);
 
                 return res.status(
                     400
                 ).json({
+
                     success: false,
+
                     message:
                         "Invalid event ID"
                 });
@@ -1302,12 +1735,15 @@ app.put(
                 );
 
             if (!event) {
+
                 removeNewFiles(req);
 
                 return res.status(
                     404
                 ).json({
+
                     success: false,
+
                     message:
                         "Event not found"
                 });
@@ -1321,10 +1757,12 @@ app.put(
                     "time"
                 ]
             ) {
+
                 if (
                     req.body[field] !==
                     undefined
                 ) {
+
                     event[field] =
                         req.body[field];
                 }
@@ -1334,6 +1772,7 @@ app.put(
                 req.body.order !==
                 undefined
             ) {
+
                 event.order =
                     Number(
                         req.body.order
@@ -1350,6 +1789,7 @@ app.put(
                 );
 
             if (imageFile) {
+
                 const oldImage =
                     event.image;
 
@@ -1365,12 +1805,14 @@ app.put(
                     oldImage !==
                         event.image
                 ) {
+
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
+
                 await event.save();
             }
 
@@ -1379,19 +1821,26 @@ app.put(
             );
 
             res.json({
+
                 success: true,
+
                 message:
                     "Event updated successfully",
+
                 data: event
             });
 
         } catch (error) {
+
             removeNewFiles(req);
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to update event",
+
                 error:
                     error.message
             });
@@ -1402,16 +1851,21 @@ app.put(
 app.delete(
     "/api/events/:id",
     async (req, res) => {
+
         try {
+
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
+
                 return res.status(
                     400
                 ).json({
+
                     success: false,
+
                     message:
                         "Invalid event ID"
                 });
@@ -1423,16 +1877,20 @@ app.delete(
                 );
 
             if (!event) {
+
                 return res.status(
                     404
                 ).json({
+
                     success: false,
+
                     message:
                         "Event not found"
                 });
             }
 
             if (event.image) {
+
                 deleteUploadedFile(
                     event.image
                 );
@@ -1443,16 +1901,22 @@ app.delete(
             );
 
             res.json({
+
                 success: true,
+
                 message:
                     "Event deleted successfully"
             });
 
         } catch (error) {
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to delete event",
+
                 error:
                     error.message
             });
@@ -1468,7 +1932,9 @@ app.delete(
 app.get(
     "/api/special-events",
     async (req, res) => {
+
         try {
+
             const events =
                 await SpecialEvent.find().sort({
                     order: 1,
@@ -1483,10 +1949,14 @@ app.get(
             res.json(events);
 
         } catch (error) {
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to load special events",
+
                 error:
                     error.message
             });
@@ -1496,9 +1966,11 @@ app.get(
 
 app.post(
     "/api/special-events",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             const imageFile =
                 getFileByFields(
                     req,
@@ -1550,19 +2022,26 @@ app.post(
             );
 
             res.status(201).json({
+
                 success: true,
+
                 message:
                     "Special event added successfully",
+
                 data: event
             });
 
         } catch (error) {
+
             removeNewFiles(req);
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to add special event",
+
                 error:
                     error.message
             });
@@ -1572,20 +2051,25 @@ app.post(
 
 app.put(
     "/api/special-events/:id",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
+
                 removeNewFiles(req);
 
                 return res.status(
                     400
                 ).json({
+
                     success: false,
+
                     message:
                         "Invalid special event ID"
                 });
@@ -1597,12 +2081,15 @@ app.put(
                 );
 
             if (!event) {
+
                 removeNewFiles(req);
 
                 return res.status(
                     404
                 ).json({
+
                     success: false,
+
                     message:
                         "Special event not found"
                 });
@@ -1617,10 +2104,12 @@ app.put(
                     "link"
                 ]
             ) {
+
                 if (
                     req.body[field] !==
                     undefined
                 ) {
+
                     event[field] =
                         req.body[field];
                 }
@@ -1630,6 +2119,7 @@ app.put(
                 req.body.order !==
                 undefined
             ) {
+
                 event.order =
                     Number(
                         req.body.order
@@ -1647,6 +2137,7 @@ app.put(
                 );
 
             if (imageFile) {
+
                 const oldImage =
                     event.image;
 
@@ -1662,12 +2153,14 @@ app.put(
                     oldImage !==
                         event.image
                 ) {
+
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
+
                 await event.save();
             }
 
@@ -1676,19 +2169,26 @@ app.put(
             );
 
             res.json({
+
                 success: true,
+
                 message:
                     "Special event updated successfully",
+
                 data: event
             });
 
         } catch (error) {
+
             removeNewFiles(req);
 
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to update special event",
+
                 error:
                     error.message
             });
@@ -1699,16 +2199,21 @@ app.put(
 app.delete(
     "/api/special-events/:id",
     async (req, res) => {
+
         try {
+
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
+
                 return res.status(
                     400
                 ).json({
+
                     success: false,
+
                     message:
                         "Invalid special event ID"
                 });
@@ -1720,16 +2225,20 @@ app.delete(
                 );
 
             if (!event) {
+
                 return res.status(
                     404
                 ).json({
+
                     success: false,
+
                     message:
                         "Special event not found"
                 });
             }
 
             if (event.image) {
+
                 deleteUploadedFile(
                     event.image
                 );
@@ -1740,205 +2249,22 @@ app.delete(
             );
 
             res.json({
+
                 success: true,
+
                 message:
                     "Special event deleted successfully"
             });
 
         } catch (error) {
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to delete special event",
-                error:
-                    error.message
-            });
-        }
-    }
-);
 
-
-
-app.put(
-    "/api/special-events/:id",
-    upload.any(),
-    async (req, res) => {
-        try {
-            if (
-                !validObjectId(
-                    req.params.id
-                )
-            ) {
-                removeNewFiles(req);
-
-                return res.status(
-                    400
-                ).json({
-                    success: false,
-                    message:
-                        "Invalid special event ID"
-                });
-            }
-
-            const event =
-                await SpecialEvent.findById(
-                    req.params.id
-                );
-
-            if (!event) {
-                removeNewFiles(req);
-
-                return res.status(
-                    404
-                ).json({
-                    success: false,
-                    message:
-                        "Special event not found"
-                });
-            }
-
-            for (
-                const field of [
-                    "title",
-                    "date",
-                    "time",
-                    "description",
-                    "link"
-                ]
-            ) {
-                if (
-                    req.body[field] !==
-                    undefined
-                ) {
-                    event[field] =
-                        req.body[field];
-                }
-            }
-
-            if (
-                req.body.order !==
-                undefined
-            ) {
-                event.order =
-                    Number(
-                        req.body.order
-                    ) || 0;
-            }
-
-            const imageFile =
-                getFileByFields(
-                    req,
-                    [
-                        "image",
-                        "eventImage",
-                        "specialImage"
-                    ]
-                );
-
-            if (imageFile) {
-                const oldImage =
-                    event.image;
-
-                event.image =
-                    normalizeUploadUrl(
-                        imageFile
-                    );
-
-                await event.save();
-
-                if (
-                    oldImage &&
-                    oldImage !==
-                        event.image
-                ) {
-                    deleteUploadedFile(
-                        oldImage
-                    );
-                }
-
-            } else {
-                await event.save();
-            }
-
-            notifyClients(
-                "special-events-updated"
-            );
-
-            res.json({
-                success: true,
-                message:
-                    "Special event updated successfully",
-                data: event
-            });
-
-        } catch (error) {
-            removeNewFiles(req);
-
-            res.status(500).json({
-                success: false,
-                message:
-                    "Failed to update special event",
-                error:
-                    error.message
-            });
-        }
-    }
-);
-
-app.delete(
-    "/api/special-events/:id",
-    async (req, res) => {
-        try {
-            if (
-                !validObjectId(
-                    req.params.id
-                )
-            ) {
-                return res.status(
-                    400
-                ).json({
-                    success: false,
-                    message:
-                        "Invalid special event ID"
-                });
-            }
-
-            const event =
-                await SpecialEvent.findByIdAndDelete(
-                    req.params.id
-                );
-
-            if (!event) {
-                return res.status(
-                    404
-                ).json({
-                    success: false,
-                    message:
-                        "Special event not found"
-                });
-            }
-
-            if (event.image) {
-                deleteUploadedFile(
-                    event.image
-                );
-            }
-
-            notifyClients(
-                "special-events-updated"
-            );
-
-            res.json({
-                success: true,
-                message:
-                    "Special event deleted successfully"
-            });
-
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message:
-                    "Failed to delete special event",
                 error:
                     error.message
             });
@@ -1954,30 +2280,25 @@ app.delete(
 app.get(
     "/api/featured",
     async (req, res) => {
+
         try {
+
             let featured =
                 await Featured.findOne();
 
             if (!featured) {
+
                 featured =
                     await Featured.create({
-                        badge:
-                            "Featured Message",
 
                         title:
-                            "Time Is Running Out",
+                            "Featured",
 
-                        subtitle:
-                            "Bible Conference 2026",
-
-                        backgroundImage:
+                        description:
                             "",
 
-                        watchLink:
-                            "#",
-
-                        sermonsLink:
-                            "#"
+                        image:
+                            ""
                     });
             }
 
@@ -1989,15 +2310,19 @@ app.get(
             res.json(featured);
 
         } catch (error) {
+
             console.error(
                 "Featured GET error:",
                 error
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
-                    "Failed to load featured section",
+                    "Failed to load featured content",
+
                 error:
                     error.message
             });
@@ -2007,59 +2332,54 @@ app.get(
 
 app.put(
     "/api/featured",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             let featured =
                 await Featured.findOne();
 
             if (!featured) {
-                featured =
-                    new Featured();
+                featured = new Featured();
             }
 
-            const textFields = [
-                "badge",
-                "title",
-                "subtitle",
-                "watchLink",
-                "sermonsLink"
-            ];
-
             for (
-                const field of textFields
+                const field of [
+                    "title",
+                    "description",
+                    "link",
+                    "buttonText"
+                ]
             ) {
+
                 if (
                     req.body[field] !==
                     undefined
                 ) {
+
                     featured[field] =
-                        String(
-                            req.body[field]
-                        );
+                        req.body[field];
                 }
             }
 
-            const backgroundFile =
+            const imageFile =
                 getFileByFields(
                     req,
                     [
-                        "backgroundImage",
-                        "backgroundImageFile",
-                        "featuredBackground",
-                        "featuredBackgroundImage",
                         "image",
-                        "file"
+                        "featuredImage"
                     ]
                 );
 
-            if (backgroundFile) {
-                const oldImage =
-                    featured.backgroundImage;
+            if (imageFile) {
 
-                featured.backgroundImage =
+                const oldImage =
+                    featured.image;
+
+                featured.image =
                     normalizeUploadUrl(
-                        backgroundFile
+                        imageFile
                     );
 
                 await featured.save();
@@ -2067,59 +2387,17 @@ app.put(
                 if (
                     oldImage &&
                     oldImage !==
-                        featured.backgroundImage
+                        featured.image
                 ) {
+
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
-                let backgroundUrl;
 
-                if (
-                    req.body.backgroundImageUrl !==
-                    undefined
-                ) {
-                    backgroundUrl =
-                        String(
-                            req.body.backgroundImageUrl ||
-                            ""
-                        ).trim();
-
-                } else if (
-                    req.body.backgroundUrl !==
-                    undefined
-                ) {
-                    backgroundUrl =
-                        String(
-                            req.body.backgroundUrl ||
-                            ""
-                        ).trim();
-                }
-
-                if (backgroundUrl) {
-                    const oldImage =
-                        featured.backgroundImage;
-
-                    featured.backgroundImage =
-                        backgroundUrl;
-
-                    await featured.save();
-
-                    if (
-                        oldImage &&
-                        oldImage !==
-                            backgroundUrl
-                    ) {
-                        deleteUploadedFile(
-                            oldImage
-                        );
-                    }
-
-                } else {
-                    await featured.save();
-                }
+                await featured.save();
             }
 
             notifyClients(
@@ -2127,13 +2405,17 @@ app.put(
             );
 
             res.json({
+
                 success: true,
+
                 message:
-                    "Featured section updated successfully",
+                    "Featured content updated successfully",
+
                 data: featured
             });
 
         } catch (error) {
+
             removeNewFiles(req);
 
             console.error(
@@ -2142,9 +2424,12 @@ app.put(
             );
 
             res.status(500).json({
+
                 success: false,
+
                 message:
-                    "Failed to update featured section",
+                    "Failed to update featured content",
+
                 error:
                     error.message
             });
@@ -2160,39 +2445,22 @@ app.put(
 app.get(
     "/api/welcome",
     async (req, res) => {
+
         try {
+
             let welcome =
                 await Welcome.findOne();
 
             if (!welcome) {
+
                 welcome =
                     await Welcome.create({
-                        badge:
-                            "A Message From Leadership",
 
                         title:
-                            "Welcome To Church",
+                            "Welcome to The Potter's House",
 
-                        paragraph1:
-                            "Thank you for visiting us online.",
-
-                        paragraph2:
-                            "We invite you to join us at any of our weekly services.",
-
-                        leaderName:
-                            "Leadership Team",
-
-                        newHereText:
-                            "New Here?",
-
-                        newHereLink:
-                            "#",
-
-                        contactText:
-                            "Contact Us",
-
-                        contactLink:
-                            "#",
+                        description:
+                            "",
 
                         image:
                             ""
@@ -2207,10 +2475,19 @@ app.get(
             res.json(welcome);
 
         } catch (error) {
+
+            console.error(
+                "Welcome GET error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
-                    "Failed to load welcome section",
+                    "Failed to load welcome content",
+
                 error:
                     error.message
             });
@@ -2220,36 +2497,31 @@ app.get(
 
 app.put(
     "/api/welcome",
-    upload.any(),
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             let welcome =
                 await Welcome.findOne();
 
             if (!welcome) {
-                welcome =
-                    new Welcome();
+                welcome = new Welcome();
             }
 
-            const fields = [
-                "badge",
-                "title",
-                "paragraph1",
-                "paragraph2",
-                "leaderName",
-                "newHereText",
-                "newHereLink",
-                "contactText",
-                "contactLink"
-            ];
-
             for (
-                const field of fields
+                const field of [
+                    "title",
+                    "description",
+                    "subtitle"
+                ]
             ) {
+
                 if (
                     req.body[field] !==
                     undefined
                 ) {
+
                     welcome[field] =
                         req.body[field];
                 }
@@ -2265,6 +2537,7 @@ app.put(
                 );
 
             if (imageFile) {
+
                 const oldImage =
                     welcome.image;
 
@@ -2280,12 +2553,14 @@ app.put(
                     oldImage !==
                         welcome.image
                 ) {
+
                     deleteUploadedFile(
                         oldImage
                     );
                 }
 
             } else {
+
                 await welcome.save();
             }
 
@@ -2294,19 +2569,31 @@ app.put(
             );
 
             res.json({
+
                 success: true,
+
                 message:
-                    "Welcome section updated successfully",
+                    "Welcome content updated successfully",
+
                 data: welcome
             });
 
         } catch (error) {
+
             removeNewFiles(req);
 
+            console.error(
+                "Welcome PUT error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
-                    "Failed to update welcome section",
+                    "Failed to update welcome content",
+
                 error:
                     error.message
             });
@@ -2319,43 +2606,12 @@ app.put(
    EXPLORE
 ========================================================= */
 
-async function normalizeExploreOrders() {
-    const items =
-        await Explore.find().sort({
-            order: 1,
-            createdAt: 1
-        });
-
-    for (
-        let i = 0;
-        i < items.length;
-        i++
-    ) {
-        if (
-            items[i].order !== i
-        ) {
-            await Explore.updateOne(
-                {
-                    _id:
-                        items[i]._id
-                },
-                {
-                    $set: {
-                        order: i
-                    }
-                }
-            );
-        }
-    }
-}
-
-
-
-
 app.get(
     "/api/explore",
     async (req, res) => {
+
         try {
+
             const items =
                 await Explore.find().sort({
                     order: 1,
@@ -2370,10 +2626,19 @@ app.get(
             res.json(items);
 
         } catch (error) {
+
+            console.error(
+                "Explore GET error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
-                    "Failed to load explore items",
+                    "Failed to load explore content",
+
                 error:
                     error.message
             });
@@ -2383,64 +2648,78 @@ app.get(
 
 app.post(
     "/api/explore",
+    ...uploadAny,
     async (req, res) => {
+
         try {
-            const count =
-                await Explore.countDocuments();
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "exploreImage"
+                    ]
+                );
 
             const item =
                 await Explore.create({
+
                     title:
-                        String(
-                            req.body.title ||
-                            ""
-                        ).trim(),
+                        req.body.title ||
+                        "",
 
                     description:
-                        String(
-                            req.body.description ||
-                            ""
-                        ).trim(),
+                        req.body.description ||
+                        "",
 
-                    buttonText:
-                        String(
-                            req.body.buttonText ||
-                            "Learn More"
-                        ).trim(),
+                    link:
+                        req.body.link ||
+                        "#",
 
-                    buttonLink:
-                        String(
-                            req.body.buttonLink ||
-                            "#"
-                        ).trim(),
+                    image:
+                        imageFile
+                            ? normalizeUploadUrl(
+                                imageFile
+                            )
+                            : "",
 
                     order:
-                        count
+                        Number(
+                            req.body.order
+                        ) || 0
                 });
-
-            await normalizeExploreOrders();
-
-            const saved =
-                await Explore.findById(
-                    item._id
-                );
 
             notifyClients(
                 "explore-updated"
             );
 
             res.status(201).json({
+
                 success: true,
+
                 message:
                     "Explore item added successfully",
-                data: saved
+
+                data: item
             });
 
         } catch (error) {
+
+            removeNewFiles(req);
+
+            console.error(
+                "Explore POST error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to add explore item",
+
                 error:
                     error.message
             });
@@ -2450,17 +2729,25 @@ app.post(
 
 app.put(
     "/api/explore/:id",
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
+
+                removeNewFiles(req);
+
                 return res.status(
                     400
                 ).json({
+
                     success: false,
+
                     message:
                         "Invalid explore item ID"
                 });
@@ -2472,10 +2759,15 @@ app.put(
                 );
 
             if (!item) {
+
+                removeNewFiles(req);
+
                 return res.status(
                     404
                 ).json({
+
                     success: false,
+
                     message:
                         "Explore item not found"
                 });
@@ -2485,46 +2777,98 @@ app.put(
                 const field of [
                     "title",
                     "description",
-                    "buttonText",
-                    "buttonLink"
+                    "link"
                 ]
             ) {
+
                 if (
                     req.body[field] !==
                     undefined
                 ) {
+
                     item[field] =
-                        String(
-                            req.body[field]
-                        ).trim();
+                        req.body[field];
                 }
             }
 
-            await item.save();
+            if (
+                req.body.order !==
+                undefined
+            ) {
 
-            await normalizeExploreOrders();
+                item.order =
+                    Number(
+                        req.body.order
+                    ) || 0;
+            }
 
-            const saved =
-                await Explore.findById(
-                    item._id
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "exploreImage"
+                    ]
                 );
+
+            if (imageFile) {
+
+                const oldImage =
+                    item.image;
+
+                item.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+
+                await item.save();
+
+                if (
+                    oldImage &&
+                    oldImage !==
+                        item.image
+                ) {
+
+                    deleteUploadedFile(
+                        oldImage
+                    );
+                }
+
+            } else {
+
+                await item.save();
+            }
 
             notifyClients(
                 "explore-updated"
             );
 
             res.json({
+
                 success: true,
+
                 message:
                     "Explore item updated successfully",
-                data: saved
+
+                data: item
             });
 
         } catch (error) {
+
+            removeNewFiles(req);
+
+            console.error(
+                "Explore PUT error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to update explore item",
+
                 error:
                     error.message
             });
@@ -2535,16 +2879,21 @@ app.put(
 app.delete(
     "/api/explore/:id",
     async (req, res) => {
+
         try {
+
             if (
                 !validObjectId(
                     req.params.id
                 )
             ) {
+
                 return res.status(
                     400
                 ).json({
+
                     success: false,
+
                     message:
                         "Invalid explore item ID"
                 });
@@ -2556,32 +2905,51 @@ app.delete(
                 );
 
             if (!item) {
+
                 return res.status(
                     404
                 ).json({
+
                     success: false,
+
                     message:
                         "Explore item not found"
                 });
             }
 
-            await normalizeExploreOrders();
+            if (item.image) {
+
+                deleteUploadedFile(
+                    item.image
+                );
+            }
 
             notifyClients(
                 "explore-updated"
             );
 
             res.json({
+
                 success: true,
+
                 message:
                     "Explore item deleted successfully"
             });
 
         } catch (error) {
+
+            console.error(
+                "Explore DELETE error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to delete explore item",
+
                 error:
                     error.message
             });
@@ -2594,52 +2962,48 @@ app.delete(
    CALENDAR
 ========================================================= */
 
-function getCalendarCollection() {
-    if (!mongoose.connection.db) {
-        throw new Error(
-            "MongoDB is not connected"
-        );
-    }
-
-    return mongoose.connection.db.collection(
-        "calendar_settings"
-    );
-}
-
 app.get(
     "/api/calendar",
     async (req, res) => {
-        try {
-            const collection =
-                getCalendarCollection();
 
-            const calendar =
-                await collection.findOne({
-                    _id: "main"
-                });
+        try {
+
+            const collection =
+                mongoose.connection.db.collection(
+                    "calendar"
+                );
+
+            const items =
+                await collection
+                    .find({})
+                    .sort({
+                        order: 1,
+                        date: 1,
+                        createdAt: 1
+                    })
+                    .toArray();
 
             res.setHeader(
                 "Cache-Control",
                 "no-store"
             );
 
-            res.json({
-                success: true,
-
-                label:
-                    calendar?.label ||
-                    "Church Calendar",
-
-                url:
-                    calendar?.url ||
-                    ""
-            });
+            res.json(items);
 
         } catch (error) {
+
+            console.error(
+                "Calendar GET error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
                     "Failed to load calendar",
+
                 error:
                     error.message
             });
@@ -2647,193 +3011,243 @@ app.get(
     }
 );
 
-async function saveCalendar(
-    req,
-    res
-) {
-    try {
-        const collection =
-            getCalendarCollection();
-
-        const current =
-            await collection.findOne({
-                _id: "main"
-            });
-
-        let url =
-            current?.url || "";
-
-        if (
-            req.body.url !==
-            undefined
-        ) {
-            url =
-                String(
-                    req.body.url || ""
-                ).trim();
-
-        } else if (
-            req.body.calendarUrl !==
-            undefined
-        ) {
-            url =
-                String(
-                    req.body.calendarUrl ||
-                    ""
-                ).trim();
-        }
-
-        const label =
-            String(
-                req.body.label ||
-                req.body.title ||
-                req.body.calendarTitle ||
-                current?.label ||
-                "Church Calendar"
-            ).trim() ||
-            "Church Calendar";
-
-        const file =
-            getFileByFields(
-                req,
-                [
-                    "file",
-                    "calendarFile",
-                    "calendar",
-                    "image",
-                    "calendarImage",
-                    "upload"
-                ]
-            ) ||
-            getFirstFile(req);
-
-        if (file) {
-            url =
-                normalizeUploadUrl(
-                    file
-                );
-        }
-
-        if (!url) {
-            removeNewFiles(req);
-
-            return res.status(
-                400
-            ).json({
-                success: false,
-                message:
-                    "Please enter a calendar URL or upload a calendar file."
-            });
-        }
-
-        await collection.updateOne(
-            {
-                _id: "main"
-            },
-            {
-                $set: {
-                    label,
-                    url,
-                    updatedAt:
-                        new Date()
-                },
-
-                $setOnInsert: {
-                    createdAt:
-                        new Date()
-                }
-            },
-            {
-                upsert: true
-            }
-        );
-
-        if (
-            current?.url &&
-            current.url !== url
-        ) {
-            deleteUploadedFile(
-                current.url
-            );
-        }
-
-        notifyClients(
-            "calendar-updated"
-        );
-
-        res.json({
-            success: true,
-            message:
-                "Calendar updated successfully",
-
-            data: {
-                label,
-                url
-            }
-        });
-
-    } catch (error) {
-        removeNewFiles(req);
-
-        res.status(500).json({
-            success: false,
-            message:
-                "Failed to update calendar",
-            error:
-                error.message
-        });
-    }
-}
-
 app.put(
     "/api/calendar",
-    upload.any(),
-    saveCalendar
-);
-
-app.put(
-    "/api/content/calendar",
-    upload.any(),
-    saveCalendar
-);
-
-app.delete(
-    "/api/calendar",
+    ...uploadAny,
     async (req, res) => {
+
         try {
+
             const collection =
-                getCalendarCollection();
-
-            const current =
-                await collection.findOne({
-                    _id: "main"
-                });
-
-            if (current?.url) {
-                deleteUploadedFile(
-                    current.url
+                mongoose.connection.db.collection(
+                    "calendar"
                 );
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "calendarImage"
+                    ]
+                );
+
+            const item = {
+
+                title:
+                    req.body.title ||
+                    "",
+
+                date:
+                    req.body.date ||
+                    "",
+
+                time:
+                    req.body.time ||
+                    "",
+
+                description:
+                    req.body.description ||
+                    "",
+
+                location:
+                    req.body.location ||
+                    "",
+
+                link:
+                    req.body.link ||
+                    "",
+
+                order:
+                    Number(
+                        req.body.order
+                    ) || 0,
+
+                updatedAt:
+                    new Date()
+            };
+
+            if (imageFile) {
+
+                item.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
             }
 
-            await collection.deleteOne({
-                _id: "main"
-            });
+            if (
+                req.body.id &&
+                validObjectId(
+                    req.body.id
+                )
+            ) {
+
+                const oldItem =
+                    await collection.findOne({
+                        _id:
+                            new mongoose.mongo.ObjectId(
+                                req.body.id
+                            )
+                    });
+
+                await collection.updateOne(
+                    {
+                        _id:
+                            new mongoose.mongo.ObjectId(
+                                req.body.id
+                            )
+                    },
+                    {
+                        $set: item
+                    }
+                );
+
+                if (
+                    imageFile &&
+                    oldItem?.image &&
+                    oldItem.image !==
+                        item.image
+                ) {
+
+                    deleteUploadedFile(
+                        oldItem.image
+                    );
+                }
+
+            } else {
+
+                item.createdAt =
+                    new Date();
+
+                await collection.insertOne(
+                    item
+                );
+            }
 
             notifyClients(
                 "calendar-updated"
             );
 
             res.json({
+
                 success: true,
+
                 message:
-                    "Calendar removed successfully"
+                    "Calendar updated successfully"
             });
 
         } catch (error) {
+
+            removeNewFiles(req);
+
+            console.error(
+                "Calendar PUT error:",
+                error
+            );
+
             res.status(500).json({
+
                 success: false,
+
                 message:
-                    "Failed to remove calendar",
+                    "Failed to update calendar",
+
+                error:
+                    error.message
+            });
+        }
+    }
+);
+
+app.delete(
+    "/api/calendar/:id",
+    async (req, res) => {
+
+        try {
+
+            if (
+                !validObjectId(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(
+                    400
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid calendar ID"
+                });
+            }
+
+            const collection =
+                mongoose.connection.db.collection(
+                    "calendar"
+                );
+
+            const item =
+                await collection.findOne({
+                    _id:
+                        new mongoose.mongo.ObjectId(
+                            req.params.id
+                        )
+                });
+
+            if (!item) {
+
+                return res.status(
+                    404
+                ).json({
+
+                    success: false,
+
+                    message:
+                        "Calendar item not found"
+                });
+            }
+
+            await collection.deleteOne({
+                _id:
+                    new mongoose.mongo.ObjectId(
+                        req.params.id
+                    )
+            });
+
+            if (item.image) {
+
+                deleteUploadedFile(
+                    item.image
+                );
+            }
+
+            notifyClients(
+                "calendar-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Calendar item deleted successfully"
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Calendar DELETE error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to delete calendar item",
+
                 error:
                     error.message
             });
@@ -2843,158 +3257,355 @@ app.delete(
 
 
 /* =========================================================
+   CONTENT CALENDAR
+   Compatibility route used by older admin code
+========================================================= */
+
+app.get(
+    "/api/content/calendar",
+    async (req, res) => {
+
+        try {
+
+            const collection =
+                mongoose.connection.db.collection(
+                    "calendar"
+                );
+
+            const items =
+                await collection
+                    .find({})
+                    .sort({
+                        order: 1,
+                        date: 1,
+                        createdAt: 1
+                    })
+                    .toArray();
+
+            res.setHeader(
+                "Cache-Control",
+                "no-store"
+            );
+
+            res.json(items);
+
+        } catch (error) {
+
+            console.error(
+                "Content calendar GET error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to load calendar",
+
+                error:
+                    error.message
+            });
+        }
+    }
+);
+
+app.put(
+    "/api/content/calendar",
+    ...uploadAny,
+    async (req, res) => {
+
+        try {
+
+            const collection =
+                mongoose.connection.db.collection(
+                    "calendar"
+                );
+
+            const imageFile =
+                getFileByFields(
+                    req,
+                    [
+                        "image",
+                        "calendarImage"
+                    ]
+                );
+
+            const item = {
+
+                title:
+                    req.body.title ||
+                    "",
+
+                date:
+                    req.body.date ||
+                    "",
+
+                time:
+                    req.body.time ||
+                    "",
+
+                description:
+                    req.body.description ||
+                    "",
+
+                location:
+                    req.body.location ||
+                    "",
+
+                link:
+                    req.body.link ||
+                    "",
+
+                order:
+                    Number(
+                        req.body.order
+                    ) || 0,
+
+                updatedAt:
+                    new Date()
+            };
+
+            if (imageFile) {
+
+                item.image =
+                    normalizeUploadUrl(
+                        imageFile
+                    );
+            }
+
+            if (
+                req.body.id &&
+                validObjectId(
+                    req.body.id
+                )
+            ) {
+
+                const oldItem =
+                    await collection.findOne({
+                        _id:
+                            new mongoose.mongo.ObjectId(
+                                req.body.id
+                            )
+                    });
+
+                await collection.updateOne(
+                    {
+                        _id:
+                            new mongoose.mongo.ObjectId(
+                                req.body.id
+                            )
+                    },
+                    {
+                        $set: item
+                    }
+                );
+
+                if (
+                    imageFile &&
+                    oldItem?.image &&
+                    oldItem.image !==
+                        item.image
+                ) {
+
+                    deleteUploadedFile(
+                        oldItem.image
+                    );
+                }
+
+            } else {
+
+                item.createdAt =
+                    new Date();
+
+                await collection.insertOne(
+                    item
+                );
+            }
+
+            notifyClients(
+                "calendar-updated"
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Calendar updated successfully"
+            });
+
+        } catch (error) {
+
+            removeNewFiles(req);
+
+            console.error(
+                "Content calendar PUT error:",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to update calendar",
+
+                error:
+                    error.message
+            });
+        }
+    }
+);
+
+
+
+/* =========================================================
    PAGE ROUTES
 ========================================================= */
 
-app.get(
-    "/",
-    (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "public",
-                "index.html"
-            )
-        );
-    }
-);
+app.get("/", (req, res) => {
 
-app.get(
-    "/index.html",
-    (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "public",
-                "index.html"
-            )
-        );
-    }
-);
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+});
 
-app.get(
-    "/website",
-    (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "public",
-                "index.html"
-            )
-        );
-    }
-);
+app.get("/index.html", (req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+});
+
+app.get("/login", (req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "login.html"
+        )
+    );
+});
+
+app.get("/login.html", (req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "login.html"
+        )
+    );
+});
+
+app.get("/admin", requireAuth, (req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "admin.html"
+        )
+    );
+});
+
+app.get("/admin.html", requireAuth, (req, res) => {
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "admin.html"
+        )
+    );
+});
 
 
 /* =========================================================
-   LOGIN / REGISTER
+   ADMIN AUTH CHECK
 ========================================================= */
 
 app.get(
-    "/login.html",
+    "/api/auth/check",
+    requireAuth,
     (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "login.html"
-            )
-        );
-    }
-);
 
-app.get(
-    "/register.html",
-    (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "register.html"
-            )
-        );
+        res.json({
+
+            success: true,
+
+            authenticated: true,
+
+            user: req.user || null
+        });
     }
 );
 
 
 /* =========================================================
-   PROTECTED ADMIN
+   LOGOUT
 ========================================================= */
 
-app.get(
-    "/admin",
-    requireAuth,
+app.post(
+    "/api/auth/logout",
     (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "public",
-                "admin.html"
-            )
-        );
-    }
-);
 
-app.get(
-    "/admin.html",
-    requireAuth,
-    (req, res) => {
-        res.sendFile(
-            path.join(
-                __dirname,
-                "public",
-                "admin.html"
-            )
+        res.clearCookie(
+            "authToken",
+            {
+                httpOnly: true,
+                sameSite: "lax",
+                secure:
+                    process.env.NODE_ENV ===
+                    "production"
+            }
         );
+
+        res.json({
+
+            success: true,
+
+            message:
+                "Logged out successfully"
+        });
     }
 );
 
 
 /* =========================================================
-   STATIC FALLBACK
+   404 API HANDLER
 ========================================================= */
 
 app.use(
-    (req, res, next) => {
-        if (
-            req.path.startsWith("/api/")
-        ) {
-            return res.status(
-                404
-            ).json({
-                success: false,
-                message:
-                    "API route not found"
-            });
-        }
+    "/api",
+    (req, res) => {
 
-        next();
-    }
-);
+        res.status(404).json({
 
-app.use(
-    (req, res, next) => {
+            success: false,
 
-        if (
-            req.path.startsWith("/api/")
-        ) {
+            message:
+                "API endpoint not found",
 
-            return res.status(
-                404
-            ).json({
-
-                success: false,
-
-                message:
-                    `API endpoint not found: ${req.method} ${req.path}`
-            });
-        }
-
-        next();
+            path:
+                req.originalUrl
+        });
     }
 );
 
 
 /* =========================================================
-   GENERAL 404
+   GENERAL 404 HANDLER
 ========================================================= */
 
 app.use(
@@ -3015,49 +3626,75 @@ app.use(
     (error, req, res, next) => {
 
         console.error(
-            "SERVER ERROR:",
+            "======================================"
+        );
+
+        console.error(
+            "EXPRESS ERROR"
+        );
+
+        console.error(
             error
         );
 
+        console.error(
+            "======================================"
+        );
+
         if (
-            error instanceof
-            multer.MulterError
+            res.headersSent
         ) {
 
-            return res.status(
-                400
-            ).json({
+            return next(error);
+        }
+
+        let statusCode = 500;
+
+        if (
+            error instanceof multer.MulterError
+        ) {
+
+            if (
+                error.code ===
+                "LIMIT_FILE_SIZE"
+            ) {
+
+                statusCode = 413;
+            }
+
+            return res
+                .status(statusCode)
+                .json({
+
+                    success: false,
+
+                    message:
+                        error.code ===
+                        "LIMIT_FILE_SIZE"
+                            ? "File is too large. Maximum size is 150MB."
+                            : "Upload error",
+
+                    error:
+                        error.message,
+
+                    code:
+                        error.code
+                });
+        }
+
+        res
+            .status(statusCode)
+            .json({
 
                 success: false,
 
                 message:
-                    "Upload error: " +
-                    error.message,
+                    "Server error",
 
-                code:
-                    error.code ||
-                    "MULTER_ERROR"
+                error:
+                    error.message ||
+                    "Unknown server error"
             });
-        }
-
-        const status =
-            Number(
-                error.status ||
-                error.statusCode
-            ) || 500;
-
-        res.status(status).json({
-
-            success: false,
-
-            message:
-                error.message ||
-                "Internal server error",
-
-            error:
-                error.message ||
-                "Internal server error"
-        });
     }
 );
 
@@ -3068,310 +3705,110 @@ app.use(
 
 async function seedDatabase() {
 
-    /* ---------- HOME ---------- */
+    try {
 
-    if (
-        !(await Home.findOne())
-    ) {
+        const homeCount =
+            await Home.countDocuments();
 
-        await Home.create({
+        if (
+            homeCount === 0
+        ) {
 
-            badge:
-                "Welcome Home",
+            await Home.create({
 
-            title:
-                "The Potter's House",
+                badge:
+                    "Welcome Home",
 
-            subtitle:
-                "Church Bengaluru",
-
-            location:
-                "Bengaluru, Karnataka, India",
-
-            mapLink:
-                "https://maps.google.com",
-
-            /* FIXED */
-            logo:
-                "/logo.jpeg"
-        });
-    }
-
-
-    /* ---------- EVENTS ---------- */
-
-    if (
-        (await Event.countDocuments()) ===
-        0
-    ) {
-
-        await Event.insertMany([
-
-            {
-                category:
-                    "Morning",
-
-                day:
-                    "Sunday",
-
-                service:
-                    "Worship Service",
-
-                time:
-                    "10:30 AM",
-
-                order: 0
-            },
-
-            {
-                category:
-                    "Evening",
-
-                day:
-                    "Sunday",
-
-                service:
-                    "Revival Service",
-
-                time:
-                    "6:00 PM",
-
-                order: 1
-            },
-
-            {
-                category:
-                    "Midweek",
-
-                day:
-                    "Wednesday",
-
-                service:
-                    "Gospel Service",
-
-                time:
-                    "7:30 PM",
-
-                order: 2
-            }
-        ]);
-    }
-
-
-    /* ---------- SPECIAL EVENTS ---------- */
-
-    if (
-        (await SpecialEvent.countDocuments()) ===
-        0
-    ) {
-
-        await SpecialEvent.insertMany([
-
-            {
                 title:
-                    "Men's Discipleship",
+                    "The Potter's House",
 
-                date:
-                    "August 24",
+                subtitle:
+                    "Church Bengaluru",
 
-                time:
-                    "7:30 PM",
+                location:
+                    "Bengaluru, Karnataka, India",
+
+                mapLink:
+                    "https://maps.google.com",
+
+                logo:
+                    "/logo.jpeg"
+            });
+
+            console.log(
+                "Default Home document created."
+            );
+        }
+
+
+        const featuredCount =
+            await Featured.countDocuments();
+
+        if (
+            featuredCount === 0
+        ) {
+
+            await Featured.create({
+
+                title:
+                    "Featured",
 
                 description:
                     "",
-
-                link:
-                    "#",
 
                 image:
-                    "",
+                    ""
+            });
 
-                order: 0
-            },
+            console.log(
+                "Default Featured document created."
+            );
+        }
 
-            {
+
+        const welcomeCount =
+            await Welcome.countDocuments();
+
+        if (
+            welcomeCount === 0
+        ) {
+
+            await Welcome.create({
+
                 title:
-                    "Youth Rally & Concert",
-
-                date:
-                    "September 12",
-
-                time:
-                    "6:30 PM",
+                    "Welcome to The Potter's House",
 
                 description:
                     "",
-
-                link:
-                    "#",
 
                 image:
-                    "",
+                    ""
+            });
 
-                order: 1
-            }
-        ]);
+            console.log(
+                "Default Welcome document created."
+            );
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Database seed error:",
+            error
+        );
     }
-
-
-    /* ---------- FEATURED ---------- */
-
-    if (
-        !(await Featured.findOne())
-    ) {
-
-        await Featured.create({
-
-            badge:
-                "Featured Message",
-
-            title:
-                "Time Is Running Out",
-
-            subtitle:
-                "Bible Conference 2026",
-
-            backgroundImage:
-                "/logo.jpeg",
-
-            watchLink:
-                "#",
-
-            sermonsLink:
-                "#"
-        });
-    }
-
-
-    /* ---------- WELCOME ---------- */
-
-    if (
-        !(await Welcome.findOne())
-    ) {
-
-        await Welcome.create({
-
-            badge:
-                "A Message From Leadership",
-
-            title:
-                "Welcome To Church",
-
-            paragraph1:
-                "Thank you for visiting us online.",
-
-            paragraph2:
-                "We invite you to join us at any of our weekly services.",
-
-            leaderName:
-                "Leadership Team",
-
-            newHereText:
-                "New Here?",
-
-            newHereLink:
-                "#",
-
-            contactText:
-                "Contact Us",
-
-            contactLink:
-                "#",
-
-            image:
-                ""
-        });
-    }
-
-
-    /* ---------- EXPLORE ---------- */
-
-    if (
-        (await Explore.countDocuments()) ===
-        0
-    ) {
-
-        await Explore.insertMany([
-
-            {
-                title:
-                    "Staff",
-
-                description:
-                    "Learn about our pastors, leaders, and history.",
-
-                buttonText:
-                    "Meet Staff",
-
-                buttonLink:
-                    "#",
-
-                order: 0
-            },
-
-            {
-                title:
-                    "Mission & Vision",
-
-                description:
-                    "Reaching local communities and foreign mission fields.",
-
-                buttonText:
-                    "Our Mission",
-
-                buttonLink:
-                    "#",
-
-                order: 1
-            },
-
-            {
-                title:
-                    "About Us",
-
-                description:
-                    "Part of a worldwide fellowship of over 2,800 churches.",
-
-                buttonText:
-                    "Learn More",
-
-                buttonLink:
-                    "#",
-
-                order: 2
-            }
-        ]);
-    }
-
-    await normalizeExploreOrders();
-
-    console.log(
-        "Database initialization complete."
-    );
 }
 
 
 /* =========================================================
-   START SERVER
+   DATABASE CONNECTION
 ========================================================= */
+
+let server = null;
 
 async function startServer() {
 
     try {
-
-        console.log("");
-
-        console.log(
-            "========================================"
-        );
-
-        console.log(
-            "THE POTTER'S HOUSE CHURCH SERVER"
-        );
-
-        console.log(
-            "========================================"
-        );
 
         console.log(
             "Connecting to MongoDB..."
@@ -3382,91 +3819,92 @@ async function startServer() {
         );
 
         console.log(
-            "MongoDB connected successfully."
-        );
-
-        console.log(
-            "Database:",
-            mongoose.connection.name
+            "MongoDB connection established."
         );
 
         await seedDatabase();
 
-        app.listen(
-            PORT,
-            () => {
+        /*
+         * Vercel imports this file as a serverless
+         * function. Do not call app.listen() there.
+         */
 
-                console.log("");
+        if (
+            !process.env.VERCEL
+        ) {
 
-                console.log(
-                    "========================================"
+            server =
+                app.listen(
+                    PORT,
+                    () => {
+
+                        console.log("");
+                        console.log(
+                            "======================================"
+                        );
+
+                        console.log(
+                            "THE POTTER'S HOUSE CHURCH SERVER"
+                        );
+
+                        console.log(
+                            "======================================"
+                        );
+
+                        console.log(
+                            `Server running on port ${PORT}`
+                        );
+
+                        console.log(
+                            `http://localhost:${PORT}`
+                        );
+
+                        console.log(
+                            "======================================"
+                        );
+
+                        console.log("");
+                    }
                 );
-
-                console.log(
-                    `Server running on port ${PORT}`
-                );
-
-                console.log(
-                    `Website:   http://localhost:${PORT}`
-                );
-
-                console.log(
-                    `Login:     http://localhost:${PORT}/login.html`
-                );
-
-                console.log(
-                    `Register:  http://localhost:${PORT}/register.html`
-                );
-
-                console.log(
-                    `Admin:     http://localhost:${PORT}/admin`
-                );
-
-                console.log(
-                    `Status:    http://localhost:${PORT}/api/status`
-                );
-
-                console.log(
-                    `Health:    http://localhost:${PORT}/api/health`
-                );
-
-                console.log(
-                    `Updates:   http://localhost:${PORT}/api/updates`
-                );
-
-                console.log(
-                    "========================================"
-                );
-
-                console.log("");
-            }
-        );
+        }
 
     } catch (error) {
 
         console.error("");
-
         console.error(
-            "========================================"
+            "======================================"
         );
 
         console.error(
-            "SERVER START FAILED"
+            "MONGODB CONNECTION FAILED"
         );
 
         console.error(
-            "========================================"
+            "======================================"
         );
-
-        console.error(error);
-
-        console.error("");
 
         console.error(
-            "Check that MongoDB is running."
+            error
         );
 
-        process.exit(1);
+        console.error(
+            "======================================"
+        );
+
+        /*
+         * On Vercel, the request middleware will
+         * report database errors to the client.
+         *
+         * Locally, keep the process alive long enough
+         * to make the error visible.
+         */
+
+        if (
+            !process.env.VERCEL
+        ) {
+
+            process.exit(1);
+        }
     }
 }
 
@@ -3475,7 +3913,9 @@ async function startServer() {
    GRACEFUL SHUTDOWN
 ========================================================= */
 
-async function shutdown(signal) {
+async function shutdown(
+    signal
+) {
 
     console.log(
         `${signal} received. Shutting down...`
@@ -3498,6 +3938,18 @@ async function shutdown(signal) {
 
     sseClients = [];
 
+    if (server) {
+
+        await new Promise(
+            resolve => {
+
+                server.close(
+                    () => resolve()
+                );
+            }
+        );
+    }
+
     try {
 
         await mongoose.connection.close();
@@ -3509,8 +3961,8 @@ async function shutdown(signal) {
     } catch (error) {
 
         console.error(
-            "MongoDB close error:",
-            error
+            "MongoDB shutdown error:",
+            error.message
         );
     }
 
@@ -3529,11 +3981,22 @@ process.on(
 
 
 /* =========================================================
-   VERCEL EXPORT / LOCAL START
+   START SERVER
+========================================================= */
+
+startServer();
+
+
+/* =========================================================
+   EXPORT APP
 ========================================================= */
 
 module.exports = app;
 
-if (require.main === module) {
-    startServer();
-}
+
+
+
+
+
+
+

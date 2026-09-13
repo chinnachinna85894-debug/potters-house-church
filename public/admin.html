@@ -4903,10 +4903,15 @@ async function loadCalendar(){
 
     try{
 
-        const data =
+        const rawData =
             (await api(
                 "/api/calendar"
-            )) || {};
+            )) || null;
+
+        const data =
+            Array.isArray(rawData)
+                ? (rawData[0] || {})
+                : rawData;
 
 
         const calendarValue =

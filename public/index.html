@@ -3133,8 +3133,14 @@ async function loadCalendar() {
     }
 
 
-    calendarData =
+    const rawCalendar =
       await response.json();
+
+
+    calendarData =
+      Array.isArray(rawCalendar)
+        ? (rawCalendar[0] || null)
+        : rawCalendar;
 
 
     updateCalendarPreview();

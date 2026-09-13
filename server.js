@@ -3006,7 +3006,205 @@ app.delete(
 
 /* =========================================================
    CALENDAR
+   The church calendar is a single current item.
+   Older duplicate records are cleaned up when saving/removing.
 ========================================================= */
+
+async function getCurrentCalendar() {
+
+    const collection =
+        mongoose.connection.db.collection(
+            "calendar"
+        );
+
+    return await collection
+        .findOne(
+            {},
+            {
+                sort: {
+                    updatedAt: -1,
+                    createdAt: -1
+                }
+            }
+        );
+}
+
+async function cleanupOldCalendars(
+    collection,
+    keepId
+) {
+
+    const oldItems =
+        await collection
+            .find(
+                keepId
+                    ? {
+                        _id: {
+                            $ne: keepId
+                        }
+                    }
+                    : {}
+            )
+            .toArray();
+
+    if (!oldItems.length) {
+        return;
+    }
+
+    await collection.deleteMany(
+        keepId
+            ? {
+                _id: {
+                    $ne: keepId
+                }
+            }
+            : {}
+    );
+
+    for (const oldItem of oldItems) {
+
+        if (oldItem?.image) {
+            deleteUploadedFile(
+                oldItem.image
+            );
+        }
+    }
+}
+
+async function saveCurrentCalendar(
+    req
+) {
+
+    const collection =
+        mongoose.connection.db.collection(
+            "calendar"
+        );
+
+    const imageFile =
+        getFileByFields(
+            req,
+            [
+                "calendarFile",
+                "image",
+                "calendarImage"
+            ]
+        );
+
+    const current =
+        await getCurrentCalendar();
+
+    const item = {
+
+        title:
+            req.body.title ||
+            "Church Calendar",
+
+        date:
+            req.body.date ||
+            "",
+
+        time:
+            req.body.time ||
+            "",
+
+        description:
+            req.body.description ||
+            "",
+
+        location:
+            req.body.location ||
+            "",
+
+        link:
+            req.body.link ||
+            "",
+
+        order:
+            Number(
+                req.body.order
+            ) || 0,
+
+        updatedAt:
+            new Date()
+    };
+
+    /*
+     * Keep the existing file when the user saves
+     * without selecting a replacement file.
+     */
+    if (imageFile) {
+
+        item.image =
+            normalizeUploadUrl(
+                imageFile
+            );
+    } else if (current?.image) {
+
+        item.image =
+            current.image;
+    }
+
+    let savedId;
+
+    if (current?._id) {
+
+        await collection.updateOne(
+            {
+                _id: current._id
+            },
+            {
+                $set: item
+            }
+        );
+
+        savedId =
+            current._id;
+
+        if (
+            imageFile &&
+            current.image &&
+            current.image !==
+                item.image
+        ) {
+
+            deleteUploadedFile(
+                current.image
+            );
+        }
+
+    } else {
+
+        item.createdAt =
+            new Date();
+
+        const inserted =
+            await collection.insertOne(
+                item
+            );
+
+        savedId =
+            inserted.insertedId;
+    }
+
+    /*
+     * The calendar is singular. Remove any
+     * duplicate records left by older versions.
+     */
+    await cleanupOldCalendars(
+        collection,
+        savedId
+    );
+
+    notifyClients(
+        "calendar-updated"
+    );
+
+    return {
+        success: true,
+        message:
+            "Calendar updated successfully"
+    };
+}
 
 app.get(
     "/api/calendar",
@@ -3014,27 +3212,26 @@ app.get(
 
         try {
 
-            const collection =
-                mongoose.connection.db.collection(
-                    "calendar"
-                );
-
-            const items =
-                await collection
-                    .find({})
-                    .sort({
-                        order: 1,
-                        date: 1,
-                        createdAt: 1
-                    })
-                    .toArray();
+            const item =
+                await getCurrentCalendar();
 
             res.setHeader(
                 "Cache-Control",
                 "no-store"
             );
 
-            res.json(items);
+            if (!item) {
+
+                return res
+                    .status(404)
+                    .json({
+                        success: false,
+                        message:
+                            "No calendar has been configured."
+                    });
+            }
+
+            res.json(item);
 
         } catch (error) {
 
@@ -3044,12 +3241,9 @@ app.get(
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load calendar",
-
                 error:
                     error.message
             });
@@ -3064,123 +3258,12 @@ app.put(
 
         try {
 
-            const collection =
-                mongoose.connection.db.collection(
-                    "calendar"
+            const result =
+                await saveCurrentCalendar(
+                    req
                 );
 
-            const imageFile =
-                getFileByFields(
-                    req,
-                    [
-                        "image",
-                        "calendarImage"
-                    ]
-                );
-
-            const item = {
-
-                title:
-                    req.body.title ||
-                    "",
-
-                date:
-                    req.body.date ||
-                    "",
-
-                time:
-                    req.body.time ||
-                    "",
-
-                description:
-                    req.body.description ||
-                    "",
-
-                location:
-                    req.body.location ||
-                    "",
-
-                link:
-                    req.body.link ||
-                    "",
-
-                order:
-                    Number(
-                        req.body.order
-                    ) || 0,
-
-                updatedAt:
-                    new Date()
-            };
-
-            if (imageFile) {
-
-                item.image =
-                    normalizeUploadUrl(
-                        imageFile
-                    );
-            }
-
-            if (
-                req.body.id &&
-                validObjectId(
-                    req.body.id
-                )
-            ) {
-
-                const oldItem =
-                    await collection.findOne({
-                        _id:
-                            new mongoose.mongo.ObjectId(
-                                req.body.id
-                            )
-                    });
-
-                await collection.updateOne(
-                    {
-                        _id:
-                            new mongoose.mongo.ObjectId(
-                                req.body.id
-                            )
-                    },
-                    {
-                        $set: item
-                    }
-                );
-
-                if (
-                    imageFile &&
-                    oldItem?.image &&
-                    oldItem.image !==
-                        item.image
-                ) {
-
-                    deleteUploadedFile(
-                        oldItem.image
-                    );
-                }
-
-            } else {
-
-                item.createdAt =
-                    new Date();
-
-                await collection.insertOne(
-                    item
-                );
-            }
-
-            notifyClients(
-                "calendar-updated"
-            );
-
-            res.json({
-
-                success: true,
-
-                message:
-                    "Calendar updated successfully"
-            });
+            res.json(result);
 
         } catch (error) {
 
@@ -3192,12 +3275,9 @@ app.put(
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update calendar",
-
                 error:
                     error.message
             });
@@ -3205,6 +3285,69 @@ app.put(
     }
 );
 
+/*
+ * Remove the entire current calendar.
+ * This matches the Admin button, which calls
+ * DELETE /api/calendar without an ID.
+ */
+app.delete(
+    "/api/calendar",
+    async (req, res) => {
+
+        try {
+
+            const collection =
+                mongoose.connection.db.collection(
+                    "calendar"
+                );
+
+            const items =
+                await collection
+                    .find({})
+                    .toArray();
+
+            await collection.deleteMany({});
+
+            for (const item of items) {
+
+                if (item?.image) {
+                    deleteUploadedFile(
+                        item.image
+                    );
+                }
+            }
+
+            notifyClients(
+                "calendar-updated"
+            );
+
+            res.json({
+                success: true,
+                message:
+                    "Calendar removed successfully"
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Calendar DELETE error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Failed to remove calendar",
+                error:
+                    error.message
+            });
+        }
+    }
+);
+
+/*
+ * Keep the old ID route for compatibility.
+ */
 app.delete(
     "/api/calendar/:id",
     async (req, res) => {
@@ -3220,9 +3363,7 @@ app.delete(
                 return res.status(
                     400
                 ).json({
-
                     success: false,
-
                     message:
                         "Invalid calendar ID"
                 });
@@ -3246,9 +3387,7 @@ app.delete(
                 return res.status(
                     404
                 ).json({
-
                     success: false,
-
                     message:
                         "Calendar item not found"
                 });
@@ -3262,9 +3401,30 @@ app.delete(
             });
 
             if (item.image) {
-
                 deleteUploadedFile(
                     item.image
+                );
+            }
+
+            /*
+             * If another legacy duplicate exists,
+             * promote the newest one as current.
+             */
+            const remaining =
+                await collection
+                    .find({})
+                    .sort({
+                        updatedAt: -1,
+                        createdAt: -1
+                    })
+                    .limit(1)
+                    .toArray();
+
+            if (remaining.length) {
+
+                await cleanupOldCalendars(
+                    collection,
+                    remaining[0]._id
                 );
             }
 
@@ -3273,27 +3433,22 @@ app.delete(
             );
 
             res.json({
-
                 success: true,
-
                 message:
-                    "Calendar item deleted successfully"
+                    "Calendar removed successfully"
             });
 
         } catch (error) {
 
             console.error(
-                "Calendar DELETE error:",
+                "Calendar DELETE by ID error:",
                 error
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
-                    "Failed to delete calendar item",
-
+                    "Failed to remove calendar",
                 error:
                     error.message
             });
@@ -3304,7 +3459,7 @@ app.delete(
 
 /* =========================================================
    CONTENT CALENDAR
-   Compatibility route used by older admin code
+   Compatibility routes used by older code.
 ========================================================= */
 
 app.get(
@@ -3313,27 +3468,26 @@ app.get(
 
         try {
 
-            const collection =
-                mongoose.connection.db.collection(
-                    "calendar"
-                );
-
-            const items =
-                await collection
-                    .find({})
-                    .sort({
-                        order: 1,
-                        date: 1,
-                        createdAt: 1
-                    })
-                    .toArray();
+            const item =
+                await getCurrentCalendar();
 
             res.setHeader(
                 "Cache-Control",
                 "no-store"
             );
 
-            res.json(items);
+            if (!item) {
+
+                return res
+                    .status(404)
+                    .json({
+                        success: false,
+                        message:
+                            "No calendar has been configured."
+                    });
+            }
+
+            res.json(item);
 
         } catch (error) {
 
@@ -3343,12 +3497,9 @@ app.get(
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to load calendar",
-
                 error:
                     error.message
             });
@@ -3363,123 +3514,12 @@ app.put(
 
         try {
 
-            const collection =
-                mongoose.connection.db.collection(
-                    "calendar"
+            const result =
+                await saveCurrentCalendar(
+                    req
                 );
 
-            const imageFile =
-                getFileByFields(
-                    req,
-                    [
-                        "image",
-                        "calendarImage"
-                    ]
-                );
-
-            const item = {
-
-                title:
-                    req.body.title ||
-                    "",
-
-                date:
-                    req.body.date ||
-                    "",
-
-                time:
-                    req.body.time ||
-                    "",
-
-                description:
-                    req.body.description ||
-                    "",
-
-                location:
-                    req.body.location ||
-                    "",
-
-                link:
-                    req.body.link ||
-                    "",
-
-                order:
-                    Number(
-                        req.body.order
-                    ) || 0,
-
-                updatedAt:
-                    new Date()
-            };
-
-            if (imageFile) {
-
-                item.image =
-                    normalizeUploadUrl(
-                        imageFile
-                    );
-            }
-
-            if (
-                req.body.id &&
-                validObjectId(
-                    req.body.id
-                )
-            ) {
-
-                const oldItem =
-                    await collection.findOne({
-                        _id:
-                            new mongoose.mongo.ObjectId(
-                                req.body.id
-                            )
-                    });
-
-                await collection.updateOne(
-                    {
-                        _id:
-                            new mongoose.mongo.ObjectId(
-                                req.body.id
-                            )
-                    },
-                    {
-                        $set: item
-                    }
-                );
-
-                if (
-                    imageFile &&
-                    oldItem?.image &&
-                    oldItem.image !==
-                        item.image
-                ) {
-
-                    deleteUploadedFile(
-                        oldItem.image
-                    );
-                }
-
-            } else {
-
-                item.createdAt =
-                    new Date();
-
-                await collection.insertOne(
-                    item
-                );
-            }
-
-            notifyClients(
-                "calendar-updated"
-            );
-
-            res.json({
-
-                success: true,
-
-                message:
-                    "Calendar updated successfully"
-            });
+            res.json(result);
 
         } catch (error) {
 
@@ -3491,20 +3531,15 @@ app.put(
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update calendar",
-
                 error:
                     error.message
             });
         }
     }
 );
-
-
 
 /* =========================================================
    PAGE ROUTES

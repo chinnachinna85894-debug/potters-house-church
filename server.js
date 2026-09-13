@@ -2965,48 +2965,14 @@ app.delete(
 app.get(
     "/api/calendar",
     async (req, res) => {
-
         try {
-
-            const collection =
-                mongoose.connection.db.collection(
-                    "calendar"
-                );
-
-            const item =
-                await collection
-                    .find({})
-                    .sort({
-                        updatedAt: -1,
-                        createdAt: -1
-                    })
-                    .limit(1)
-                    .next();
-
-            res.setHeader(
-                "Cache-Control",
-                "no-store"
-            );
-
-            res.json(item || null);
-
+            const collection = mongoose.connection.db.collection("calendar");
+            const items = await collection.find({}).sort({ order: 1, createdAt: 1 }).toArray();
+            res.setHeader("Cache-Control", "no-store");
+            res.json(items[0] || {});
         } catch (error) {
-
-            console.error(
-                "Calendar GET error:",
-                error
-            );
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Failed to load calendar",
-
-                error:
-                    error.message
-            });
+            console.error("Calendar GET error:", error);
+            res.status(500).json({ success: false, message: "Failed to load calendar", error: error.message });
         }
     }
 );
@@ -3015,124 +2981,73 @@ app.put(
     "/api/calendar",
     ...uploadAny,
     async (req, res) => {
-
         try {
+            const collection = mongoose.connection.db.collection("calendar");
+            const items = await collection.find({}).sort({ order: 1, createdAt: 1 }).toArray();
+            const current = items[0] || null;
+            const imageFile = getFileByFields(req, ["image", "calendarImage", "calendarFile", "file"]) || getFirstFile(req);
+            const submittedUrl = String(req.body.url || req.body.calendarUrl || "").trim();
+            let calendarUrl = submittedUrl || current?.image || current?.url || current?.fileUrl || current?.calendarUrl || "";
+            if (imageFile) calendarUrl = normalizeUploadUrl(imageFile);
 
-            const collection =
-                mongoose.connection.db.collection(
-                    "calendar"
-                );
-
-            const calendarFile =
-                getFileByFields(
-                    req,
-                    [
-                        "calendarFile",
-                        "image",
-                        "calendarImage"
-                    ]
-                );
-
-            const existing =
-                await collection
-                    .find({})
-                    .sort({
-                        updatedAt: -1,
-                        createdAt: -1
-                    })
-                    .limit(1)
-                    .next();
-
-            const item = {
-                title:
-                    req.body.title ||
-                    "Church Calendar",
-                url:
-                    req.body.url ||
-                    existing?.url ||
-                    existing?.image ||
-                    "",
-                type:
-                    existing?.type ||
-                    "",
-                updatedAt: new Date()
-            };
-
-            if (calendarFile) {
-                const uploadedUrl =
-                    normalizeUploadUrl(
-                        calendarFile
-                    );
-
-                item.url = uploadedUrl;
-                item.image = uploadedUrl;
-                item.type =
-                    calendarFile.mimetype ===
-                    "application/pdf"
-                        ? "pdf"
-                        : "image";
-            } else if (existing?.image && !item.url) {
-                item.url = existing.image;
+            if (!calendarUrl) {
+                removeNewFiles(req);
+                return res.status(400).json({ success: false, message: "Please select a calendar file or enter a Calendar URL." });
             }
 
-            if (existing) {
-                await collection.updateOne(
-                    { _id: existing._id },
-                    { $set: item }
-                );
+            const item = {
+                title: String(req.body.title || current?.title || "Church Calendar").trim() || "Church Calendar",
+                date: req.body.date || current?.date || "",
+                time: req.body.time || current?.time || "",
+                description: req.body.description || current?.description || "",
+                location: req.body.location || current?.location || "",
+                link: req.body.link || current?.link || "",
+                order: 0,
+                image: calendarUrl,
+                updatedAt: new Date(),
+                createdAt: current?.createdAt || new Date()
+            };
 
-                if (
-                    calendarFile &&
-                    existing.url &&
-                    existing.url !== item.url
-                ) {
-                    deleteUploadedFile(
-                        existing.url
-                    );
+            if (current?._id) {
+                await collection.updateOne({ _id: current._id }, { $set: item });
+                if (items.length > 1) {
+                    const duplicateItems = items.slice(1);
+                    await collection.deleteMany({ _id: { $in: duplicateItems.map(x => x._id) } });
+                    for (const duplicate of duplicateItems) {
+                        if (duplicate.image) deleteUploadedFile(duplicate.image);
+                    }
                 }
-
-                if (
-                    calendarFile &&
-                    existing.image &&
-                    existing.image !== existing.url &&
-                    existing.image !== item.url
-                ) {
-                    deleteUploadedFile(
-                        existing.image
-                    );
+                if (imageFile && current.image && current.image !== calendarUrl) {
+                    deleteUploadedFile(current.image);
                 }
             } else {
-                item.createdAt = new Date();
                 await collection.insertOne(item);
             }
 
-            notifyClients(
-                "calendar-updated"
-            );
-
-            res.json({
-                success: true,
-                message:
-                    "Calendar updated successfully",
-                data: item
-            });
-
+            notifyClients("calendar-updated");
+            res.json({ success: true, message: "Calendar updated successfully", data: item });
         } catch (error) {
-
             removeNewFiles(req);
+            console.error("Calendar PUT error:", error);
+            res.status(500).json({ success: false, message: "Failed to update calendar", error: error.message });
+        }
+    }
+);
 
-            console.error(
-                "Calendar PUT error:",
-                error
-            );
-
-            res.status(500).json({
-                success: false,
-                message:
-                    "Failed to update calendar",
-                error:
-                    error.message
-            });
+app.delete(
+    "/api/calendar",
+    async (req, res) => {
+        try {
+            const collection = mongoose.connection.db.collection("calendar");
+            const items = await collection.find({}).sort({ order: 1, createdAt: 1 }).toArray();
+            if (!items.length) return res.status(404).json({ success: false, message: "No calendar has been configured." });
+            for (const item of items) if (item.image) deleteUploadedFile(item.image);
+            await collection.deleteMany({});
+            notifyClients("calendar-updated");
+            res.json({ success: true, message: "Calendar removed successfully" });
+        } catch (error) {
+            console.error("Calendar DELETE error:", error);
+            res.status(500).json({ success: false, message: "Failed to remove calendar", error: error.message });
         }
     }
 );

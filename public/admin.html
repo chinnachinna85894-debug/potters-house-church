@@ -4909,14 +4909,22 @@ async function loadCalendar(){
             )) || {};
 
 
+        const calendarValue =
+            data.url ||
+            data.image ||
+            data.fileUrl ||
+            data.calendarUrl ||
+            data.path ||
+            "";
+
         document.getElementById(
             "calendarUrl"
         ).value =
-            data.url &&
-            !data.url.startsWith(
+            calendarValue &&
+            !calendarValue.startsWith(
                 "/uploads/"
             )
-            ? data.url
+            ? calendarValue
             : "";
 
 
@@ -4939,7 +4947,7 @@ async function loadCalendar(){
             );
 
 
-        if(!data.url){
+        if(!calendarValue){
 
             status.textContent =
                 "No calendar has been configured.";
@@ -4963,7 +4971,7 @@ async function loadCalendar(){
 
 
         const url =
-            fileUrl(data.url);
+            fileUrl(calendarValue);
 
 
         const lower =
@@ -4983,6 +4991,7 @@ async function loadCalendar(){
             `;
 
         }else if(
+            data.image === calendarValue ||
             /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)
         ){
 
@@ -5051,6 +5060,25 @@ document
                 .trim();
 
 
+            /*
+             * Do not allow an empty calendar to be saved.
+             * A calendar must have either a URL or an uploaded file.
+             */
+            const file =
+                document.getElementById(
+                    "calendarFile"
+                ).files[0];
+
+            if(!url && !file){
+
+                showToast(
+                    "Please select a calendar file or enter a Calendar URL.",
+                    "error"
+                );
+
+                return;
+            }
+
             formData.append(
                 "url",
                 url
@@ -5062,12 +5090,6 @@ document
                 title ||
                 "Church Calendar"
             );
-
-
-            const file =
-                document.getElementById(
-                    "calendarFile"
-                ).files[0];
 
 
             if(file){

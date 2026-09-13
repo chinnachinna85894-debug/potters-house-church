@@ -3133,14 +3133,8 @@ async function loadCalendar() {
     }
 
 
-    const rawCalendar =
-      await response.json();
-
-
     calendarData =
-      Array.isArray(rawCalendar)
-        ? (rawCalendar[0] || null)
-        : rawCalendar;
+      await response.json();
 
 
     updateCalendarPreview();
@@ -3176,7 +3170,6 @@ function getCalendarUrl(data) {
 
   return (
     data.url ||
-    data.image ||
     data.fileUrl ||
     data.calendarUrl ||
     data.path ||
@@ -3204,11 +3197,12 @@ function getCalendarTitle(data) {
 }
 
 
-function isImageUrl(url, data = null) {
-  return (
-    (data && data.image === url) ||
-    /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)
+function isImageUrl(url) {
+
+  return /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(
+    url
   );
+
 }
 
 
@@ -3331,7 +3325,7 @@ function updateCalendarPreview(
 
 
   if (
-    isImageUrl(url, calendarData)
+    isImageUrl(url)
   ) {
 
     content.classList.add(
@@ -4663,6 +4657,139 @@ loadAllContent();
 
 
 /* =========================================================
+   AUTOMATIC LIVE REFRESH FALLBACK
+========================================================= */
+
+/*
+ * SSE normally updates the page immediately.
+ * This polling fallback keeps the public page updated
+ * automatically if SSE is unavailable or interrupted.
+ */
+
+let liveContentFingerprint = "";
+
+const LIVE_CONTENT_ENDPOINTS = [
+  "/api/home",
+  "/api/home-background",
+  "/api/events",
+  "/api/special-events",
+  "/api/featured",
+  "/api/welcome",
+  "/api/explore",
+  "/api/calendar"
+];
+
+
+async function getLiveContentFingerprint() {
+
+  try {
+
+    const results =
+      await Promise.all(
+        LIVE_CONTENT_ENDPOINTS.map(
+          async function(url) {
+
+            try {
+
+              const response =
+                await fetch(
+                  url,
+                  {
+                    cache: "no-store"
+                  }
+                );
+
+              const text =
+                await response.text();
+
+              return (
+                url +
+                "|" +
+                response.status +
+                "|" +
+                text
+              );
+
+            } catch(error) {
+
+              return (
+                url +
+                "|network-error"
+              );
+
+            }
+
+          }
+        )
+      );
+
+    return results.join("\n");
+
+  } catch(error) {
+
+    console.error(
+      "Live content check error:",
+      error
+    );
+
+    return "";
+
+  }
+
+}
+
+
+async function checkForLiveContentChanges() {
+
+  const fingerprint =
+    await getLiveContentFingerprint();
+
+  if (!fingerprint) {
+    return;
+  }
+
+
+  if (!liveContentFingerprint) {
+
+    liveContentFingerprint =
+      fingerprint;
+
+    return;
+
+  }
+
+
+  if (
+    fingerprint !==
+    liveContentFingerprint
+  ) {
+
+    liveContentFingerprint =
+      fingerprint;
+
+    console.log(
+      "Content changed. Refreshing website content..."
+    );
+
+    await loadAllContent();
+
+  }
+
+}
+
+
+/*
+ * Check every 5 seconds.
+ * This updates the content without refreshing the browser page.
+ */
+const liveRefreshTimer =
+  setInterval(
+    checkForLiveContentChanges,
+    5000
+  );
+
+
+/* =========================================================
    SERVER-SENT EVENTS
 ========================================================= */
 
@@ -4793,9 +4920,29 @@ document.addEventListener(
   }
 );
 
+/* =========================================================
+   CLEANUP
+========================================================= */
+
+window.addEventListener(
+  "beforeunload",
+  function() {
+
+    if (eventSource) {
+      eventSource.close();
+    }
+
+    if (liveRefreshTimer) {
+      clearInterval(
+        liveRefreshTimer
+      );
+    }
+
+  }
+);
+
 </script>
 
 </body>
 
 </html>
-

@@ -2973,22 +2973,22 @@ app.get(
                     "calendar"
                 );
 
-            const items =
+            const item =
                 await collection
                     .find({})
                     .sort({
-                        order: 1,
-                        date: 1,
-                        createdAt: 1
+                        updatedAt: -1,
+                        createdAt: -1
                     })
-                    .toArray();
+                    .limit(1)
+                    .next();
 
             res.setHeader(
                 "Cache-Control",
                 "no-store"
             );
 
-            res.json(items);
+            res.json(item || null);
 
         } catch (error) {
 
@@ -3023,105 +3023,87 @@ app.put(
                     "calendar"
                 );
 
-            const imageFile =
+            const calendarFile =
                 getFileByFields(
                     req,
                     [
+                        "calendarFile",
                         "image",
                         "calendarImage"
                     ]
                 );
 
-            const item = {
+            const existing =
+                await collection
+                    .find({})
+                    .sort({
+                        updatedAt: -1,
+                        createdAt: -1
+                    })
+                    .limit(1)
+                    .next();
 
+            const item = {
                 title:
                     req.body.title ||
+                    "Church Calendar",
+                url:
+                    req.body.url ||
+                    existing?.url ||
+                    existing?.image ||
                     "",
-
-                date:
-                    req.body.date ||
+                type:
+                    existing?.type ||
                     "",
-
-                time:
-                    req.body.time ||
-                    "",
-
-                description:
-                    req.body.description ||
-                    "",
-
-                location:
-                    req.body.location ||
-                    "",
-
-                link:
-                    req.body.link ||
-                    "",
-
-                order:
-                    Number(
-                        req.body.order
-                    ) || 0,
-
-                updatedAt:
-                    new Date()
+                updatedAt: new Date()
             };
 
-            if (imageFile) {
-
-                item.image =
+            if (calendarFile) {
+                const uploadedUrl =
                     normalizeUploadUrl(
-                        imageFile
+                        calendarFile
                     );
+
+                item.url = uploadedUrl;
+                item.image = uploadedUrl;
+                item.type =
+                    calendarFile.mimetype ===
+                    "application/pdf"
+                        ? "pdf"
+                        : "image";
+            } else if (existing?.image && !item.url) {
+                item.url = existing.image;
             }
 
-            if (
-                req.body.id &&
-                validObjectId(
-                    req.body.id
-                )
-            ) {
-
-                const oldItem =
-                    await collection.findOne({
-                        _id:
-                            new mongoose.mongo.ObjectId(
-                                req.body.id
-                            )
-                    });
-
+            if (existing) {
                 await collection.updateOne(
-                    {
-                        _id:
-                            new mongoose.mongo.ObjectId(
-                                req.body.id
-                            )
-                    },
-                    {
-                        $set: item
-                    }
+                    { _id: existing._id },
+                    { $set: item }
                 );
 
                 if (
-                    imageFile &&
-                    oldItem?.image &&
-                    oldItem.image !==
-                        item.image
+                    calendarFile &&
+                    existing.url &&
+                    existing.url !== item.url
                 ) {
-
                     deleteUploadedFile(
-                        oldItem.image
+                        existing.url
                     );
                 }
 
+                if (
+                    calendarFile &&
+                    existing.image &&
+                    existing.image !== existing.url &&
+                    existing.image !== item.url
+                ) {
+                    deleteUploadedFile(
+                        existing.image
+                    );
+                }
             } else {
-
-                item.createdAt =
-                    new Date();
-
-                await collection.insertOne(
-                    item
-                );
+                item.createdAt = new Date();
+                await collection.insertOne(item);
             }
 
             notifyClients(
@@ -3129,11 +3111,10 @@ app.put(
             );
 
             res.json({
-
                 success: true,
-
                 message:
-                    "Calendar updated successfully"
+                    "Calendar updated successfully",
+                data: item
             });
 
         } catch (error) {
@@ -3146,12 +3127,9 @@ app.put(
             );
 
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Failed to update calendar",
-
                 error:
                     error.message
             });

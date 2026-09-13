@@ -1,96 +1,152 @@
+
 <!DOCTYPE html>
 
-<html lang="en" class="scroll-smooth overflow-x-hidden w-full">
+<html
+  lang="en"
+  class="scroll-smooth overflow-x-hidden w-full"
+>
 
 <head>
 
   <meta charset="UTF-8">
 
-<meta
-name="viewport"
-content="width=device-width,
-initial-scale=1.0,
-maximum-scale=1.0,
-user-scalable=no"
-
->
+  <meta
+    name="viewport"
+    content="
+      width=device-width,
+      initial-scale=1.0,
+      maximum-scale=1.0,
+      user-scalable=no
+    "
+  >
 
   <title>The Potter's House Church Bengaluru</title>
 
-  <!-- Tailwind -->
+  <!-- =========================================================
+       TAILWIND
+  ========================================================== -->
 
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- AOS -->
+
+  <!-- =========================================================
+       AOS
+  ========================================================== -->
 
   <link
     rel="stylesheet"
     href="https://unpkg.com/aos@next/dist/aos.css"
   >
 
+
+  <!-- =========================================================
+       CUSTOM CSS
+  ========================================================== -->
+
   <style>
 
     html,
     body {
+
       max-width: 100%;
+
       overflow-x: hidden;
+
       background: #000;
+
     }
+
 
     body {
+
       margin: 0;
+
     }
+
 
     ::-webkit-scrollbar {
+
       width: 6px;
+
     }
+
 
     ::-webkit-scrollbar-track {
+
       background: #000;
+
     }
 
+
     ::-webkit-scrollbar-thumb {
+
       background: #dc2626;
+
       border-radius: 3px;
+
     }
+
+
+    /* =========================================================
+       PULSE GLOW
+    ========================================================== */
 
     @keyframes pulseGlow {
 
       0%,
       100% {
+
         box-shadow:
           0 0 15px
           rgba(220, 38, 38, 0.4);
+
       }
 
       50% {
+
         box-shadow:
           0 0 35px
           rgba(220, 38, 38, 0.9);
+
       }
 
     }
 
+
     .pulse-glow {
+
       animation:
         pulseGlow 2.5s infinite;
+
     }
+
+
+    /* =========================================================
+       ANIMATED BACKGROUND
+    ========================================================== */
 
     @keyframes gradientShift {
 
       0% {
+
         background-position: 0% 50%;
+
       }
 
       50% {
+
         background-position: 100% 50%;
+
       }
 
       100% {
+
         background-position: 0% 50%;
+
       }
 
     }
+
 
     .animated-bg {
 
@@ -110,125 +166,631 @@ user-scalable=no"
 
     }
 
-    /* =========================================
+
+    /* =========================================================
        CALENDAR
-    ========================================= */
+    ========================================================== */
 
     #calendarWrapper {
+
       max-height: 0;
+
       opacity: 0;
+
       overflow: hidden;
+
       transition:
         max-height 0.7s ease,
         opacity 0.4s ease,
         margin-top 0.4s ease;
+
       margin-top: 0;
+
     }
+
 
     #calendarWrapper.open {
+
       max-height: 3000px;
+
       opacity: 1;
+
       margin-top: 35px;
+
     }
+
 
     #calendarContent {
+
       width: 100%;
+
       min-height: 500px;
+
       background: #050505;
+
       border: 1px solid #374151;
+
       border-radius: 18px;
+
       overflow: hidden;
+
     }
+
 
     #calendarContent iframe {
+
       width: 100%;
+
       min-height: 700px;
+
       border: 0;
+
       display: block;
+
       background: white;
+
     }
+
 
     #calendarContent img {
+
       width: 100%;
+
       max-height: 1000px;
+
       object-fit: contain;
+
       display: block;
+
       margin: auto;
+
       background: #000;
+
     }
+
 
     .calendar-loading {
+
       min-height: 300px;
+
       display: flex;
+
       align-items: center;
+
       justify-content: center;
+
       color: #9ca3af;
+
     }
 
-    /* =========================================
+
+    /* =========================================================
        HERO MEDIA
-    ========================================= */
+    ========================================================== */
 
     .hero-media-layer {
+
       position: absolute;
+
       inset: 0;
+
       opacity: 0;
+
       transition: opacity 1s ease;
+
       pointer-events: none;
+
     }
 
+
     .hero-media-layer.active {
+
       opacity: 1;
+
     }
+
 
     .hero-media-layer img,
     .hero-media-layer video {
+
       width: 100%;
+
       height: 100%;
+
       object-fit: cover;
+
     }
 
-    /* =========================================
+
+    /* =========================================================
        EXPLORE
-    ========================================= */
+    ========================================================== */
 
     #exploreContainer {
+
       display: grid;
+
       grid-template-columns:
         repeat(1, minmax(0, 1fr));
+
       gap: 24px;
+
     }
+
 
     @media (min-width: 640px) {
 
       #exploreContainer {
+
         grid-template-columns:
           repeat(2, minmax(0, 1fr));
+
       }
 
     }
+
 
     @media (min-width: 1024px) {
 
       #exploreContainer {
+
         grid-template-columns:
           repeat(3, minmax(0, 1fr));
+
       }
 
     }
 
+
     .explore-card {
+
       min-height: 240px;
+
     }
 
-    /* =========================================
+
+    /* =========================================================
+       SPECIAL EVENT IMAGE
+    ========================================================== */
+
+    .special-event-image-button {
+
+      width: 100%;
+
+      height: 100%;
+
+      padding: 0;
+
+      margin: 0;
+
+      border: 0;
+
+      background: transparent;
+
+      display: block;
+
+      overflow: hidden;
+
+      cursor: zoom-in;
+
+    }
+
+
+    .special-event-image {
+
+      width: 100%;
+
+      height: 100%;
+
+      object-fit: cover;
+
+      object-position: center;
+
+      display: block;
+
+      cursor: zoom-in;
+
+      transition:
+        transform 0.35s ease;
+
+    }
+
+
+    .special-event-image-button:hover
+    .special-event-image {
+
+      transform: scale(1.05);
+
+    }
+
+
+    /* =========================================================
+       SPECIAL EVENT IMAGE LIGHTBOX
+    ========================================================== */
+
+    #specialEventLightbox {
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 99999;
+
+      display: none;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+
+      background:
+        rgba(0, 0, 0, 0.94);
+
+      backdrop-filter:
+        blur(8px);
+
+      -webkit-backdrop-filter:
+        blur(8px);
+
+    }
+
+
+    #specialEventLightbox.open {
+
+      display: flex;
+
+    }
+
+
+    #specialEventLightboxImage {
+
+      display: block;
+
+      max-width: 95vw;
+
+      max-height: 88vh;
+
+      width: auto;
+
+      height: auto;
+
+      object-fit: contain;
+
+      border-radius: 10px;
+
+      box-shadow:
+        0 0 50px
+        rgba(0, 0, 0, 0.9);
+
+      animation:
+        specialImageOpen
+        0.25s ease;
+
+    }
+
+
+    @keyframes specialImageOpen {
+
+      from {
+
+        opacity: 0;
+
+        transform: scale(0.94);
+
+      }
+
+      to {
+
+        opacity: 1;
+
+        transform: scale(1);
+
+      }
+
+    }
+
+
+    #specialEventLightboxClose {
+
+      position: absolute;
+
+      top: 20px;
+
+      right: 25px;
+
+      width: 48px;
+
+      height: 48px;
+
+      border: 0;
+
+      border-radius: 50%;
+
+      background:
+        rgba(255, 255, 255, 0.12);
+
+      color: white;
+
+      font-size: 32px;
+
+      line-height: 48px;
+
+      text-align: center;
+
+      cursor: pointer;
+
+      transition:
+        0.2s ease;
+
+      z-index: 2;
+
+    }
+
+
+    #specialEventLightboxClose:hover {
+
+      background: #dc2626;
+
+      transform: scale(1.08);
+
+    }
+
+
+    #specialEventLightboxTitle {
+
+      position: absolute;
+
+      left: 20px;
+
+      right: 20px;
+
+      bottom: 20px;
+
+      text-align: center;
+
+      color: white;
+
+      font-size: 14px;
+
+      font-weight: 700;
+
+      text-transform: uppercase;
+
+      letter-spacing: 0.12em;
+
+      text-shadow:
+        0 2px 8px
+        rgba(0, 0, 0, 0.9);
+
+      pointer-events: none;
+
+    }
+
+
+    /* =========================================================
+       SECTION SPACING
+    ========================================================== */
+
+    html,
+    body {
+
+      margin: 0 !important;
+
+      padding: 0 !important;
+
+      width: 100% !important;
+
+      overflow-x: hidden !important;
+
+    }
+
+
+    /* HOME ONLY */
+
+    #hero {
+
+      min-height: 100vh !important;
+
+      height: 100vh !important;
+
+      height: 100svh !important;
+
+      margin: 0 !important;
+
+    }
+
+
+    /* ALL OTHER SECTIONS */
+
+    #events,
+    #special-events,
+    #calendar,
+    #featured,
+    #welcome,
+    #explore,
+    #contact {
+
+      min-height: 0 !important;
+
+      height: auto !important;
+
+      margin-top: 96px !important;
+
+      margin-bottom: 0 !important;
+
+      padding-top: 35px !important;
+
+      padding-bottom: 35px !important;
+
+    }
+
+
+    /* =========================================================
+       CALENDAR COMPACT
+    ========================================================== */
+
+    #calendarWrapper {
+
+      margin-top: 15px !important;
+
+      margin-bottom: 15px !important;
+
+    }
+
+
+    #calendarContent {
+
+      min-height: 0 !important;
+
+      height: auto !important;
+
+    }
+
+
+    #calendarContent img {
+
+      display: block !important;
+
+      width: 100% !important;
+
+      height: auto !important;
+
+      max-height: none !important;
+
+      object-fit: contain !important;
+
+      margin: 0 !important;
+
+    }
+
+
+    #calendarContent iframe {
+
+      width: 100% !important;
+
+      min-height: 650px !important;
+
+      height: 650px !important;
+
+      display: block !important;
+
+      border: 0 !important;
+
+    }
+
+
+    /* =========================================================
+       CARDS
+    ========================================================== */
+
+    .event-card,
+    .special-event-card,
+    .card,
+    .explore-card {
+
+      height: auto !important;
+
+      min-height: 0 !important;
+
+    }
+
+
+    /* =========================================================
        MOBILE
-    ========================================= */
+    ========================================================== */
 
     @media (max-width: 640px) {
 
+      #hero {
+
+        min-height: 100svh !important;
+
+        height: 100svh !important;
+
+      }
+
+
+      #events,
+      #special-events,
+      #calendar,
+      #featured,
+      #welcome,
+      #explore,
+      #contact {
+
+        min-height: 0 !important;
+
+        height: auto !important;
+
+        margin-top: 96px !important;
+
+        margin-bottom: 0 !important;
+
+        padding-top: 25px !important;
+
+        padding-bottom: 25px !important;
+
+      }
+
+
+      #calendarWrapper {
+
+        margin-top: 10px !important;
+
+        margin-bottom: 10px !important;
+
+      }
+
+
       #calendarContent iframe {
-        min-height: 600px;
+
+        min-height: 600px !important;
+
+        height: 600px !important;
+
+      }
+
+
+      #specialEventLightbox {
+
+        padding: 10px;
+
+      }
+
+
+      #specialEventLightboxImage {
+
+        max-width: 96vw;
+
+        max-height: 82vh;
+
+        border-radius: 6px;
+
+      }
+
+
+      #specialEventLightboxClose {
+
+        top: 12px;
+
+        right: 12px;
+
+        width: 44px;
+
+        height: 44px;
+
+        line-height: 44px;
+
+      }
+
+
+      #specialEventLightboxTitle {
+
+        bottom: 12px;
+
+        font-size: 11px;
+
       }
 
     }
@@ -236,6 +798,7 @@ user-scalable=no"
   </style>
 
 </head>
+
 
 <body
   class="
@@ -246,6 +809,7 @@ user-scalable=no"
     overflow-x-hidden
   "
 >
+
 
 <!-- =========================================================
      HEADER
@@ -278,193 +842,213 @@ user-scalable=no"
     "
   >
 
+    <!-- LOGO -->
 
-<!-- LOGO + NAME -->
-
-<a
-  href="#hero"
-  class="
-    flex
-    items-center
-    space-x-3
-    group
-    min-w-0
-  "
->
-
-  <div
-    id="logoContainer"
-    class="
-      w-10
-      h-10
-      bg-red-600
-      rounded-full
-      flex-shrink-0
-      flex
-      items-center
-      justify-center
-      text-white
-      font-bold
-      text-xl
-      transition-transform
-      duration-500
-      group-hover:rotate-180
-      shadow-lg
-      shadow-red-600/50
-      overflow-hidden
-    "
-  >
-    ✝
-  </div>
-
-  <span
-    id="navChurchName"
-    class="
-      font-bold
-      text-xs
-      sm:text-sm
-      md:text-base
-      tracking-widest
-      uppercase
-      truncate
-    "
-  >
-    The Potter's House
-  </span>
-
-</a>
-
-
-<!-- DESKTOP NAV -->
-
-<nav
-  class="
-    hidden
-    lg:flex
-    space-x-6
-    xl:space-x-8
-    text-xs
-    uppercase
-    tracking-widest
-    font-semibold
-  "
->
-
-  <a href="#hero" class="hover:text-red-500 transition">
-    Home
-  </a>
-
-  <a href="#events" class="hover:text-red-500 transition">
-    Events
-  </a>
-
-  <a href="#special-events" class="hover:text-red-500 transition">
-    Special Events
-  </a>
-
-  <a href="#featured" class="hover:text-red-500 transition">
-    Watch
-  </a>
-
-  <a href="#welcome" class="hover:text-red-500 transition">
-    Welcome
-  </a>
-
-  <a href="#explore" class="hover:text-red-500 transition">
-    Explore
-  </a>
-
-</nav>
-
-
-<!-- RIGHT -->
-
-<div
-  class="
-    flex
-    items-center
-    space-x-2
-    sm:space-x-3
-    flex-shrink-0
-  "
->
-
-  <a
-    href="#welcome"
-    class="
-      hidden
-      sm:inline-block
-      border
-      border-gray-600
-      px-3
-      sm:px-4
-      py-2
-      rounded-full
-      text-xs
-      uppercase
-      font-bold
-      hover:bg-white
-      hover:text-black
-      transition
-    "
-  >
-    Contact
-  </a>
-
-  <a
-    href="#hero"
-    class="
-      bg-red-600
-      px-3
-      sm:px-5
-      py-2
-      rounded-full
-      text-xs
-      uppercase
-      font-bold
-      hover:bg-red-700
-      transition
-      pulse-glow
-    "
-  >
-    Location
-  </a>
-
-  <button
-    id="menu-btn"
-    class="
-      lg:hidden
-      text-gray-300
-      hover:text-white
-      focus:outline-none
-      p-2
-    "
-    aria-label="Toggle Navigation"
-  >
-
-    <svg
-      class="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
+    <a
+      href="#hero"
+      class="
+        flex
+        items-center
+        space-x-3
+        group
+        min-w-0
+      "
     >
 
-      <path
-        id="menu-icon"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M4 6h16M4 12h16M4 18h16"
-      />
+      <div
+        id="logoContainer"
+        class="
+          w-10
+          h-10
+          bg-red-600
+          rounded-full
+          flex-shrink-0
+          flex
+          items-center
+          justify-center
+          text-white
+          font-bold
+          text-xl
+          transition-transform
+          duration-500
+          group-hover:rotate-180
+          shadow-lg
+          shadow-red-600/50
+          overflow-hidden
+        "
+      >
+        ✝
+      </div>
 
-    </svg>
 
-  </button>
+      <span
+        id="navChurchName"
+        class="
+          font-bold
+          text-xs
+          sm:text-sm
+          md:text-base
+          tracking-widest
+          uppercase
+          truncate
+        "
+      >
+        The Potter's House
+      </span>
 
-</div>
+    </a>
 
+
+    <!-- DESKTOP NAV -->
+
+    <nav
+      class="
+        hidden
+        lg:flex
+        space-x-6
+        xl:space-x-8
+        text-xs
+        uppercase
+        tracking-widest
+        font-semibold
+      "
+    >
+
+      <a
+        href="#hero"
+        class="hover:text-red-500 transition"
+      >
+        Home
+      </a>
+
+      <a
+        href="#events"
+        class="hover:text-red-500 transition"
+      >
+        Events
+      </a>
+
+      <a
+        href="#special-events"
+        class="hover:text-red-500 transition"
+      >
+        Special Events
+      </a>
+
+      <a
+        href="#featured"
+        class="hover:text-red-500 transition"
+      >
+        Watch
+      </a>
+
+      <a
+        href="#welcome"
+        class="hover:text-red-500 transition"
+      >
+        Welcome
+      </a>
+
+      <a
+        href="#explore"
+        class="hover:text-red-500 transition"
+      >
+        Explore
+      </a>
+
+    </nav>
+
+
+    <!-- RIGHT -->
+
+    <div
+      class="
+        flex
+        items-center
+        space-x-2
+        sm:space-x-3
+        flex-shrink-0
+      "
+    >
+
+      <a
+        href="#welcome"
+        class="
+          hidden
+          sm:inline-block
+          border
+          border-gray-600
+          px-3
+          sm:px-4
+          py-2
+          rounded-full
+          text-xs
+          uppercase
+          font-bold
+          hover:bg-white
+          hover:text-black
+          transition
+        "
+      >
+        Contact
+      </a>
+
+
+      <a
+        href="#hero"
+        class="
+          bg-red-600
+          px-3
+          sm:px-5
+          py-2
+          rounded-full
+          text-xs
+          uppercase
+          font-bold
+          hover:bg-red-700
+          transition
+          pulse-glow
+        "
+      >
+        Location
+      </a>
+
+
+      <button
+        id="menu-btn"
+        class="
+          lg:hidden
+          text-gray-300
+          hover:text-white
+          focus:outline-none
+          p-2
+        "
+        aria-label="Toggle Navigation"
+      >
+
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+
+          <path
+            id="menu-icon"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+
+        </svg>
+
+      </button>
+
+    </div>
 
   </div>
+
 
   <!-- MOBILE MENU -->
 
@@ -481,73 +1065,90 @@ user-scalable=no"
     "
   >
 
-```
-<nav
-  class="
-    flex
-    flex-col
-    space-y-4
-    text-sm
-    uppercase
-    tracking-widest
-    font-semibold
-  "
->
+    <nav
+      class="
+        flex
+        flex-col
+        space-y-4
+        text-sm
+        uppercase
+        tracking-widest
+        font-semibold
+      "
+    >
 
-  <a href="#hero" class="mobile-link hover:text-red-500 transition">
-    Home
-  </a>
+      <a
+        href="#hero"
+        class="mobile-link hover:text-red-500 transition"
+      >
+        Home
+      </a>
 
-  <a href="#events" class="mobile-link hover:text-red-500 transition">
-    Events
-  </a>
+      <a
+        href="#events"
+        class="mobile-link hover:text-red-500 transition"
+      >
+        Events
+      </a>
 
-  <a href="#special-events" class="mobile-link hover:text-red-500 transition">
-    Special Events
-  </a>
+      <a
+        href="#special-events"
+        class="mobile-link hover:text-red-500 transition"
+      >
+        Special Events
+      </a>
 
-  <a href="#featured" class="mobile-link hover:text-red-500 transition">
-    Watch
-  </a>
+      <a
+        href="#featured"
+        class="mobile-link hover:text-red-500 transition"
+      >
+        Watch
+      </a>
 
-  <a href="#welcome" class="mobile-link hover:text-red-500 transition">
-    Welcome
-  </a>
+      <a
+        href="#welcome"
+        class="mobile-link hover:text-red-500 transition"
+      >
+        Welcome
+      </a>
 
-  <a href="#explore" class="mobile-link hover:text-red-500 transition">
-    Explore
-  </a>
+      <a
+        href="#explore"
+        class="mobile-link hover:text-red-500 transition"
+      >
+        Explore
+      </a>
 
-  <a
-    href="#welcome"
-    class="
-      mobile-link
-      inline-block
-      border
-      border-gray-600
-      px-4
-      py-2
-      rounded-full
-      text-xs
-      uppercase
-      font-bold
-      hover:bg-white
-      hover:text-black
-      transition
-      text-center
-      w-full
-      mt-2
-    "
-  >
-    Contact
-  </a>
+      <a
+        href="#welcome"
+        class="
+          mobile-link
+          inline-block
+          border
+          border-gray-600
+          px-4
+          py-2
+          rounded-full
+          text-xs
+          uppercase
+          font-bold
+          hover:bg-white
+          hover:text-black
+          transition
+          text-center
+          w-full
+          mt-2
+        "
+      >
+        Contact
+      </a>
 
-</nav>
-
+    </nav>
 
   </div>
 
 </header>
+
 
 <!-- =========================================================
      HERO
@@ -583,33 +1184,34 @@ user-scalable=no"
     "
   >
 
+    <div
+      id="heroMediaSlides"
+      class="absolute inset-0"
+    ></div>
 
-<div
-  id="heroMediaSlides"
-  class="absolute inset-0"
-></div>
 
-<div
-  class="
-    absolute
-    inset-0
-    bg-black/55
-  "
-></div>
+    <div
+      class="
+        absolute
+        inset-0
+        bg-black/55
+      "
+    ></div>
 
-<div
-  class="
-    absolute
-    inset-0
-    bg-gradient-to-b
-    from-black/40
-    via-black/35
-    to-black/80
-  "
-></div>
 
+    <div
+      class="
+        absolute
+        inset-0
+        bg-gradient-to-b
+        from-black/40
+        via-black/35
+        to-black/80
+      "
+    ></div>
 
   </div>
+
 
   <div
     data-aos="fade-up"
@@ -624,149 +1226,146 @@ user-scalable=no"
     "
   >
 
-
-<span
-  id="heroBadge"
-  class="
-    text-xs
-    uppercase
-    tracking-widest
-    text-red-500
-    font-bold
-    bg-red-950/60
-    px-4
-    py-1.5
-    rounded-full
-    border
-    border-red-800/40
-  "
->
-  Welcome Home
-</span>
-
-
-<h1
-  class="
-    text-3xl
-    sm:text-5xl
-    md:text-7xl
-    font-black
-    tracking-widest
-    uppercase
-    my-6
-    leading-tight
-    text-transparent
-    bg-clip-text
-    bg-gradient-to-r
-    from-white
-    via-gray-200
-    to-gray-400
-  "
->
-
-  <span id="heroTitle">
-    The Potter's House
-  </span>
-
-  <br>
-
-  <span
-    id="heroSubtitle"
-    class="
-      text-xl
-      sm:text-3xl
-      md:text-5xl
-      tracking-widest
-      text-gray-300
-      block
-      mt-2
-    "
-  >
-    Church Bengaluru
-  </span>
-
-</h1>
+    <span
+      id="heroBadge"
+      class="
+        text-xs
+        uppercase
+        tracking-widest
+        text-red-500
+        font-bold
+        bg-red-950/60
+        px-4
+        py-1.5
+        rounded-full
+        border
+        border-red-800/40
+      "
+    >
+      Welcome Home
+    </span>
 
 
-<p
-  id="heroLocation"
-  class="
-    text-gray-400
-    mb-8
-    text-base
-    sm:text-lg
-    font-light
-  "
->
-  Bengaluru, Karnataka, India
-</p>
+    <h1
+      class="
+        text-3xl
+        sm:text-5xl
+        md:text-7xl
+        font-black
+        tracking-widest
+        uppercase
+        my-6
+        leading-tight
+        text-transparent
+        bg-clip-text
+        bg-gradient-to-r
+        from-white
+        via-gray-200
+        to-gray-400
+      "
+    >
+
+      <span id="heroTitle">
+        The Potter's House
+      </span>
+
+      <br>
+
+      <span
+        id="heroSubtitle"
+        class="
+          text-xl
+          sm:text-3xl
+          md:text-5xl
+          tracking-widest
+          text-gray-300
+          block
+          mt-2
+        "
+      >
+        Church Bengaluru
+      </span>
+
+    </h1>
 
 
-<a
-  id="heroMapLink"
-  href="https://maps.google.com"
-  target="_blank"
-  rel="noopener noreferrer"
-  class="
-    inline-block
-    border
-    border-white/40
-    bg-white/5
-    backdrop-blur-md
-    px-6
-    sm:px-8
-    py-3.5
-    rounded-full
-    text-xs
-    uppercase
-    font-bold
-    tracking-widest
-    hover:bg-white
-    hover:text-black
-    transition
-    duration-300
-    hover:scale-105
-  "
->
-  📍 Find Us On A Map
-</a>
+    <p
+      id="heroLocation"
+      class="
+        text-gray-400
+        mb-8
+        text-base
+        sm:text-lg
+        font-light
+      "
+    >
+      Bengaluru, Karnataka, India
+    </p>
 
+
+    <a
+      id="heroMapLink"
+      href="https://maps.google.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="
+        inline-block
+        border
+        border-white/40
+        bg-white/5
+        backdrop-blur-md
+        px-6
+        sm:px-8
+        py-3.5
+        rounded-full
+        text-xs
+        uppercase
+        font-bold
+        tracking-widest
+        hover:bg-white
+        hover:text-black
+        transition
+        duration-300
+        hover:scale-105
+      "
+    >
+      📍 Find Us On A Map
+    </a>
 
   </div>
 
-<a
-href="#events"
-class="
-mt-8
-animate-bounce
-text-gray-500
-hover:text-white
-transition
-relative
-z-10
-"
 
->
+  <a
+    href="#events"
+    class="
+      mt-8
+      animate-bounce
+      text-gray-500
+      hover:text-white
+      transition
+      relative
+      z-10
+    "
+  >
 
+    <span
+      class="
+        text-xs
+        uppercase
+        tracking-widest
+        block
+        mb-1
+      "
+    >
+      Scroll Down
+    </span>
 
-<span
-  class="
-    text-xs
-    uppercase
-    tracking-widest
-    block
-    mb-1
-  "
->
-  Scroll Down
-</span>
-
-↓
-
+    ↓
 
   </a>
 
 </section>
+
 
 <!-- =========================================================
      COMING EVENTS
@@ -776,11 +1375,6 @@ z-10
   id="events"
   class="
     w-full
-    min-h-screen
-    flex
-    flex-col
-    items-center
-    justify-center
     bg-stone-950
     px-4
     py-20
@@ -790,180 +1384,179 @@ z-10
   "
 >
 
-  <div class="max-w-6xl w-full mx-auto my-auto">
+  <div class="max-w-6xl w-full mx-auto">
+
+    <h2
+      data-aos="fade-down"
+      class="
+        text-3xl
+        sm:text-4xl
+        md:text-5xl
+        font-black
+        uppercase
+        tracking-widest
+        mb-2
+      "
+    >
+      Coming Events
+    </h2>
 
 
-<h2
-  data-aos="fade-down"
-  class="
-    text-3xl
-    sm:text-4xl
-    md:text-5xl
-    font-black
-    uppercase
-    tracking-widest
-    mb-2
-  "
->
-  Coming Events
-</h2>
+    <p
+      data-aos="fade-down"
+      data-aos-delay="100"
+      class="
+        text-red-500
+        font-bold
+        mb-10
+        md:mb-12
+        uppercase
+        text-xs
+        tracking-widest
+      "
+    >
+      Regular Service Times
+    </p>
 
-
-<p
-  data-aos="fade-down"
-  data-aos-delay="100"
-  class="
-    text-red-500
-    font-bold
-    mb-10
-    md:mb-12
-    uppercase
-    text-xs
-    tracking-widest
-  "
->
-  Regular Service Times
-</p>
-
-
-<div
-  id="eventsContainer"
-  class="
-    grid
-    grid-cols-1
-    sm:grid-cols-2
-    lg:grid-cols-3
-    gap-6
-    mb-12
-  "
-></div>
-
-
-<button
-  id="viewCalendarBtn"
-  type="button"
-  data-aos="fade-up"
-  data-aos-delay="500"
-  class="
-    inline-flex
-    items-center
-    justify-center
-    gap-3
-    bg-white
-    text-black
-    px-8
-    py-3.5
-    rounded-full
-    text-xs
-    font-bold
-    uppercase
-    tracking-widest
-    hover:bg-red-600
-    hover:text-white
-    transition
-    duration-300
-  "
->
-
-  <span>View Calendar</span>
-
-  <span
-    id="calendarArrow"
-    class="transition-transform duration-300"
-  >
-    ↓
-  </span>
-
-</button>
-
-
-<div id="calendarWrapper">
-
-  <div
-    class="
-      text-left
-      bg-gray-950
-      border
-      border-gray-800
-      rounded-2xl
-      p-4
-      sm:p-6
-    "
-  >
 
     <div
+      id="eventsContainer"
       class="
-        flex
-        flex-col
-        sm:flex-row
-        items-start
-        sm:items-center
-        justify-between
-        gap-4
-        mb-5
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        gap-6
+        mb-12
+      "
+    ></div>
+
+
+    <button
+      id="viewCalendarBtn"
+      type="button"
+      data-aos="fade-up"
+      data-aos-delay="500"
+      class="
+        inline-flex
+        items-center
+        justify-center
+        gap-3
+        bg-white
+        text-black
+        px-8
+        py-3.5
+        rounded-full
+        text-xs
+        font-bold
+        uppercase
+        tracking-widest
+        hover:bg-red-600
+        hover:text-white
+        transition
+        duration-300
       "
     >
 
-      <div>
+      <span>View Calendar</span>
 
-        <h3
-          id="calendarTitle"
-          class="text-xl sm:text-2xl font-black uppercase"
-        >
-          Church Calendar
-        </h3>
+      <span
+        id="calendarArrow"
+        class="transition-transform duration-300"
+      >
+        ↓
+      </span>
 
-        <p
-          id="calendarStatus"
-          class="text-xs text-gray-500 mt-1"
-        >
-          Loading calendar...
-        </p>
-
-      </div>
+    </button>
 
 
-      <a
-        id="calendarOpenLink"
-        href="#"
-        target="_blank"
-        rel="noopener noreferrer"
+    <div id="calendarWrapper">
+
+      <div
         class="
-          hidden
-          bg-red-600
-          hover:bg-red-700
-          text-white
-          px-5
-          py-2.5
-          rounded-full
-          text-xs
-          font-bold
-          uppercase
-          tracking-widest
+          text-left
+          bg-gray-950
+          border
+          border-gray-800
+          rounded-2xl
+          p-4
+          sm:p-6
         "
       >
-        Open Calendar
-      </a>
 
-    </div>
+        <div
+          class="
+            flex
+            flex-col
+            sm:flex-row
+            items-start
+            sm:items-center
+            justify-between
+            gap-4
+            mb-5
+          "
+        >
+
+          <div>
+
+            <h3
+              id="calendarTitle"
+              class="text-xl sm:text-2xl font-black uppercase"
+            >
+              Church Calendar
+            </h3>
+
+            <p
+              id="calendarStatus"
+              class="text-xs text-gray-500 mt-1"
+            >
+              Loading calendar...
+            </p>
+
+          </div>
 
 
-    <div id="calendarContent">
+          <a
+            id="calendarOpenLink"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="
+              hidden
+              bg-red-600
+              hover:bg-red-700
+              text-white
+              px-5
+              py-2.5
+              rounded-full
+              text-xs
+              font-bold
+              uppercase
+              tracking-widest
+            "
+          >
+            Open Calendar
+          </a>
 
-      <div class="calendar-loading">
-        Loading calendar...
+        </div>
+
+
+        <div id="calendarContent">
+
+          <div class="calendar-loading">
+            Loading calendar...
+          </div>
+
+        </div>
+
       </div>
 
     </div>
-
-  </div>
-
-</div>
-
 
   </div>
 
 </section>
+
 
 <!-- =========================================================
      SPECIAL EVENTS
@@ -973,11 +1566,6 @@ z-10
   id="special-events"
   class="
     w-full
-    min-h-screen
-    flex
-    flex-col
-    items-center
-    justify-center
     bg-black
     px-4
     py-20
@@ -991,68 +1579,66 @@ z-10
       max-w-4xl
       w-full
       mx-auto
-      my-auto
     "
     data-aos="zoom-in"
   >
 
-
-<div
-  class="
-    bg-white
-    rounded-lg
-    border-2
-    border-black
-    overflow-hidden
-    shadow-2xl
-    text-black
-  "
->
-
-  <div
-    class="
-      bg-stone-900
-      text-white
-      py-5
-      px-4
-      text-center
-      border-b-2
-      border-black
-    "
-  >
-
-    <h2
+    <div
       class="
-        text-2xl
-        sm:text-3xl
-        md:text-4xl
-        font-black
-        uppercase
-        tracking-widest
+        bg-white
+        rounded-lg
+        border-2
+        border-black
+        overflow-hidden
+        shadow-2xl
+        text-black
       "
     >
-      SPECIAL EVENTS
-    </h2>
 
-  </div>
+      <div
+        class="
+          bg-stone-900
+          text-white
+          py-5
+          px-4
+          text-center
+          border-b-2
+          border-black
+        "
+      >
+
+        <h2
+          class="
+            text-2xl
+            sm:text-3xl
+            md:text-4xl
+            font-black
+            uppercase
+            tracking-widest
+          "
+        >
+          SPECIAL EVENTS
+        </h2>
+
+      </div>
 
 
-  <div
-    id="specialEventsContainer"
-    class="
-      p-4
-      sm:p-6
-      md:p-10
-      space-y-8
-    "
-  ></div>
+      <div
+        id="specialEventsContainer"
+        class="
+          p-4
+          sm:p-6
+          md:p-10
+          space-y-8
+        "
+      ></div>
 
-</div>
-
+    </div>
 
   </div>
 
 </section>
+
 
 <!-- =========================================================
      FEATURED
@@ -1062,11 +1648,6 @@ z-10
   id="featured"
   class="
     w-full
-    min-h-screen
-    flex
-    flex-col
-    items-center
-    justify-center
     relative
     px-4
     py-20
@@ -1085,6 +1666,7 @@ z-10
     "
   ></div>
 
+
   <div
     class="
       absolute
@@ -1093,6 +1675,7 @@ z-10
     "
   ></div>
 
+
   <div
     class="
       relative
@@ -1100,134 +1683,132 @@ z-10
       max-w-4xl
       w-full
       mx-auto
-      my-auto
     "
     data-aos="zoom-out"
   >
 
-
-<span
-  id="featuredBadge"
-  class="
-    text-xs
-    font-bold
-    uppercase
-    tracking-widest
-    text-red-500
-    border
-    border-red-800/60
-    bg-red-950/40
-    px-5
-    py-2
-    rounded-full
-  "
->
-  Featured Message
-</span>
-
-
-<h2
-  id="featuredTitle"
-  class="
-    text-3xl
-    sm:text-5xl
-    md:text-7xl
-    font-black
-    uppercase
-    my-6
-    md:my-8
-    leading-tight
-    tracking-wide
-    text-white
-  "
->
-  Time Is Running Out
-</h2>
+    <span
+      id="featuredBadge"
+      class="
+        text-xs
+        font-bold
+        uppercase
+        tracking-widest
+        text-red-500
+        border
+        border-red-800/60
+        bg-red-950/40
+        px-5
+        py-2
+        rounded-full
+      "
+    >
+      Featured Message
+    </span>
 
 
-<p
-  id="featuredSubtitle"
-  class="
-    text-gray-300
-    mb-8
-    md:mb-10
-    text-base
-    sm:text-lg
-    font-light
-  "
->
-  Bible Conference 2026
-</p>
+    <h2
+      id="featuredTitle"
+      class="
+        text-3xl
+        sm:text-5xl
+        md:text-7xl
+        font-black
+        uppercase
+        my-6
+        md:my-8
+        leading-tight
+        tracking-wide
+        text-white
+      "
+    >
+      Time Is Running Out
+    </h2>
 
 
-<div
-  class="
-    flex
-    flex-col
-    sm:flex-row
-    justify-center
-    items-center
-    gap-4
-  "
->
-
-  <a
-    id="watchLink"
-    href="#"
-    class="
-      w-full
-      sm:w-auto
-      bg-red-600
-      text-white
-      px-8
-      py-3.5
-      rounded-full
-      font-bold
-      text-xs
-      uppercase
-      tracking-widest
-      hover:bg-red-700
-      transition
-      duration-300
-      shadow-lg
-      shadow-red-600/40
-    "
-  >
-    ▶ Watch Now
-  </a>
+    <p
+      id="featuredSubtitle"
+      class="
+        text-gray-300
+        mb-8
+        md:mb-10
+        text-base
+        sm:text-lg
+        font-light
+      "
+    >
+      Bible Conference 2026
+    </p>
 
 
-  <a
-    id="sermonsLink"
-    href="#"
-    class="
-      w-full
-      sm:w-auto
-      border
-      border-white/30
-      backdrop-blur-md
-      px-8
-      py-3.5
-      rounded-full
-      font-bold
-      text-xs
-      uppercase
-      tracking-widest
-      hover:bg-white
-      hover:text-black
-      transition
-      duration-300
-    "
-  >
-    View All Sermons
-  </a>
+    <div
+      class="
+        flex
+        flex-col
+        sm:flex-row
+        justify-center
+        items-center
+        gap-4
+      "
+    >
 
-</div>
+      <a
+        id="watchLink"
+        href="#"
+        class="
+          w-full
+          sm:w-auto
+          bg-red-600
+          text-white
+          px-8
+          py-3.5
+          rounded-full
+          font-bold
+          text-xs
+          uppercase
+          tracking-widest
+          hover:bg-red-700
+          transition
+          duration-300
+          shadow-lg
+          shadow-red-600/40
+        "
+      >
+        ▶ Watch Now
+      </a>
 
+
+      <a
+        id="sermonsLink"
+        href="#"
+        class="
+          w-full
+          sm:w-auto
+          border
+          border-white/30
+          backdrop-blur-md
+          px-8
+          py-3.5
+          rounded-full
+          font-bold
+          text-xs
+          uppercase
+          tracking-widest
+          hover:bg-white
+          hover:text-black
+          transition
+          duration-300
+        "
+      >
+        View All Sermons
+      </a>
+
+    </div>
 
   </div>
 
 </section>
+
 
 <!-- =========================================================
      WELCOME
@@ -1237,11 +1818,6 @@ z-10
   id="welcome"
   class="
     w-full
-    min-h-screen
-    flex
-    flex-col
-    items-center
-    justify-center
     bg-gray-950
     px-4
     sm:px-6
@@ -1255,7 +1831,6 @@ z-10
       max-w-6xl
       w-full
       mx-auto
-      my-auto
       grid
       grid-cols-1
       md:grid-cols-2
@@ -1265,179 +1840,178 @@ z-10
     "
   >
 
-
-<div
-  data-aos="fade-right"
-  class="text-center md:text-left"
->
-
-  <span
-    id="welcomeBadge"
-    class="
-      text-xs
-      font-bold
-      uppercase
-      tracking-widest
-      text-red-500
-    "
-  >
-    A Message From Leadership
-  </span>
-
-
-  <h2
-    id="welcomeTitle"
-    class="
-      text-3xl
-      sm:text-4xl
-      md:text-5xl
-      font-black
-      uppercase
-      my-4
-    "
-  >
-    Welcome To Church
-  </h2>
-
-
-  <p
-    id="welcomeParagraph1"
-    class="
-      text-gray-400
-      text-sm
-      leading-relaxed
-      mb-4
-    "
-  >
-    Thank you for visiting us online.
-  </p>
-
-
-  <p
-    id="welcomeParagraph2"
-    class="
-      text-gray-400
-      text-sm
-      leading-relaxed
-      mb-6
-    "
-  >
-    Whether you are seeking a spiritual
-    home or just passing through, we
-    invite you to join us.
-  </p>
-
-
-  <p
-    id="leaderName"
-    class="
-      font-bold
-      text-sm
-      text-white
-      italic
-      mb-6
-    "
-  >
-    — Leadership Team
-  </p>
-
-
-  <div
-    class="
-      flex
-      flex-col
-      sm:flex-row
-      justify-center
-      md:justify-start
-      gap-4
-    "
-  >
-
-    <a
-      id="newHereLink"
-      href="#"
-      class="
-        bg-white
-        text-black
-        px-6
-        py-3
-        rounded-full
-        text-xs
-        font-bold
-        uppercase
-        tracking-widest
-        hover:bg-red-600
-        hover:text-white
-        transition
-        duration-300
-        text-center
-      "
+    <div
+      data-aos="fade-right"
+      class="text-center md:text-left"
     >
-      New Here?
-    </a>
+
+      <span
+        id="welcomeBadge"
+        class="
+          text-xs
+          font-bold
+          uppercase
+          tracking-widest
+          text-red-500
+        "
+      >
+        A Message From Leadership
+      </span>
 
 
-    <a
-      id="contactLink"
-      href="#"
+      <h2
+        id="welcomeTitle"
+        class="
+          text-3xl
+          sm:text-4xl
+          md:text-5xl
+          font-black
+          uppercase
+          my-4
+        "
+      >
+        Welcome To Church
+      </h2>
+
+
+      <p
+        id="welcomeParagraph1"
+        class="
+          text-gray-400
+          text-sm
+          leading-relaxed
+          mb-4
+        "
+      >
+        Thank you for visiting us online.
+      </p>
+
+
+      <p
+        id="welcomeParagraph2"
+        class="
+          text-gray-400
+          text-sm
+          leading-relaxed
+          mb-6
+        "
+      >
+        Whether you are seeking a spiritual
+        home or just passing through, we
+        invite you to join us.
+      </p>
+
+
+      <p
+        id="leaderName"
+        class="
+          font-bold
+          text-sm
+          text-white
+          italic
+          mb-6
+        "
+      >
+        — Leadership Team
+      </p>
+
+
+      <div
+        class="
+          flex
+          flex-col
+          sm:flex-row
+          justify-center
+          md:justify-start
+          gap-4
+        "
+      >
+
+        <a
+          id="newHereLink"
+          href="#"
+          class="
+            bg-white
+            text-black
+            px-6
+            py-3
+            rounded-full
+            text-xs
+            font-bold
+            uppercase
+            tracking-widest
+            hover:bg-red-600
+            hover:text-white
+            transition
+            duration-300
+            text-center
+          "
+        >
+          New Here?
+        </a>
+
+
+        <a
+          id="contactLink"
+          href="#"
+          class="
+            border
+            border-gray-700
+            px-6
+            py-3
+            rounded-full
+            text-xs
+            font-bold
+            uppercase
+            tracking-widest
+            hover:border-white
+            transition
+            text-center
+          "
+        >
+          Contact Us
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div
+      data-aos="fade-left"
+      id="welcomeImageContainer"
       class="
+        bg-gradient-to-br
+        from-gray-900
+        to-gray-800
         border
-        border-gray-700
-        px-6
-        py-3
-        rounded-full
-        text-xs
-        font-bold
-        uppercase
-        tracking-widest
-        hover:border-white
-        transition
+        border-gray-800
+        rounded-3xl
+        h-64
+        sm:h-80
+        md:h-96
+        flex
+        items-center
+        justify-center
+        text-gray-500
+        font-semibold
+        shadow-2xl
+        p-4
         text-center
+        overflow-hidden
       "
     >
-      Contact Us
-    </a>
 
-  </div>
+      <span id="welcomeImagePlaceholder">
+        [ Pastor & Spouse Image Placeholder ]
+      </span>
 
-</div>
-
-
-<div
-  data-aos="fade-left"
-  id="welcomeImageContainer"
-  class="
-    bg-gradient-to-br
-    from-gray-900
-    to-gray-800
-    border
-    border-gray-800
-    rounded-3xl
-    h-64
-    sm:h-80
-    md:h-96
-    flex
-    items-center
-    justify-center
-    text-gray-500
-    font-semibold
-    shadow-2xl
-    p-4
-    text-center
-    overflow-hidden
-  "
->
-
-  <span id="welcomeImagePlaceholder">
-    [ Pastor & Spouse Image Placeholder ]
-  </span>
-
-</div>
-
+    </div>
 
   </div>
 
 </section>
+
 
 <!-- =========================================================
      EXPLORE
@@ -1447,10 +2021,6 @@ z-10
   id="explore"
   class="
     w-full
-    min-h-screen
-    flex
-    flex-col
-    justify-between
     bg-black
     px-4
     sm:px-6
@@ -1465,43 +2035,41 @@ z-10
       max-w-6xl
       mx-auto
       w-full
-      my-auto
     "
   >
 
+    <h2
+      data-aos="fade-up"
+      class="
+        text-3xl
+        md:text-4xl
+        font-black
+        uppercase
+        tracking-widest
+        text-center
+        mb-10
+      "
+    >
+      Explore More
+    </h2>
 
-<h2
-  data-aos="fade-up"
-  class="
-    text-3xl
-    md:text-4xl
-    font-black
-    uppercase
-    tracking-widest
-    text-center
-    mb-10
-  "
->
-  Explore More
-</h2>
 
-
-<div
-  id="exploreContainer"
-  class="
-    grid
-    grid-cols-1
-    sm:grid-cols-2
-    lg:grid-cols-3
-    gap-6
-  "
-></div>
-
+    <div
+      id="exploreContainer"
+      class="
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        gap-6
+      "
+    ></div>
 
   </div>
 
+
   <!-- =======================================================
-       NEW FOOTER
+       FOOTER
   ======================================================== -->
 
   <footer
@@ -1517,274 +2085,280 @@ z-10
     "
   >
 
-
-<div
-  class="
-    grid
-    grid-cols-1
-    sm:grid-cols-2
-    lg:grid-cols-3
-    gap-8
-    text-center
-    sm:text-left
-  "
->
-
-  <!-- CHURCH INFO -->
-
-  <div>
-
-    <h3
-      class="
-        text-lg
-        font-black
-        uppercase
-        tracking-widest
-        text-white
-        mb-4
-      "
-    >
-      The Potter's House
-    </h3>
-
-    <p
-      class="
-        text-sm
-        leading-relaxed
-      "
-    >
-      A place to worship, grow in faith,
-      and connect with our church family.
-    </p>
-
-  </div>
-
-
-  <!-- CONTACT -->
-
-  <div>
-
-    <h3
-      class="
-        text-sm
-        font-bold
-        uppercase
-        tracking-widest
-        text-red-500
-        mb-4
-      "
-    >
-      Contact Us
-    </h3>
-
     <div
       class="
-        space-y-3
-        text-sm
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        gap-8
+        text-center
+        sm:text-left
       "
     >
 
-    
+      <!-- CHURCH INFO -->
 
-<a href="https:www.google.com">
-   
+      <div>
 
-
-    📍 Bengaluru, Karnataka, India
-      
-
-
-</a>
-
-      
-
-      <p>
-
-        📞
-
-        <a
-          href="tel:+91XXXXXXXXXX"
+        <h3
           class="
-            hover:text-red-500
-            transition
+            text-lg
+            font-black
+            uppercase
+            tracking-widest
+            text-white
+            mb-4
           "
         >
-          +91 XXXXX XXXXX
-        </a>
-
-      </p>
+          The Potter's House
+        </h3>
 
 
-      <p>
-
-        ✉️
-
-        <a
-          href="mailto:info@yourchurch.com"
+        <p
           class="
-            hover:text-red-500
-            transition
+            text-sm
+            leading-relaxed
           "
         >
-          info@yourchurch.com
-        </a>
+          A place to worship, grow in faith,
+          and connect with our church family.
+        </p>
 
-      </p>
+      </div>
+
+
+      <!-- CONTACT -->
+
+      <div>
+
+        <h3
+          class="
+            text-sm
+            font-bold
+            uppercase
+            tracking-widest
+            text-red-500
+            mb-4
+          "
+        >
+          Contact Us
+        </h3>
+
+
+        <div
+          class="
+            space-y-3
+            text-sm
+          "
+        >
+
+          <p>
+
+            📍
+
+            <a
+              href="https://www.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-red-500 transition"
+            >
+              Bengaluru, Karnataka, India
+            </a>
+
+          </p>
+
+
+          <p>
+
+            📞
+
+            <a
+              href="tel:+91XXXXXXXXXX"
+              class="
+                hover:text-red-500
+                transition
+              "
+            >
+              +91 XXXXX XXXXX
+            </a>
+
+          </p>
+
+
+          <p>
+
+            ✉️
+
+            <a
+              href="mailto:info@yourchurch.com"
+              class="
+                hover:text-red-500
+                transition
+              "
+            >
+              info@yourchurch.com
+            </a>
+
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- SERVICE TIMES -->
+
+      <div>
+
+        <h3
+          class="
+            text-sm
+            font-bold
+            uppercase
+            tracking-widest
+            text-red-500
+            mb-4
+          "
+        >
+          Service Times
+        </h3>
+
+
+        <div
+          class="
+            space-y-2
+            text-sm
+          "
+        >
+
+          <p>
+
+            <span
+              class="
+                text-white
+                font-semibold
+              "
+            >
+              Sunday Worship
+            </span>
+
+            <br>
+
+            10:00 AM
+
+          </p>
+
+
+          <p>
+
+            <span
+              class="
+                text-white
+                font-semibold
+              "
+            >
+              Sunday Evening Service
+            </span>
+
+            <br>
+
+            6:00 PM
+
+          </p>
+
+
+          <p>
+
+            <span
+              class="
+                text-white
+                font-semibold
+              "
+            >
+              Wednesday Service
+            </span>
+
+            <br>
+
+            7:00 PM
+
+          </p>
+
+        </div>
+
+      </div>
 
     </div>
 
-  </div>
 
-
-  <!-- SERVICE TIMES -->
-
-  <div>
-
-    <h3
-      class="
-        text-sm
-        font-bold
-        uppercase
-        tracking-widest
-        text-red-500
-        mb-4
-      "
-    >
-      Service Times
-    </h3>
+    <!-- COPYRIGHT -->
 
     <div
       class="
-        space-y-2
-        text-sm
+        border-t
+        border-gray-900
+        mt-6
+        pt-6
+        text-center
+        text-xs
+        text-gray-600
       "
     >
 
-      <p>
-
-        <span
-          class="
-            text-white
-            font-semibold
-          "
-        >
-          Sunday Worship
-        </span>
-
-        <br>
-
-        10:00 AM
-
-      </p>
-
-
-      <p>
-
-        <span
-          class="
-            text-white
-            font-semibold
-          "
-        >
-          Sunday Evening Service
-        </span>
-
-        <br>
-
-        6:00 PM
-
-      </p>
-
-
-      <p>
-
-        <span
-          class="
-            text-white
-            font-semibold
-          "
-        >
-          Wednesday Service
-        </span>
-
-        <br>
-
-        7:00 PM
-
-      </p>
+      © 2026 The Potter's House Church Bengaluru.
+      All Rights Reserved.
 
     </div>
-
-  </div>
-
-</div>
-
-
-<!-- QUICK LINKS -->
-
-<div
-  class="
-    border-t
-    border-gray-900
-    mt-10
-    pt-6
-    flex
-    flex-col
-    sm:flex-row
-    items-center
-    justify-between
-    gap-4
-    text-xs
-  "
->
-
-  <div
-    class="
-      flex
-      flex-wrap
-      justify-center
-      gap-4
-      uppercase
-      tracking-wider
-    "
-  >
-
-   
-
-
-  </div>
-
-</div>
-
-
-<!-- COPYRIGHT -->
-
-<div
-  class="
-    border-t
-    border-gray-900
-    mt-6
-    pt-6
-    text-center
-    text-xs
-    text-gray-600
-  "
->
-
-  © 2026 The Potter's House Church Bengaluru.
-  All Rights Reserved.
-
-</div>
 
   </footer>
 
 </section>
 
+
+<!-- =========================================================
+     SPECIAL EVENT IMAGE LIGHTBOX
+========================================================= -->
+
+<div
+  id="specialEventLightbox"
+  aria-hidden="true"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Special Event Image"
+>
+
+  <button
+    id="specialEventLightboxClose"
+    type="button"
+    aria-label="Close image"
+  >
+    ×
+  </button>
+
+
+  <img
+    id="specialEventLightboxImage"
+    src=""
+    alt="Special Event"
+  >
+
+
+  <div
+    id="specialEventLightboxTitle"
+  ></div>
+
+</div>
+
+
 <!-- =========================================================
      AOS
 ========================================================= -->
 
-<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script
+  src="https://unpkg.com/aos@next/dist/aos.js"
+></script>
+
 
 <script>
 
@@ -1793,9 +2367,13 @@ z-10
 ========================================================= */
 
 AOS.init({
+
   once: false,
+
   duration: 800,
+
   easing: "ease-out-cubic"
+
 });
 
 
@@ -1809,30 +2387,59 @@ function escapeHtml(value) {
     value === null ||
     value === undefined
   ) {
+
     return "";
+
   }
 
+
   return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
 
 function escapeAttribute(value) {
+
   return escapeHtml(value);
+
 }
 
 
 async function getJSON(url) {
 
   const response =
-    await fetch(url, {
-      cache: "no-store"
-    });
+    await fetch(
+      url,
+      {
+        cache: "no-store"
+      }
+    );
+
 
   if (!response.ok) {
 
@@ -1845,6 +2452,7 @@ async function getJSON(url) {
     );
 
   }
+
 
   return response.json();
 
@@ -1860,7 +2468,9 @@ async function loadHome() {
   try {
 
     const home =
-      await getJSON("/api/home");
+      await getJSON(
+        "/api/home"
+      );
 
 
     document.getElementById(
@@ -1915,7 +2525,9 @@ async function loadHome() {
 
       logo.innerHTML = `
         <img
-          src="${escapeAttribute(home.logo)}"
+          src="${escapeAttribute(
+            home.logo
+          )}"
           alt="Church Logo"
           class="
             w-full
@@ -1924,6 +2536,7 @@ async function loadHome() {
           "
         >
       `;
+
 
       logo.classList.remove(
         "bg-red-600"
@@ -1948,7 +2561,9 @@ async function loadHome() {
 ========================================================= */
 
 let heroMediaItems = [];
+
 let heroMediaIndex = 0;
+
 let heroMediaTimer = null;
 
 
@@ -2012,7 +2627,9 @@ async function loadHeroMedia() {
       Array.isArray(media)
         ? media
         : (
-            Array.isArray(media?.items)
+            Array.isArray(
+              media?.items
+            )
               ? media.items
               : []
           );
@@ -2020,7 +2637,9 @@ async function loadHeroMedia() {
 
     heroMediaItems =
       heroMediaItems.filter(
-        item => item && item.url
+        item =>
+          item &&
+          item.url
       );
 
 
@@ -2090,11 +2709,17 @@ async function loadHeroMedia() {
 
           layer.innerHTML = `
             <video
-              class="w-full h-full object-cover"
+              class="
+                w-full
+                h-full
+                object-cover
+              "
               muted
               playsinline
               preload="metadata"
-              src="${escapeAttribute(url)}"
+              src="${escapeAttribute(
+                url
+              )}"
             ></video>
           `;
 
@@ -2107,7 +2732,9 @@ async function loadHeroMedia() {
                 h-full
                 object-cover
               "
-              src="${escapeAttribute(url)}"
+              src="${escapeAttribute(
+                url
+              )}"
               alt="Church background"
             >
           `;
@@ -2145,7 +2772,9 @@ function showHeroMedia(index) {
   if (
     !heroMediaItems.length
   ) {
+
     return;
+
   }
 
 
@@ -2186,7 +2815,9 @@ function showHeroMedia(index) {
 
   const video =
     layer
-      ? layer.querySelector("video")
+      ? layer.querySelector(
+          "video"
+        )
       : null;
 
 
@@ -2194,8 +2825,10 @@ function showHeroMedia(index) {
 
     video.currentTime = 0;
 
+
     const playPromise =
       video.play();
+
 
     if (playPromise) {
 
@@ -2217,7 +2850,6 @@ function showHeroMedia(index) {
         );
 
       };
-
 
   } else {
 
@@ -2517,6 +3149,7 @@ async function loadCalendar() {
 
     calendarData = null;
 
+
     updateCalendarPreview(
       "Unable to load calendar."
     );
@@ -2529,12 +3162,15 @@ async function loadCalendar() {
 function getCalendarUrl(data) {
 
   if (!data) {
+
     return "";
+
   }
 
 
   return (
     data.url ||
+    data.image ||
     data.fileUrl ||
     data.calendarUrl ||
     data.path ||
@@ -2547,7 +3183,9 @@ function getCalendarUrl(data) {
 function getCalendarTitle(data) {
 
   if (!data) {
+
     return "Church Calendar";
+
   }
 
 
@@ -2560,12 +3198,11 @@ function getCalendarTitle(data) {
 }
 
 
-function isImageUrl(url) {
-
-  return /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(
-    url
+function isImageUrl(url, data = null) {
+  return (
+    (data && data.image === url) ||
+    /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)
   );
-
 }
 
 
@@ -2688,12 +3325,19 @@ function updateCalendarPreview(
 
 
   if (
-    isImageUrl(url)
+    isImageUrl(url, calendarData)
   ) {
+
+    content.classList.add(
+      "calendar-image-mode"
+    );
+
 
     content.innerHTML = `
       <img
-        src="${escapeAttribute(url)}"
+        src="${escapeAttribute(
+          url
+        )}"
         alt="${escapeAttribute(
           getCalendarTitle(
             calendarData
@@ -2702,9 +3346,15 @@ function updateCalendarPreview(
       >
     `;
 
+
     return;
 
   }
+
+
+  content.classList.remove(
+    "calendar-image-mode"
+  );
 
 
   if (
@@ -2713,10 +3363,13 @@ function updateCalendarPreview(
 
     content.innerHTML = `
       <iframe
-        src="${escapeAttribute(url)}"
+        src="${escapeAttribute(
+          url
+        )}"
         title="Church Calendar"
       ></iframe>
     `;
+
 
     return;
 
@@ -2725,7 +3378,9 @@ function updateCalendarPreview(
 
   content.innerHTML = `
     <iframe
-      src="${escapeAttribute(url)}"
+      src="${escapeAttribute(
+        url
+      )}"
       title="Church Calendar"
       loading="lazy"
     ></iframe>
@@ -2775,7 +3430,6 @@ function toggleCalendar() {
       "span"
     ).textContent =
       "View Calendar";
-
 
   } else {
 
@@ -2851,6 +3505,7 @@ async function loadSpecialEvents() {
         </div>
       `;
 
+
       return;
 
     }
@@ -2887,6 +3542,7 @@ async function loadSpecialEvents() {
 
         wrapper.className =
           `
+          special-event-card
           flex
           flex-col
           sm:flex-row
@@ -2901,25 +3557,51 @@ async function loadSpecialEvents() {
           `;
 
 
+        /*
+         * =====================================================
+         * IMAGE HTML
+         * =====================================================
+         */
+
         let imageHTML = "";
 
 
         if (event.image) {
 
           imageHTML = `
-            <img
-              src="${escapeAttribute(
+            <button
+              type="button"
+              class="
+                special-event-image-button
+              "
+              data-image="${escapeAttribute(
                 event.image
               )}"
-              alt="${escapeAttribute(
-                event.title
+              data-title="${escapeAttribute(
+                event.title ||
+                "Special Event"
               )}"
-              class="
-                w-full
-                h-full
-                object-cover
-              "
+              aria-label="Open ${escapeAttribute(
+                event.title ||
+                "special event"
+              )} image"
             >
+
+              <img
+                src="${escapeAttribute(
+                  event.image
+                )}"
+                alt="${escapeAttribute(
+                  event.title ||
+                  "Special Event"
+                )}"
+                class="
+                  special-event-image
+                "
+                loading="lazy"
+              >
+
+            </button>
           `;
 
         } else {
@@ -2939,6 +3621,7 @@ async function loadSpecialEvents() {
                 text-center
               "
             >
+
               <span
                 class="
                   text-xs
@@ -2947,11 +3630,18 @@ async function loadSpecialEvents() {
               >
                 Image Added By Admin
               </span>
+
             </div>
           `;
 
         }
 
+
+        /*
+         * =====================================================
+         * EVENT
+         * =====================================================
+         */
 
         wrapper.innerHTML = `
 
@@ -2970,7 +3660,9 @@ async function loadSpecialEvents() {
               shadow-md
             "
           >
+
             ${imageHTML}
+
           </div>
 
 
@@ -3055,40 +3747,39 @@ async function loadSpecialEvents() {
             }
 
 
-            <a
-              href="${escapeAttribute(
-                event.link ||
-                "#"
-              )}"
-              ${
-                event.link &&
-                event.link !== "#"
-                  ? `
+            ${
+              event.link &&
+              event.link !== "#"
+                ? `
+                  <a
+                    href="${escapeAttribute(
+                      event.link
+                    )}"
                     target="_blank"
                     rel="noopener noreferrer"
-                  `
-                  : ""
-              }
-              class="
-                inline-block
-                mt-3
-                border-2
-                border-black
-                px-6
-                py-2
-                rounded-md
-                font-bold
-                text-xs
-                uppercase
-                tracking-widest
-                hover:bg-black
-                hover:text-white
-                transition
-                duration-300
-              "
-            >
-              Find Out More
-            </a>
+                    class="
+                      inline-block
+                      mt-3
+                      border-2
+                      border-black
+                      px-6
+                      py-2
+                      rounded-md
+                      font-bold
+                      text-xs
+                      uppercase
+                      tracking-widest
+                      hover:bg-black
+                      hover:text-white
+                      transition
+                      duration-300
+                    "
+                  >
+                    Find Out More
+                  </a>
+                `
+                : ""
+            }
 
           </div>
 
@@ -3103,6 +3794,35 @@ async function loadSpecialEvents() {
     );
 
 
+    /*
+     * =====================================================
+     * CONNECT IMAGE CLICK EVENTS
+     * =====================================================
+     */
+
+    container
+      .querySelectorAll(
+        ".special-event-image-button"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              openSpecialEventImage(
+                button.dataset.image,
+                button.dataset.title
+              );
+
+            }
+          );
+
+        }
+      );
+
+
     AOS.refresh();
 
   } catch (error) {
@@ -3115,6 +3835,226 @@ async function loadSpecialEvents() {
   }
 
 }
+
+
+/* =========================================================
+   SPECIAL EVENT IMAGE LIGHTBOX
+========================================================= */
+
+const specialEventLightbox =
+  document.getElementById(
+    "specialEventLightbox"
+  );
+
+
+const specialEventLightboxImage =
+  document.getElementById(
+    "specialEventLightboxImage"
+  );
+
+
+const specialEventLightboxTitle =
+  document.getElementById(
+    "specialEventLightboxTitle"
+  );
+
+
+const specialEventLightboxClose =
+  document.getElementById(
+    "specialEventLightboxClose"
+  );
+
+
+function openSpecialEventImage(
+  imageUrl,
+  title = ""
+) {
+
+  if (
+    !imageUrl ||
+    !specialEventLightbox ||
+    !specialEventLightboxImage
+  ) {
+
+    return;
+
+  }
+
+
+  specialEventLightboxImage.src =
+    imageUrl;
+
+
+  specialEventLightboxImage.alt =
+    title ||
+    "Special Event";
+
+
+  specialEventLightboxTitle.textContent =
+    title || "";
+
+
+  specialEventLightbox.classList.add(
+    "open"
+  );
+
+
+  specialEventLightbox.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+
+  document.body.style.overflow =
+    "hidden";
+
+
+  /*
+   * Put focus on close button
+   */
+
+  if (specialEventLightboxClose) {
+
+    specialEventLightboxClose.focus();
+
+  }
+
+}
+
+
+function closeSpecialEventImage() {
+
+  if (
+    !specialEventLightbox
+  ) {
+
+    return;
+
+  }
+
+
+  specialEventLightbox.classList.remove(
+    "open"
+  );
+
+
+  specialEventLightbox.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+
+  if (
+    specialEventLightboxImage
+  ) {
+
+    specialEventLightboxImage.src =
+      "";
+
+  }
+
+
+  if (
+    specialEventLightboxTitle
+  ) {
+
+    specialEventLightboxTitle.textContent =
+      "";
+
+  }
+
+
+  document.body.style.overflow =
+    "";
+
+}
+
+
+/*
+ * CLOSE BUTTON
+ */
+
+if (
+  specialEventLightboxClose
+) {
+
+  specialEventLightboxClose.addEventListener(
+    "click",
+    closeSpecialEventImage
+  );
+
+}
+
+
+/*
+ * CLICK BACKGROUND
+ */
+
+if (
+  specialEventLightbox
+) {
+
+  specialEventLightbox.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        specialEventLightbox
+      ) {
+
+        closeSpecialEventImage();
+
+      }
+
+    }
+  );
+
+}
+
+
+/*
+ * CLICK IMAGE DOES NOT CLOSE
+ */
+
+if (
+  specialEventLightboxImage
+) {
+
+  specialEventLightboxImage.addEventListener(
+    "click",
+    event => {
+
+      event.stopPropagation();
+
+    }
+  );
+
+}
+
+
+/*
+ * ESCAPE KEY
+ */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Escape" &&
+      specialEventLightbox &&
+      specialEventLightbox.classList.contains(
+        "open"
+      )
+    ) {
+
+      closeSpecialEventImage();
+
+    }
+
+  }
+);
 
 
 /* =========================================================
@@ -3186,7 +4126,9 @@ async function loadFeatured() {
           rgba(0,0,0,0.35),
           rgba(0,0,0,0.35)
         ),
-        url('${escapeAttribute(background)}')
+        url('${escapeAttribute(
+          background
+        )}')
         `;
 
     } else {
@@ -3425,6 +4367,7 @@ async function loadExplore() {
         </div>
       `;
 
+
       return;
 
     }
@@ -3625,14 +4568,23 @@ async function loadExplore() {
 async function loadAllContent() {
 
   await Promise.allSettled([
+
     loadHome(),
+
     loadHeroMedia(),
+
     loadEvents(),
+
     loadSpecialEvents(),
+
     loadFeatured(),
+
     loadWelcome(),
+
     loadExplore(),
+
     loadCalendar()
+
   ]);
 
 
@@ -3760,7 +4712,6 @@ function connectLiveUpdates() {
 
           await loadAllContent();
 
-
         } catch (error) {
 
           console.error(
@@ -3839,4 +4790,5 @@ document.addEventListener(
 </script>
 
 </body>
+
 </html>

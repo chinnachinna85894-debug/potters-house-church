@@ -21,8 +21,6 @@
   >
 
   <title>The Potter's House Church Bengaluru</title>
-   <link rel="icon" type="image/x-icon" href="./potters_house_logo_transparent_no_shadow.png">
-
 
   <!-- =========================================================
        TAILWIND
@@ -359,7 +357,9 @@
 
       width: 100%;
 
-      height: 100%;
+      aspect-ratio: 16 / 9;
+
+      height: auto;
 
       padding: 0;
 
@@ -380,15 +380,17 @@
 
     .special-event-image {
 
+      display: block;
+
       width: 100%;
 
       height: 100%;
 
-      object-fit: cover;
+      max-width: 100%;
+
+      object-fit: contain;
 
       object-position: center;
-
-      display: block;
 
       cursor: zoom-in;
 
@@ -898,639 +900,7 @@
       }
     }
 
-  
-
-
-/* =========================================================
-   FOOTSCRAY-STYLE UI / LAYOUT OVERRIDES
-   UI ONLY — dynamic/API/viewer functionality is intentionally untouched.
-========================================================= */
-:root{
-  --site-red:#c8102e;
-  --site-black:#090909;
-  --site-ink:#171717;
-  --site-muted:#6b7280;
-  --site-line:#e5e5e5;
-  --site-soft:#f6f6f4;
-}
-
-body{
-  background:#fff !important;
-  color:var(--site-ink) !important;
-  font-family:Arial, Helvetica, sans-serif !important;
-}
-
-header{
-  background:rgba(255,255,255,.97) !important;
-  border-bottom:1px solid #e8e8e8 !important;
-  box-shadow:0 2px 18px rgba(0,0,0,.06);
-  backdrop-filter:blur(14px) !important;
-}
-header #logoContainer{
-  background:var(--site-red) !important;
-  box-shadow:none !important;
-}
-header #navChurchName,
-header a,
-header button{
-  color:#111 !important;
-}
-header nav a:hover,
-header .mobile-link:hover{
-  color:var(--site-red) !important;
-}
-
-/* Hero: large editorial image-first treatment */
-#hero{
-  min-height:100svh !important;
-  height:100svh !important;
-  background:#050505 !important;
-  padding-top:100px !important;
-  padding-bottom:45px !important;
-}
-#heroMediaBackground{background:#050505 !important;}
-#heroMediaBackground > div:nth-last-child(2){background:rgba(0,0,0,.38) !important;}
-#heroMediaBackground > div:last-child{
-  background:linear-gradient(to bottom,rgba(0,0,0,.08),rgba(0,0,0,.72)) !important;
-}
-#hero > div.relative.z-10{max-width:980px !important;}
-#heroBadge{
-  color:#fff !important;
-  background:transparent !important;
-  border:0 !important;
-  padding:0 !important;
-  letter-spacing:.28em !important;
-}
-#hero h1{
-  text-shadow:0 3px 22px rgba(0,0,0,.65);
-  letter-spacing:.12em !important;
-}
-#heroSubtitle{color:#fff !important;letter-spacing:.18em !important;}
-#heroLocation{color:rgba(255,255,255,.82) !important;}
-#heroMapLink{
-  border:1px solid rgba(255,255,255,.75) !important;
-  border-radius:2px !important;
-  background:transparent !important;
-  padding:14px 28px !important;
-}
-#heroMapLink:hover{background:#fff !important;color:#111 !important;}
-
-/* Shared Footscray-style section rhythm */
-#events,#special-events,#featured,#welcome,#our-church,#bible-hour,#scriptures,#visit-us,#explore,#contact{
-  margin-top:0 !important;
-  padding-top:86px !important;
-  padding-bottom:86px !important;
-}
-#events,#welcome{background:#fff !important;color:var(--site-ink) !important;}
-#special-events{background:var(--site-soft) !important;color:var(--site-ink) !important;}
-#featured{background:#111 !important;}
-#explore{background:#f3f3f1 !important;color:var(--site-ink) !important;}
-
-#events .max-w-6xl,
-#special-events .max-w-4xl,
-#featured .max-w-4xl,
-#welcome .max-w-6xl,
-#explore .max-w-6xl{
-  max-width:1180px !important;
-}
-
-/* Section headings */
-#events h2,
-#special-events h2,
-#welcome h2,
-#explore h2{
-  color:#111 !important;
-  letter-spacing:.12em !important;
-  font-size:clamp(28px,4vw,48px) !important;
-  margin-bottom:12px !important;
-}
-#events > div > p,
-#welcomeBadge{
-  color:var(--site-red) !important;
-  letter-spacing:.22em !important;
-}
-
-/* Coming events: clean three-column service cards */
-#eventsContainer{
-  gap:0 !important;
-  border-top:1px solid var(--site-line);
-  border-bottom:1px solid var(--site-line);
-  margin-bottom:36px !important;
-}
-#eventsContainer > *{
-  background:#fff !important;
-  color:#111 !important;
-  border:0 !important;
-  border-right:1px solid var(--site-line) !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  padding:34px 24px !important;
-}
-#eventsContainer > *:last-child{border-right:0 !important;}
-#eventsContainer > * *{color:inherit;}
-#eventsContainer button,
-#eventsContainer a{color:var(--site-red) !important;}
-#viewCalendarBtn{
-  background:#111 !important;
-  color:#fff !important;
-  border-radius:2px !important;
-  box-shadow:none !important;
-  padding:14px 28px !important;
-}
-#viewCalendarBtn:hover{background:var(--site-red) !important;color:#fff !important;}
-
-/* Calendar container remains functionally identical; visual shell only */
-#calendarWrapper{margin-top:24px !important;}
-#calendarWrapper > div{
-  background:#fff !important;
-  border:1px solid var(--site-line) !important;
-  border-radius:0 !important;
-  box-shadow:0 12px 40px rgba(0,0,0,.07);
-}
-#calendarTitle{color:#111 !important;}
-#calendarStatus{color:#777 !important;}
-#calendarOpenLink{background:var(--site-red) !important;border-radius:2px !important;}
-#calendarContent{background:#fafafa !important;border-color:#ddd !important;border-radius:0 !important;}
-
-/* Special events: image-led editorial card */
-#special-events > div > div{
-  background:#fff !important;
-  border:0 !important;
-  border-radius:0 !important;
-  box-shadow:0 14px 45px rgba(0,0,0,.08) !important;
-}
-#special-events > div > div > div:first-child{
-  background:#111 !important;
-  border:0 !important;
-  padding:22px 18px !important;
-}
-#special-events h2{color:#fff !important;font-size:clamp(25px,3.5vw,38px) !important;}
-#specialEventsContainer{padding:28px !important;}
-#specialEventsContainer .special-event-card{
-  background:#fff !important;
-  border:0 !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  color:#111 !important;
-}
-#specialEventsContainer .special-event-image-button{
-  aspect-ratio:16 / 9 !important;
-  border-radius:0 !important;
-}
-#specialEventsContainer .special-event-image{object-fit:contain !important;background:#000;}
-
-/* Featured message: Footscray-like full-width dark feature */
-#featured{min-height:560px !important;display:flex;align-items:center;}
-#featuredBackground{filter:saturate(.75) contrast(1.04);}
-#featured > div:nth-child(2){background:linear-gradient(90deg,rgba(0,0,0,.74),rgba(0,0,0,.45),rgba(0,0,0,.72)) !important;}
-#featuredBadge{border:0 !important;background:transparent !important;padding:0 !important;color:#fff !important;letter-spacing:.25em !important;}
-#featuredTitle{letter-spacing:.08em !important;font-size:clamp(34px,6vw,72px) !important;}
-#featuredSubtitle{color:#ddd !important;}
-#watchLink{background:var(--site-red) !important;border-radius:2px !important;box-shadow:none !important;}
-#sermonsLink{border-radius:2px !important;background:transparent !important;}
-
-/* Welcome: clean split editorial layout */
-#welcome .grid{gap:70px !important;}
-#welcomeTitle{letter-spacing:.08em !important;}
-#welcomeParagraph1,#welcomeParagraph2{color:#555 !important;font-size:16px !important;line-height:1.9 !important;}
-#leaderName{color:#111 !important;}
-#newHereLink{background:#111 !important;color:#fff !important;border-radius:2px !important;}
-#newHereLink:hover{background:var(--site-red) !important;color:#fff !important;}
-#contactLink{border-color:#ccc !important;color:#111 !important;border-radius:2px !important;}
-#welcomeImageContainer{
-  background:#eee !important;
-  border:0 !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-}
-
-/* Explore cards */
-#explore h2{margin-bottom:36px !important;}
-#exploreContainer{gap:1px !important;background:#ddd !important;}
-#exploreContainer .explore-card{
-  background:#fff !important;
-  border:0 !important;
-  border-radius:0 !important;
-  min-height:220px !important;
-  box-shadow:none !important;
-  color:#111 !important;
-  transition:transform .25s ease,box-shadow .25s ease;
-}
-#exploreContainer .explore-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.09);z-index:2;}
-#exploreContainer .explore-card *{color:inherit;}
-#exploreContainer .explore-card a{color:var(--site-red) !important;}
-
-/* Footer becomes a strong black closing band */
-#explore footer{
-  border-top:0 !important;
-  margin-top:70px !important;
-  padding-top:65px !important;
-  color:#bdbdbd !important;
-}
-#explore footer h3{color:#fff !important;}
-#explore footer .text-red-500{color:#fff !important;}
-#explore footer .border-t{border-color:#2a2a2a !important;}
-#explore footer a:hover{color:#fff !important;}
-#explore footer > div:last-child{border-color:#2a2a2a !important;}
-
-/* Keep lightboxes/viewers above every UI layer. No behavior changes. */
-#specialEventLightbox,#calendarFullscreen{z-index:100000 !important;}
-
-@media (max-width:767px){
-  #events,#special-events,#featured,#welcome,#our-church,#bible-hour,#visit-us,#explore,#contact{
-    padding-top:58px !important;
-    padding-bottom:58px !important;
-  }
-  #eventsContainer{grid-template-columns:1fr !important;}
-  #eventsContainer > *{border-right:0 !important;border-bottom:1px solid var(--site-line) !important;}
-  #eventsContainer > *:last-child{border-bottom:0 !important;}
-  #specialEventsContainer{padding:16px !important;}
-  #welcome .grid{gap:34px !important;}
-  #featured{min-height:500px !important;}
-}
-
-
-/* =========================================================
-   FOOTSCRAY MATCH-LAYOUT EXTENSION
-   UI/LAYOUT ONLY. Existing API, calendar and lightboxes untouched.
-========================================================= */
-.fhx-section{padding:96px 20px;position:relative;overflow:hidden}
-.fhx-white{background:#fff;color:#171717}
-.fhx-dark-feature{background:#111;color:#fff}
-.fhx-wrap{max-width:1180px;margin:0 auto}
-.fhx-split{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
-.fhx-center{text-align:center}
-.fhx-kicker{margin:0 0 14px;color:#c8102e;font-size:12px;font-weight:700;letter-spacing:.24em;text-transform:uppercase}
-.fhx-kicker.light{color:#fff}
-.fhx-section h2{margin:0 0 22px;font-size:clamp(34px,5vw,64px);line-height:.98;letter-spacing:.08em;font-weight:900;text-transform:uppercase}
-.fhx-copy{max-width:650px;margin:0 0 18px;color:#666;font-size:16px;line-height:1.9}
-.light-copy{margin-left:auto;margin-right:auto;color:#cfcfcf}
-.fhx-red-btn,.fhx-outline-btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 28px;margin-top:12px;border-radius:2px;text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;transition:.25s ease}
-.fhx-red-btn{background:#c8102e;color:#fff}
-.fhx-red-btn:hover{background:#111;color:#fff}
-.fhx-outline-btn{border:1px solid rgba(255,255,255,.55);color:#fff}
-.fhx-outline-btn:hover{background:#fff;color:#111}
-.fhx-photo-panel{min-height:430px;background:linear-gradient(135deg,#151515,#3b3b3b);display:flex;align-items:flex-end;justify-content:flex-start;box-shadow:0 18px 55px rgba(0,0,0,.15)}
-.fhx-photo-inner{width:100%;padding:38px;color:#fff;font-size:clamp(25px,4vw,52px);line-height:1;font-weight:900;letter-spacing:.06em}
-.fhx-photo-inner span{font-size:.42em;letter-spacing:.22em;color:#ddd}
-.fhx-scriptures{background:#f4f4f1;color:#111;padding:0}
-.fhx-quote-grid{display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid #ddd}
-.fhx-quote-grid>div{padding:48px 32px;border-right:1px solid #ddd;text-align:center}
-.fhx-quote-grid p{font-size:18px;line-height:1.7;margin:0 0 14px;font-style:italic}
-.fhx-quote-grid span{font-size:11px;font-weight:800;letter-spacing:.2em;color:#c8102e}
-.fhx-visit{background:#fff;color:#111;border-top:1px solid #eee}
-.fhx-address{font-size:15px;letter-spacing:.15em;text-transform:uppercase;color:#555;margin:0 0 18px}
-.fhx-service-row{display:grid;grid-template-columns:repeat(3,1fr);margin-top:65px;border-top:1px solid #ddd;border-bottom:1px solid #ddd}
-.fhx-service-row>div{padding:32px 20px;border-right:1px solid #ddd}
-.fhx-service-row>div:last-child{border-right:0}
-.fhx-service-row small,.fhx-service-row strong,.fhx-service-row span{display:block}
-.fhx-service-row small{font-size:10px;letter-spacing:.18em;color:#c8102e;font-weight:800;margin-bottom:9px}
-.fhx-service-row strong{font-size:17px;letter-spacing:.08em}
-.fhx-service-row span{margin-top:7px;color:#777;font-size:14px}
-@media(max-width:767px){
- .fhx-section{padding:60px 18px}
- .fhx-split{grid-template-columns:1fr;gap:36px}
- .fhx-photo-panel{min-height:300px}
- .fhx-quote-grid,.fhx-service-row{grid-template-columns:1fr}
- .fhx-quote-grid>div,.fhx-service-row>div{border-right:0;border-bottom:1px solid #ddd}
- .fhx-quote-grid>div:last-child,.fhx-service-row>div:last-child{border-bottom:0}
-}
-
   </style>
-
-
-<style id="FOOTSCRAY-PIXEL-HERO-OVERRIDE">
-/* =========================================================
-   FOOTSCRAY REFERENCE HERO / HEADER
-   Keeps all existing API, calendar and lightbox hooks intact.
-========================================================= */
-header{
-  position:fixed !important;
-  top:0 !important; left:0 !important; right:0 !important;
-  z-index:1000 !important;
-  height:92px !important;
-  background:rgba(0,0,0,.62) !important;
-  border:0 !important;
-  box-shadow:none !important;
-  backdrop-filter:none !important;
-}
-header > div{
-  max-width:1280px !important;
-  height:92px !important;
-  padding:0 28px !important;
-  margin:0 auto !important;
-}
-header > div > a:first-child{
-  width:365px !important;
-  flex-shrink:0 !important;
-  gap:0 !important;
-}
-header #logoContainer{
-  width:365px !important;
-  height:78px !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  border-radius:0 !important;
-  transform:none !important;
-}
-header #logoContainer img.site-header-logo{
-  display:block !important;
-  width:365px !important;
-  height:auto !important;
-  max-width:none !important;
-  object-fit:contain !important;
-}
-header #navChurchName{display:none !important;}
-header nav{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:40px !important;
-  margin-left:auto !important;
-  margin-right:34px !important;
-  color:#fff !important;
-  font-family:Arial,Helvetica,sans-serif !important;
-  font-size:14px !important;
-  font-weight:800 !important;
-  letter-spacing:0 !important;
-  white-space:nowrap !important;
-}
-header nav a, header .mobile-link{color:#fff !important;}
-header nav a:hover{color:#ddd !important;}
-header > div > div:last-child{
-  display:flex !important;
-  align-items:center !important;
-  gap:14px !important;
-}
-header > div > div:last-child > a{
-  color:#fff !important;
-  border:2px solid rgba(255,255,255,.9) !important;
-  background:transparent !important;
-  border-radius:999px !important;
-  padding:11px 20px !important;
-  font-size:14px !important;
-  font-weight:800 !important;
-  line-height:1 !important;
-  white-space:nowrap !important;
-}
-header > div > div:last-child > a:hover{
-  background:#fff !important;
-  color:#111 !important;
-}
-#hero{
-  position:relative !important;
-  min-height:100svh !important;
-  height:100svh !important;
-  padding:92px 24px 40px !important;
-  background:#050505 !important;
-}
-#heroMediaBackground > div:nth-last-child(2){
-  background:rgba(0,0,0,.53) !important;
-}
-#heroMediaBackground > div:last-child{
-  background:linear-gradient(to bottom,rgba(0,0,0,.20),rgba(0,0,0,.58)) !important;
-}
-#hero > div.relative.z-10{
-  max-width:1100px !important;
-  margin-top:22px !important;
-}
-#heroBadge{
-  display:none !important;
-}
-#hero h1{
-  margin:0 0 20px !important;
-  font-family:Arial,Helvetica,sans-serif !important;
-  font-size:clamp(44px,5vw,68px) !important;
-  line-height:1.05 !important;
-  font-weight:900 !important;
-  letter-spacing:.015em !important;
-  color:#fff !important;
-  text-shadow:0 3px 16px rgba(0,0,0,.7) !important;
-  background:none !important;
-  -webkit-text-fill-color:#fff !important;
-}
-#heroTitle,#heroSubtitle{
-  color:#fff !important;
-  font-size:inherit !important;
-  line-height:inherit !important;
-  letter-spacing:inherit !important;
-  margin:0 !important;
-  font-weight:900 !important;
-}
-#heroSubtitle{display:block !important; margin-top:4px !important;}
-#heroLocation{
-  margin:0 0 34px !important;
-  color:#fff !important;
-  font-size:24px !important;
-  line-height:1.35 !important;
-  font-weight:400 !important;
-  text-shadow:0 2px 8px rgba(0,0,0,.6) !important;
-}
-#heroMapLink{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  min-width:250px !important;
-  height:54px !important;
-  padding:0 30px !important;
-  border:2px solid rgba(255,255,255,.95) !important;
-  border-radius:10px !important;
-  background:rgba(0,0,0,.12) !important;
-  color:#fff !important;
-  font-size:14px !important;
-  font-weight:900 !important;
-  letter-spacing:0 !important;
-  box-shadow:none !important;
-  transform:none !important;
-}
-#heroMapLink:hover{background:#fff !important;color:#111 !important;}
-.hero-scroll-arrow{
-  position:absolute !important;
-  z-index:20 !important;
-  left:50% !important;
-  bottom:72px !important;
-  transform:translateX(-50%) !important;
-  width:52px !important;
-  height:52px !important;
-  border:2px solid #fff !important;
-  border-radius:50% !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  animation:none !important;
-}
-.hero-scroll-arrow span{
-  width:17px !important;
-  height:17px !important;
-  border-right:4px solid #fff !important;
-  border-bottom:4px solid #fff !important;
-  transform:rotate(45deg) translate(-2px,-2px) !important;
-}
-@media(max-width:1199px){
-  header nav{gap:24px !important;margin-right:18px !important;}
-  header > div > a:first-child, header #logoContainer, header #logoContainer img.site-header-logo{width:310px !important;}
-  header > div > div:last-child > a{padding:10px 15px !important;font-size:12px !important;}
-}
-@media(max-width:900px){
-  header{height:78px !important;}
-  header > div{height:78px !important;padding:0 16px !important;}
-  header > div > a:first-child, header #logoContainer, header #logoContainer img.site-header-logo{width:250px !important;height:auto !important;}
-  header nav, header > div > div:last-child > a{display:none !important;}
-  #menu-btn{display:flex !important;color:#fff !important;border:0 !important;background:transparent !important;}
-  #hero{padding-top:78px !important;}
-  #hero h1{font-size:clamp(34px,8vw,54px) !important;}
-  #heroLocation{font-size:19px !important;}
-}
-@media(max-width:600px){
-  header > div > a:first-child, header #logoContainer, header #logoContainer img.site-header-logo{width:205px !important;}
-  #hero{padding-left:14px !important;padding-right:14px !important;}
-  #hero > div.relative.z-10{margin-top:10px !important;}
-  #hero h1{font-size:34px !important;line-height:1.08 !important;}
-  #heroLocation{font-size:17px !important;margin-bottom:26px !important;}
-  #heroMapLink{height:50px !important;min-width:225px !important;}
-  .hero-scroll-arrow{bottom:42px !important;width:48px !important;height:48px !important;}
-}
-</style>
-
-
-<style id="FOOTSCRAY-AS-IS-2026-FINAL">
-/* =========================================================
-   FOOTSCRAY HOMEPAGE REFERENCE — AS-IS VISUAL PASS
-   Reference checked 13 Sep 2026.
-   UI-only overrides. Existing API/backend hooks untouched.
-========================================================= */
-header{
-  height:92px !important;
-  background:rgba(0,0,0,.58) !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-  border:0 !important;
-}
-header > div{
-  max-width:1260px !important;
-  height:92px !important;
-  padding:0 18px !important;
-}
-header > div > a:first-child{
-  width:300px !important;
-  height:92px !important;
-  flex-shrink:0 !important;
-}
-header #logoContainer{
-  width:300px !important;
-  height:92px !important;
-}
-header #logoContainer img.site-header-logo{
-  width:300px !important;
-  height:auto !important;
-  max-width:300px !important;
-  object-fit:contain !important;
-}
-header nav{
-  gap:38px !important;
-  margin-left:48px !important;
-  margin-right:30px !important;
-  font-size:14px !important;
-  font-weight:800 !important;
-  letter-spacing:0 !important;
-}
-header nav a{
-  padding:0 !important;
-}
-header > div > div:last-child{
-  gap:14px !important;
-}
-header > div > div:last-child > a{
-  height:42px !important;
-  padding:0 20px !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  border:2px solid rgba(255,255,255,.92) !important;
-  border-radius:999px !important;
-  background:transparent !important;
-  font-size:14px !important;
-  font-weight:800 !important;
-}
-header > div > div:last-child > a:first-child{min-width:150px !important;}
-header > div > div:last-child > a:last-child{min-width:134px !important;}
-#hero{
-  min-height:100vh !important;
-  height:100vh !important;
-  padding:92px 20px 40px !important;
-}
-#heroMediaBackground > div:nth-last-child(2){
-  background:rgba(0,0,0,.56) !important;
-}
-#heroMediaBackground > div:last-child{
-  background:linear-gradient(to bottom,rgba(0,0,0,.18) 0%,rgba(0,0,0,.30) 48%,rgba(0,0,0,.72) 100%) !important;
-}
-#hero > div.relative.z-10{
-  max-width:1000px !important;
-  margin-top:12px !important;
-  transform:translateY(-2px) !important;
-}
-#hero h1{
-  font-size:clamp(46px,5.05vw,66px) !important;
-  line-height:1.06 !important;
-  letter-spacing:.01em !important;
-  margin-bottom:22px !important;
-  font-weight:900 !important;
-}
-#heroTitle,#heroSubtitle{
-  font-size:inherit !important;
-  line-height:inherit !important;
-  letter-spacing:inherit !important;
-  font-weight:900 !important;
-}
-#heroLocation{
-  font-size:24px !important;
-  margin-bottom:34px !important;
-  font-weight:400 !important;
-}
-#heroMapLink{
-  min-width:250px !important;
-  height:54px !important;
-  border-radius:10px !important;
-  border-width:2px !important;
-  font-size:14px !important;
-  font-weight:900 !important;
-  padding:0 28px !important;
-  background:rgba(0,0,0,.08) !important;
-}
-.hero-scroll-arrow{
-  width:52px !important;
-  height:52px !important;
-  bottom:72px !important;
-  border-width:2px !important;
-}
-@media(max-width:1200px){
-  header > div{padding:0 16px !important;}
-  header > div > a:first-child,
-  header #logoContainer,
-  header #logoContainer img.site-header-logo{width:280px !important;max-width:280px !important;}
-  header nav{gap:25px !important;margin-left:25px !important;margin-right:18px !important;}
-  header > div > div:last-child > a{padding:0 15px !important;font-size:12px !important;}
-}
-@media(max-width:900px){
-  header,header > div{height:78px !important;}
-  header > div{padding:0 16px !important;}
-  header > div > a:first-child,
-  header #logoContainer,
-  header #logoContainer img.site-header-logo{width:245px !important;max-width:245px !important;height:auto !important;}
-  header nav,header > div > div:last-child > a{display:none !important;}
-  #hero{padding-top:78px !important;}
-}
-@media(max-width:600px){
-  header > div > a:first-child,
-  header #logoContainer,
-  header #logoContainer img.site-header-logo{width:205px !important;max-width:205px !important;}
-  #hero h1{font-size:34px !important;line-height:1.08 !important;}
-  #heroLocation{font-size:17px !important;}
-  #heroMapLink{min-width:225px !important;height:50px !important;}
-  .hero-scroll-arrow{width:48px !important;height:48px !important;bottom:42px !important;}
-}
-</style>
 
 </head>
 
@@ -1593,18 +963,26 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
       <div
         id="logoContainer"
         class="
+          w-10
+          h-10
+          bg-red-600
+          rounded-full
           flex-shrink-0
           flex
           items-center
           justify-center
+          text-white
+          font-bold
+          text-xl
+          transition-transform
+          duration-500
+          group-hover:rotate-180
+          shadow-lg
+          shadow-red-600/50
           overflow-hidden
         "
       >
-        <img
-          src="./60ecdcaaa85a03702e333b58_PH-LOGO-WHITE-p-500.png"
-          alt="The Potter's House Christian Fellowship Church"
-          class="site-header-logo"
-        >
+        ✝
       </div>
 
 
@@ -1641,12 +1019,47 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
       "
     >
 
-      <a href="#hero" class="hover:text-gray-300 transition">HOME</a>
-      <a href="#welcome" class="hover:text-gray-300 transition">ABOUT</a>
-      <a href="#featured" class="hover:text-gray-300 transition">WATCH</a>
-      <a href="#visit-us" class="hover:text-gray-300 transition">GIVE</a>
-      <a href="#explore" class="hover:text-gray-300 transition">MINISTRIES</a>
-      <a href="#events" class="hover:text-gray-300 transition">EVENTS</a>
+      <a
+        href="#hero"
+        class="hover:text-red-500 transition"
+      >
+        Home
+      </a>
+
+      <a
+        href="#events"
+        class="hover:text-red-500 transition"
+      >
+        Events
+      </a>
+
+      <a
+        href="#special-events"
+        class="hover:text-red-500 transition"
+      >
+        Special Events
+      </a>
+
+      <a
+        href="#featured"
+        class="hover:text-red-500 transition"
+      >
+        Watch
+      </a>
+
+      <a
+        href="#welcome"
+        class="hover:text-red-500 transition"
+      >
+        Welcome
+      </a>
+
+      <a
+        href="#explore"
+        class="hover:text-red-500 transition"
+      >
+        Explore
+      </a>
 
     </nav>
 
@@ -1682,7 +1095,7 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
           transition
         "
       >
-        📱 CONTACT US
+        Contact
       </a>
 
 
@@ -1702,7 +1115,7 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
           pulse-glow
         "
       >
-        📍 LOCATION
+        Location
       </a>
 
 
@@ -1958,7 +1371,7 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
     >
 
       <span id="heroTitle">
-        The Potter's House Church
+        The Potter's House
       </span>
 
       <br>
@@ -1975,7 +1388,7 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
           mt-2
         "
       >
-        Bengaluru
+        Church Bengaluru
       </span>
 
     </h1>
@@ -2027,95 +1440,36 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
   </div>
 
 
-  <a href="#special-events" class="hero-scroll-arrow" aria-label="Scroll down">
-    <span></span>
+  <a
+    href="#events"
+    class="
+      mt-8
+      animate-bounce
+      text-gray-500
+      hover:text-white
+      transition
+      relative
+      z-10
+    "
+  >
+
+    <span
+      class="
+        text-xs
+        uppercase
+        tracking-widest
+        block
+        mb-1
+      "
+    >
+      Scroll Down
+    </span>
+
+    ↓
+
   </a>
 
 </section>
-
-
-<!-- =========================================================
-     SPECIAL EVENTS
-========================================================= -->
-
-<section
-  id="special-events"
-  class="
-    w-full
-    bg-black
-    px-4
-    py-20
-    relative
-    overflow-hidden
-  "
->
-
-  <div
-    class="
-      max-w-4xl
-      w-full
-      mx-auto
-    "
-    data-aos="zoom-in"
-  >
-
-    <div
-      class="
-        bg-white
-        rounded-lg
-        border-2
-        border-black
-        overflow-hidden
-        shadow-2xl
-        text-black
-      "
-    >
-
-      <div
-        class="
-          bg-stone-900
-          text-white
-          py-5
-          px-4
-          text-center
-          border-b-2
-          border-black
-        "
-      >
-
-        <h2
-          class="
-            text-2xl
-            sm:text-3xl
-            md:text-4xl
-            font-black
-            uppercase
-            tracking-widest
-          "
-        >
-          SPECIAL EVENTS
-        </h2>
-
-      </div>
-
-
-      <div
-        id="specialEventsContainer"
-        class="
-          p-4
-          sm:p-6
-          md:p-10
-          space-y-8
-        "
-      ></div>
-
-    </div>
-
-  </div>
-
-</section>
-
-
 
 
 <!-- =========================================================
@@ -2301,6 +1655,88 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
         </div>
 
       </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================================================
+     SPECIAL EVENTS
+========================================================= -->
+
+<section
+  id="special-events"
+  class="
+    w-full
+    bg-black
+    px-4
+    py-20
+    relative
+    overflow-hidden
+  "
+>
+
+  <div
+    class="
+      max-w-4xl
+      w-full
+      mx-auto
+    "
+    data-aos="zoom-in"
+  >
+
+    <div
+      class="
+        bg-white
+        rounded-lg
+        border-2
+        border-black
+        overflow-hidden
+        shadow-2xl
+        text-black
+      "
+    >
+
+      <div
+        class="
+          bg-stone-900
+          text-white
+          py-5
+          px-4
+          text-center
+          border-b-2
+          border-black
+        "
+      >
+
+        <h2
+          class="
+            text-2xl
+            sm:text-3xl
+            md:text-4xl
+            font-black
+            uppercase
+            tracking-widest
+          "
+        >
+          SPECIAL EVENTS
+        </h2>
+
+      </div>
+
+
+      <div
+        id="specialEventsContainer"
+        class="
+          p-4
+          sm:p-6
+          md:p-10
+          space-y-8
+        "
+      ></div>
 
     </div>
 
@@ -2681,64 +2117,6 @@ header > div > div:last-child > a:last-child{min-width:134px !important;}
 
 </section>
 
-
-<!-- =========================================================
-     OUR CHURCH / ABOUT
-========================================================= -->
-<section id="our-church" class="fhx-section fhx-white">
-  <div class="fhx-wrap fhx-split">
-    <div data-aos="fade-right">
-      <p class="fhx-kicker">OUR CHURCH</p>
-      <h2>THE POTTER'S HOUSE<br>CHURCH BENGALURU</h2>
-      <p class="fhx-copy">We are a Bible-believing church in Bengaluru, Karnataka. Our desire is to see people encounter Jesus Christ, grow in faith, build strong relationships and discover God's purpose for their lives.</p>
-      <p class="fhx-copy">Everyone is welcome to join us for worship, preaching, fellowship and special events.</p>
-      <a class="fhx-red-btn" href="#welcome">LEARN MORE</a>
-    </div>
-    <div class="fhx-photo-panel" data-aos="fade-left">
-      <div class="fhx-photo-inner">THE POTTER'S HOUSE<br><span>CHURCH BENGALURU</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- =========================================================
-     BIBLE HOUR / FEATURED SERIES
-========================================================= -->
-<section id="bible-hour" class="fhx-section fhx-dark-feature">
-  <div class="fhx-wrap fhx-center">
-    <p class="fhx-kicker light">BIBLE HOUR SERIES</p>
-    <h2>GROW IN THE WORD</h2>
-    <p class="fhx-copy light-copy">Join us as we open the Bible, learn together and grow in our relationship with God.</p>
-    <a class="fhx-outline-btn" href="#events">VIEW SERVICE TIMES</a>
-  </div>
-</section>
-
-<!-- =========================================================
-     SCRIPTURE STRIP
-========================================================= -->
-<section id="scriptures" class="fhx-scriptures">
-  <div class="fhx-wrap fhx-quote-grid">
-    <div><p>“Go into all the world and preach the gospel to all creation.”</p><span>MARK 16:15</span></div>
-    <div><p>“Taste and see that the LORD is good.”</p><span>PSALM 34:8</span></div>
-    <div><p>“Casting all your anxieties on him, because he cares for you.”</p><span>1 PETER 5:7</span></div>
-  </div>
-</section>
-
-<!-- =========================================================
-     COME AND VISIT
-========================================================= -->
-<section id="visit-us" class="fhx-section fhx-visit">
-  <div class="fhx-wrap fhx-center">
-    <p class="fhx-kicker">WE'D LOVE FOR YOU TO</p>
-    <h2>COME AND VISIT US</h2>
-    <p class="fhx-address">BENGALURU, KARNATAKA, INDIA</p>
-    <a class="fhx-red-btn" href="https://maps.google.com" target="_blank" rel="noopener noreferrer">📍 FIND US ON A MAP</a>
-    <div class="fhx-service-row">
-      <div><small>REGULAR SERVICES</small><strong>SUNDAY</strong><span>Worship &amp; Revival</span></div>
-      <div><small>LOCATION</small><strong>BENGALURU</strong><span>Karnataka, India</span></div>
-      <div><small>CONTACT</small><strong>GET IN TOUCH</strong><span>Visit our Contact section</span></div>
-    </div>
-  </div>
-</section>
 
 <!-- =========================================================
      EXPLORE
@@ -4557,9 +3935,10 @@ async function loadSpecialEvents() {
           <div
             class="
               w-full
-              sm:w-64
-              h-44
-              sm:h-36
+              sm:w-80
+              md:w-96
+              aspect-[16/9]
+              h-auto
               bg-gray-100
               border-2
               border-black

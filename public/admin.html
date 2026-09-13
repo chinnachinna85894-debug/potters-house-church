@@ -2632,11 +2632,14 @@ async function api(url,options={}){
 
     if(!response.ok){
 
-        throw new Error(
+        const error = new Error(
             data.message ||
             data.error ||
             `Request failed (${response.status})`
         );
+
+        error.status = response.status;
+        throw error;
 
     }
 
@@ -4903,10 +4906,15 @@ async function loadCalendar(){
 
     try{
 
-        const data =
+        const rawData =
             (await api(
                 "/api/calendar"
-            )) || {};
+            )) || null;
+
+        const data =
+            Array.isArray(rawData)
+                ? (rawData[0] || {})
+                : rawData;
 
 
         const calendarValue =
@@ -5015,44 +5023,21 @@ async function loadCalendar(){
 
     }catch(error){
 
-        /*
-         * A missing calendar is a normal empty state, not an error.
-         * Keep real API/server errors as red error toasts.
-         */
-        if(
-            error &&
-            error.message ===
-                "No calendar has been configured."
-        ){
-
-            document.getElementById(
-                "calendarStatus"
-            ).textContent =
-                "No calendar has been configured.";
-
-            document.getElementById(
-                "calendarPreview"
-            ).innerHTML = `
-                <span style="color:#64748b">
-                    No calendar available.
-                </span>
-            `;
-
-            return;
-
-        }
-
-
         document.getElementById(
             "calendarStatus"
         ).textContent =
-            "Unable to load calendar.";
+            error.status === 404
+                ? "No calendar has been configured."
+                : "Unable to load calendar.";
 
-
-        showToast(
-            error.message,
-            "error"
-        );
+        // A 404 simply means there is no calendar yet. Do not show
+        // an alarming red toast every time the Dashboard is refreshed.
+        if(error.status !== 404){
+            showToast(
+                error.message,
+                "error"
+            );
+        }
 
     }
 

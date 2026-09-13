@@ -3010,199 +3010,215 @@ app.delete(
    Older duplicate records are cleaned up when saving/removing.
 ========================================================= */
 
-async function getCurrentCalendar() {
+async function findCalendarInCollection(name) {
 
-    const collection =
-        mongoose.connection.db.collection(
-            "calendar"
-        );
+    const db = mongoose.connection.db;
+    if (!db) return null;
 
-    return await collection
-        .findOne(
+    try {
+        return await db.collection(name).findOne(
             {},
             {
                 sort: {
                     updatedAt: -1,
-                    createdAt: -1
+                    createdAt: -1,
+                    _id: -1
                 }
             }
         );
+    } catch (error) {
+        console.warn(`Calendar collection lookup failed (${name}):`, error.message);
+        return null;
+    }
 }
 
-async function cleanupOldCalendars(
-    collection,
-    keepId
-) {
+async function getLatestCalendarGridFSFile() {
 
-    const oldItems =
-        await collection
-            .find(
-                keepId
-                    ? {
-                        _id: {
-                            $ne: keepId
-                        }
-                    }
-                    : {}
-            )
-            .toArray();
+    const db = mongoose.connection.db;
+    if (!db) return null;
 
-    if (!oldItems.length) {
-        return;
+    try {
+        const file = await db
+            .collection("uploads.files")
+            .find({
+                $or: [
+                    { "metadata.section": "calendar" },
+                    { "metadata.folder": "calendar" },
+                    { "metadata.originalName": { $regex: /calendar/i } }
+                ]
+            })
+            .sort({ uploadDate: -1, _id: -1 })
+            .limit(1)
+            .next();
+
+        if (!file) return null;
+
+        return {
+            _id: file._id,
+            title: "Church Calendar",
+            image: `/api/files/${file._id}`,
+            url: `/api/files/${file._id}`,
+            calendarUrl: `/api/files/${file._id}`,
+            type: file.contentType || "",
+            createdAt: file.uploadDate || new Date(),
+            updatedAt: file.uploadDate || new Date(),
+            source: "gridfs-fallback"
+        };
+    } catch (error) {
+        console.warn("Calendar GridFS fallback lookup failed:", error.message);
+        return null;
+    }
+}
+
+async function getCurrentCalendar() {
+
+    const db = mongoose.connection.db;
+
+    if (!db) {
+        throw new Error("MongoDB is not connected");
     }
 
-    await collection.deleteMany(
-        keepId
-            ? {
-                _id: {
-                    $ne: keepId
-                }
-            }
-            : {}
-    );
+    // Prefer the canonical collection, then support every older
+    // collection name that may have been used by previous versions.
+    const collectionNames = [
+        "calendar",
+        "calendars",
+        "Calendar",
+        "Calendars"
+    ];
+
+    for (const name of collectionNames) {
+        const item = await findCalendarInCollection(name);
+        if (item) return item;
+    }
+
+    // If the database record was lost but the uploaded file is still
+    // present in GridFS, recover the latest calendar file automatically.
+    return await getLatestCalendarGridFSFile();
+}
+
+async function cleanupOldCalendars(collection, keepId) {
+
+    const filter = keepId
+        ? { _id: { $ne: keepId } }
+        : {};
+
+    const oldItems = await collection.find(filter).toArray();
+
+    if (!oldItems.length) return;
+
+    await collection.deleteMany(filter);
 
     for (const oldItem of oldItems) {
-
         if (oldItem?.image) {
-            deleteUploadedFile(
-                oldItem.image
-            );
+            deleteUploadedFile(oldItem.image);
         }
     }
 }
 
-async function saveCurrentCalendar(
-    req
-) {
+async function saveCurrentCalendar(req) {
 
-    const collection =
-        mongoose.connection.db.collection(
-            "calendar"
-        );
+    const db = mongoose.connection.db;
+    if (!db) throw new Error("MongoDB is not connected");
 
-    const imageFile =
-        getFileByFields(
-            req,
-            [
-                "calendarFile",
-                "image",
-                "calendarImage"
-            ]
-        );
+    const collection = db.collection("calendar");
 
-    const current =
-        await getCurrentCalendar();
+    const imageFile = getFileByFields(req, [
+        "calendarFile",
+        "image",
+        "calendarImage"
+    ]);
+
+    // Look in all known calendar collections before saving, so old data
+    // is never silently discarded.
+    const current = await getCurrentCalendar();
+
+    const submittedUrl =
+        typeof req.body.url === "string"
+            ? req.body.url.trim()
+            : (typeof req.body.calendarUrl === "string"
+                ? req.body.calendarUrl.trim()
+                : "");
 
     const item = {
-
-        title:
-            req.body.title ||
-            "Church Calendar",
-
-        date:
-            req.body.date ||
-            "",
-
-        time:
-            req.body.time ||
-            "",
-
-        description:
-            req.body.description ||
-            "",
-
-        location:
-            req.body.location ||
-            "",
-
-        link:
-            req.body.link ||
-            "",
-
-        order:
-            Number(
-                req.body.order
-            ) || 0,
-
-        updatedAt:
-            new Date()
+        title: req.body.title || "Church Calendar",
+        url: submittedUrl,
+        calendarUrl: submittedUrl,
+        date: req.body.date || "",
+        time: req.body.time || "",
+        description: req.body.description || "",
+        location: req.body.location || "",
+        link: req.body.link || "",
+        order: Number(req.body.order) || 0,
+        updatedAt: new Date()
     };
 
-    /*
-     * Keep the existing file when the user saves
-     * without selecting a replacement file.
-     */
     if (imageFile) {
+        const uploadedUrl = normalizeUploadUrl(imageFile);
+        item.image = uploadedUrl;
+        item.url = uploadedUrl;
+        item.calendarUrl = uploadedUrl;
+    } else if (current) {
+        const existingUrl =
+            current.image ||
+            current.url ||
+            current.calendarUrl ||
+            "";
 
-        item.image =
-            normalizeUploadUrl(
-                imageFile
-            );
-    } else if (current?.image) {
-
-        item.image =
-            current.image;
+        if (existingUrl) {
+            item.image = current.image || undefined;
+            item.url = item.url || existingUrl;
+            item.calendarUrl = item.calendarUrl || existingUrl;
+        }
     }
+
+    if (!item.url && !item.image) {
+        throw new Error("A calendar URL or uploaded calendar file is required.");
+    }
+
+    // Upsert into ONE canonical document. This guarantees that a saved
+    // calendar survives an Admin page refresh and a server restart.
+    const existingCanonical = await collection.findOne({});
 
     let savedId;
 
-    if (current?._id) {
-
+    if (existingCanonical?._id) {
         await collection.updateOne(
-            {
-                _id: current._id
-            },
-            {
-                $set: item
-            }
+            { _id: existingCanonical._id },
+            { $set: item }
         );
-
-        savedId =
-            current._id;
+        savedId = existingCanonical._id;
 
         if (
             imageFile &&
-            current.image &&
-            current.image !==
-                item.image
+            existingCanonical.image &&
+            existingCanonical.image !== item.image
         ) {
-
-            deleteUploadedFile(
-                current.image
-            );
+            deleteUploadedFile(existingCanonical.image);
         }
-
     } else {
-
-        item.createdAt =
-            new Date();
-
-        const inserted =
-            await collection.insertOne(
-                item
-            );
-
-        savedId =
-            inserted.insertedId;
+        item.createdAt = new Date();
+        const inserted = await collection.insertOne(item);
+        savedId = inserted.insertedId;
     }
 
-    /*
-     * The calendar is singular. Remove any
-     * duplicate records left by older versions.
-     */
-    await cleanupOldCalendars(
-        collection,
-        savedId
-    );
+    // Remove duplicate canonical records only after the new record exists.
+    await cleanupOldCalendars(collection, savedId);
 
-    notifyClients(
-        "calendar-updated"
-    );
+    // If an older collection still contains a duplicate, leave it alone for
+    // compatibility, but the canonical collection is now authoritative.
+    const saved = await collection.findOne({ _id: savedId });
+
+    if (!saved) {
+        throw new Error("Calendar was not persisted to MongoDB.");
+    }
+
+    notifyClients("calendar-updated");
 
     return {
         success: true,
-        message:
-            "Calendar updated successfully"
+        message: "Calendar updated successfully",
+        calendar: saved
     };
 }
 
